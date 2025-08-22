@@ -155,6 +155,7 @@ export default function AllTicketbyType({ filterType }) {
                     data={chartData}
                     options={{
                         responsive: true,
+
                         plugins: {
                             legend: { display: true },
                             title: { display: true, text: filterType === "perMonth" ? "Tickets by Type per Month" : "Tickets by Type" }

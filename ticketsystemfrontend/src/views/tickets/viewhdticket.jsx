@@ -42,10 +42,63 @@ export default function ViewHDTicket() {
 
     const [showUserCard, setShowUserCard] = useState(false);
 
+    const [notifyReview, setNotifyReview] = useState(false);
+
     const subCategoryOptions = {
-        hardware: ['Computer', 'Laptop', 'Monitor', 'Printer/Scanner', 'Peripherals', 'Fax', 'Others'],
-        network: ['Internet Connectivity', 'Wi-Fi', 'Email/Server Access', 'Network Printer/Scanner', 'Firewall', 'Others'],
-        software: ['Application Not Responding', 'Installation/Uninstallation', 'System Updates', 'Login Issue', 'Outlook', 'Security', 'Others'],
+        hardware: [
+            'Desktop',
+            'Laptop',
+            'Monitor',
+            'Printer',
+            'Scanner',
+            'Printer/Scanner Combo',
+            'Peripherals (Keyboard, Mouse, Webcam, External Drive)',
+            'Docking Station',
+            'Projector',
+            'Fax Machine',
+            'Telephone',
+            'Server Hardware',
+            'UPS (Uninterruptible Power Supply)',
+            'Cabling & Ports',
+            'Others'
+        ],
+
+        network: [
+            'Internet Connectivity',
+            'Wi-Fi',
+            'LAN (Local Area Network)',
+            'WAN (Wide Area Network)',
+            'Server Access',
+            'Network Printer/Scanner',
+            'VPN Connection',
+            'Firewall',
+            'Router/Switch Configuration',
+            'MPLS',
+            'ISP',
+            'Network Security (Intrusion Detection/Prevention)',
+            'Bandwidth Issues',
+            'Others'
+        ],
+
+        software: [
+            'Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)',
+            'Oracle (PROD/BIPUB)',
+            'Email (Setup, Creation, Error, Backup)',
+            'System Updates & Patches',
+            'Active Directory (User Creation, Login, Password)',
+            'Zoom / Video Conferencing Tools',
+            'FoxPro (Accounting System)',
+            'GEMCOM',
+            'SURPAC',
+            'FTP (Access Creation, Change Password)',
+            'PDF (Conversion, Reduce Size, Editing)',
+            'Antivirus / Security Software',
+            'Operating System (Windows, macOS, Linux)',
+            'Custom In-house Applications',
+            'Backup & Restore Tools',
+            'Cloud Services (OneDrive, Google Drive, Dropbox)',
+            'Others'
+        ]
     };
 
     const customSelectStyles = {
@@ -333,7 +386,12 @@ export default function ViewHDTicket() {
                 const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
                 setFormData(ticket);
                 setOriginalData(ticket);
-                console.log('ASSIGNED COLLABORATORS: ', ticket.assigned_collaborators)
+
+                if (ticket.ticket_status === 'closed' && ticket.is_reviewed === false || ticket.is_reviewed === null) {
+                    setNotifyReview(true)
+                } else {
+                    setNotifyReview(false)
+                }
             } catch (err) {
                 console.error('Error fetching data:', err);
             }
@@ -355,6 +413,30 @@ export default function ViewHDTicket() {
                 console.error("Error fetching users:", err);
             });
     }, [])
+
+    const handleNotifyReview = async () => {
+        const empInfo = JSON.parse(localStorage.getItem('user'));
+        //tikcetfor
+        try {
+            axios.post(`${config.baseApi}/ticket/send-notification-review`, {
+                ticket_for_id: ticketForData.user_id,
+                ticket_id: ticket_id,
+                hd_user_id: empInfo.user_id,
+            });
+
+            axios.post(`${config.baseApi}/ticket/note-post`, {
+                notes: 'Notified the user for review',
+                current_user: empInfo.user_name,
+                ticket_id: ticket_id
+            })
+
+            window.location.reload();
+        } catch (err) {
+            console.error('Error notifying review:', err);
+        }
+    }
+
+
     //Accept ticket function
     const HandleAcceptButton = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
@@ -483,9 +565,16 @@ export default function ViewHDTicket() {
             dataToSend.append('ticket_urgencyLevel', formData.ticket_urgencyLevel);
             dataToSend.append('ticket_for', formData.ticket_for);
             dataToSend.append('Description', formData.Description);
-            dataToSend.append('updated_by', empInfo.user_name)
+            dataToSend.append('updated_by', empInfo.user_id)
             dataToSend.append('changes_made', changesMade);
             dataToSend.append('assigned_collaborators', formData.assigned_collaborators);
+
+            const changedTicketFor = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
+                params: { user_name: formData.ticket_for }
+            })
+            const TicketforEmail = changedTicketFor.data
+            dataToSend.append('ticket_for_UserId', TicketforEmail.user_id);
+            dataToSend.append('assigned_to_UserId', hdUser.user_id);
 
             if (formData.ticket_for) {
                 const changedTicketFor = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
@@ -493,7 +582,6 @@ export default function ViewHDTicket() {
                 })
                 const newticketfor = changedTicketFor.data;
                 const newTF_location = newticketfor.emp_location;
-
                 dataToSend.append('assigned_location', newTF_location);
 
             }
@@ -601,6 +689,16 @@ export default function ViewHDTicket() {
                             <div className="d-flex justify-content-between align-items-center">
                                 <h3 className="fw-bold text-dark mb-0">Ticket Details</h3>
                                 <div className="d-flex gap-2">
+                                    {notifyReview && (
+                                        <Button
+                                            variant="primary"
+                                            size="sm"
+                                            style={{ width: '100px', minHeight: '40px' }}
+                                            onClick={handleNotifyReview}
+                                        >
+                                            <FeatherIcon icon="bell" />
+                                        </Button>
+                                    )}
                                     {showAcceptButton && (
                                         <Button
                                             variant="primary"
@@ -621,6 +719,7 @@ export default function ViewHDTicket() {
                                             Save Changes
                                         </Button>
                                     )}
+
                                 </div>
                             </div>
                         </Row>
@@ -947,7 +1046,7 @@ export default function ViewHDTicket() {
                                     required
                                     disabled={!isEditable}
                                 >
-                                    <option value="open" hidden>Open</option>
+                                    <option value="open" >Open</option>
                                     <option value="assigned" hidden>Assigned</option>
                                     <option value="in-progress">In Progress</option>
                                     <option value="escalate2">Escalate Tier II</option>

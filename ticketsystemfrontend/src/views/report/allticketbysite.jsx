@@ -132,6 +132,7 @@ export default function LocationTicketsChart({ filterType }) {
                     data={chartData}
                     options={{
                         responsive: true,
+
                         plugins: {
                             legend: { position: "top" },
                             title: { display: true, text: "Tickets per Site" }

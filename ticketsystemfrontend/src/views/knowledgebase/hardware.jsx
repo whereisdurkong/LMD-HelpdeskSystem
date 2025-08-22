@@ -5,6 +5,8 @@ import { Container, Card, Accordion, ListGroup, Modal, Button, Form, ButtonGroup
 import { useNavigate } from "react-router";
 import { PencilSquare, Archive } from 'react-bootstrap-icons';
 
+import Spinner from 'react-bootstrap/Spinner';
+
 export default function Hardware() {
     const [loaded] = useState(true);
     const navigate = useNavigate();
@@ -21,6 +23,16 @@ export default function Hardware() {
     const [editMode, setEditMode] = useState(false);
 
     const [access, setAccess] = useState(false)
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (loading) {
+            const timer = setTimeout(() => {
+                setLoading(false);
+            }, 2000);
+            return () => clearTimeout(timer)
+        }
+    }, [loading])
 
     // Check user access
     useEffect(() => {
@@ -61,7 +73,7 @@ export default function Hardware() {
                             }))
                     );
                 }
-                console.log(all.data);
+
             } catch (err) {
                 console.error("Error fetching FAQ data:", err);
             }
@@ -79,6 +91,7 @@ export default function Hardware() {
     const handleArchive = async (id) => {
 
         try {
+            setLoading(true)
             const empInfo = JSON.parse(localStorage.getItem("user"));
             await axios.post(`${config.baseApi}/knowledgebase/archive-knowledgebase`, { kb_id: id, updated_by: empInfo.user_name })
 
@@ -101,6 +114,7 @@ export default function Hardware() {
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));
             try {
+                setLoading(true)
                 await axios.post(`${config.baseApi}/knowledgebase/update-knowledgebase`, {
                     kb_id: kbID,
                     kb_title: newTitle,
@@ -121,7 +135,6 @@ export default function Hardware() {
     }
 
     const handleSave = async () => {
-        console.log("Saving Hardware:", newTitle, newContent);
         if (newTitle === '') {
             setError("Please fill in title.");
         } else if (newContent.replace(/<(.|\n)*?>/g, '').trim() === '') {
@@ -129,6 +142,7 @@ export default function Hardware() {
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));
             try {
+                setLoading(true)
                 await axios.post(`${config.baseApi}/knowledgebase/add-knowledgebase`, {
                     kb_title: newTitle,
                     kb_desc: newContent,
@@ -332,6 +346,24 @@ export default function Hardware() {
                     </Button>
                 </Modal.Footer>
             </Modal>
+            {loading && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <Spinner animation="border" variant="light" />
+                </div>
+            )}
         </Container >
     );
 }

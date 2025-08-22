@@ -67,3 +67,36 @@ Additional notes
             setAccess(false)
         }
     })
+---------------------------------------------------------------------------------------
+LODING 
+
+import Spinner from 'react-bootstrap/Spinner';
+
+const [loading, setLoading] = useState(false);
+
+useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 2000);
+      return () => clearTimeout(timer)
+    }
+  }, [loading])
+
+
+<div
+                    style={{
+                      position: "fixed",
+                      top: 0,
+                      left: 0,
+                      width: "100vw",
+                      height: "100vh",
+                      backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      zIndex: 9999,
+                    }}
+                  >
+                    <Spinner animation="border" variant="light" />
+                  </div>

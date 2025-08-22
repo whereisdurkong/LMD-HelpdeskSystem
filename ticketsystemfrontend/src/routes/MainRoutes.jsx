@@ -44,13 +44,15 @@ const AllTicketsBySite = lazy(() => import('views/report/allticketbysite'));
 const AllTicketsByStatus = lazy(() => import('views/report/allticketsbystatus'));
 const AllTicketsByCategory = lazy(() => import('views/report/getallbycategory'));
 const AllTicketbyType = lazy(() => import('views/report/allticketbytype'));
+const AllTicketByTAT = lazy(() => import('views/report/allticketbytat'));
+const AllData = lazy(() => import('views/report/alldata'));
+
+const UserDashboard = lazy(() => import('views/dashboard/userdashboard'));
+const HDDashboard = lazy(() => import('views/dashboard/hddashboard'));
 
 const Profile = lazy(() => import('views/pages/profile'));
 const Users = lazy(() => import('views/users'))
 const UsersView = lazy(() => import('views/users/users-view'))
-
-
-
 
 // Spinner fallback
 const LoadingSpinner = (
@@ -98,8 +100,24 @@ const MainRoutes = {
       element: withSpinner(<AllTicketbyType />)
     },
     {
+      path: '/sample5',
+      element: withSpinner(<AllTicketByTAT />)
+    },
+    {
+      path: '/sample6',
+      element: withSpinner(<AllData />)
+    },
+    {
       path: '/dashboard',
       element: withSpinner(<Dashboard />)
+    },
+    {
+      path: '/dashboard-user',
+      element: withSpinner(<UserDashboard />)
+    },
+    {
+      path: '/dashboard-hd',
+      element: withSpinner(<HDDashboard />)
     },
     {
       path: '/register',

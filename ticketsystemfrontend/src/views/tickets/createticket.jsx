@@ -49,10 +49,62 @@ export default function CreateTicket() {
 
 
   const subCategoryOptions = {
-    hardware: ['Computer', 'Laptop', 'Monitor', 'Printer/Scanner', 'Peripherals', 'Fax', 'Others'],
-    network: ['Internet Connectivity', 'Wi-Fi', 'Email/Server Access', 'Network Printer/Scanner', 'Firewall', 'Others'],
-    software: ['Application Not Responding', 'Installation/Uninstallation', 'System Updates', 'Login Issue', 'Outlook', 'Security', 'Others'],
+    hardware: [
+      'Desktop',
+      'Laptop',
+      'Monitor',
+      'Printer',
+      'Scanner',
+      'Printer/Scanner Combo',
+      'Peripherals (Keyboard, Mouse, Webcam, External Drive)',
+      'Docking Station',
+      'Projector',
+      'Fax Machine',
+      'Telephone',
+      'Server Hardware',
+      'UPS (Uninterruptible Power Supply)',
+      'Cabling & Ports',
+      'Others'
+    ],
+
+    network: [
+      'Internet Connectivity',
+      'Wi-Fi',
+      'LAN (Local Area Network)',
+      'WAN (Wide Area Network)',
+      'Server Access',
+      'Network Printer/Scanner',
+      'VPN Connection',
+      'Firewall',
+      'Router/Switch Configuration',
+      'MPLS',
+      'ISP',
+      'Network Security (Intrusion Detection/Prevention)',
+      'Bandwidth Issues',
+      'Others'
+    ],
+
+    software: [
+      'Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)',
+      'Oracle (PROD/BIPUB)',
+      'Email (Setup, Creation, Error, Backup)',
+      'System Updates & Patches',
+      'Active Directory (User Creation, Login, Password)',
+      'Zoom / Video Conferencing Tools',
+      'FoxPro (Accounting System)',
+      'GEMCOM',
+      'SURPAC',
+      'FTP (Access Creation, Change Password)',
+      'PDF (Conversion, Reduce Size, Editing)',
+      'Antivirus / Security Software',
+      'Operating System (Windows, macOS, Linux)',
+      'Custom In-house Applications',
+      'Backup & Restore Tools',
+      'Cloud Services (OneDrive, Google Drive, Dropbox)',
+      'Others'
+    ]
   };
+
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -132,6 +184,7 @@ export default function CreateTicket() {
 
       data.set('created_by', currentUser);
       data.set('assigned_location', empInfo.emp_location);
+      data.set('user_id', empInfo.user_id);
       const response = await axios.post(`${config.baseApi}/ticket/create-ticket`, data, {
         headers: {
           'Content-Type': 'multipart/form-data'

@@ -4,6 +4,8 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import axios from 'axios';
 import config from 'config';
 
+import Spinner from 'react-bootstrap/Spinner';
+
 export default function InActiveAnnouncement() {
     const [announcementText, setAnnouncementText] = useState('');
     const [announcementsList, setAnnouncementsList] = useState([]);
@@ -21,28 +23,41 @@ export default function InActiveAnnouncement() {
     const [currentPage, setCurrentPage] = useState(1);
     const announcementsPerPage = 5;
 
+    const [loading, setLoading] = useState(false);
+
     // Pagination logic
     const indexOfLast = currentPage * announcementsPerPage;
     const indexOfFirst = indexOfLast - announcementsPerPage;
     const currentAnnouncements = announcementsList.slice(indexOfFirst, indexOfLast);
-
     const totalPages = Math.ceil(announcementsList.length / announcementsPerPage);
 
+    useEffect(() => {
+        if (loading) {
+            const timer = setTimeout(() => {
+                setLoading(false);
+            }, 2000);
+            return () => clearTimeout(timer)
+        }
+    }, [loading])
+
+    //Fetch all announcements
     useEffect(() => {
         const fetchAnnouncements = async () => {
             try {
                 const res = await axios.get(`${config.baseApi}/announcements/get-all-anc`);
 
-
+                //all inactive announcements
                 const active = res.data.filter(data => data.is_active === false);
                 setAnnouncementsList(active);
 
                 const usernames = res.data.map(data => data.created_by);
 
+                // Fetch usernames for all announcements
                 const getUsernames = await axios.get(`${config.baseApi}/authentication/get-all-notes-usernames`, {
                     params: { user_name: JSON.stringify(usernames) }
                 });
 
+                // Setting Complete names
                 const userMap = {}
                 getUsernames.data.forEach(user => {
                     userMap[user.user_name] = `${user.emp_FirstName} ${user.emp_LastName}`;
@@ -56,64 +71,38 @@ export default function InActiveAnnouncement() {
         fetchAnnouncements();
     }, []);
 
-    const HandleSave = async () => {
-        const empInfo = JSON.parse(localStorage.getItem("user"));
-
-        if (!announcementText.trim()) {
-            alert("Announcement cannot be empty.");
-            return;
-        }
-        try {
-            await axios.post(`${config.baseApi}/announcements/add-anc`, {
-                announcements: announcementText,
-                created_by: empInfo.user_name,
-            });
-            setSuccess("Announcement created successfully!");
-            setAnnouncementText('');
-            setShowCard(false);
-            window.location.reload();
-        } catch (error) {
-            console.error("Error saving announcement:", error);
-            setError("Failed to create announcement.");
-        }
-    };
-
+    //Edit Announcement
     const handleEditClick = async (announcement) => {
-        console.log(announcement.announcements_id)
         const empInfo = JSON.parse(localStorage.getItem("user"));
         try {
+            setLoading(true)
             await axios.post(`${config.baseApi}/announcements/reactivate-anc`, {
                 announcement_id: announcement.announcements_id,
                 updated_by: empInfo.user_name
             });
 
             setSuccess("Announcement Re-activated successfully!");
-
             setAnnouncementText('');
             setShowCard(false);
             setIsEditing(false);
             setEditId(null);
-
+            setAncId(null);
             window.location.reload();
         } catch (err) {
             console.log('Unable to update announcement:', err);
             setError("Failed to update announcement.");
         }
-
-
-        console.log("Editing announcement:", announcement);
-
-        setAncId(null);
     };
 
 
-
+    //Delete Announcement
     const handleDelete = async (announcementId) => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         if (!window.confirm("Are you sure you want to delete this announcement?")) {
             return;
         }
         try {
+            setLoading(true)
             await axios.post(`${config.baseApi}/announcements/perma-delete-anc`, {
                 announcement_id: announcementId,
                 updated_by: empInfo.user_name
@@ -121,7 +110,6 @@ export default function InActiveAnnouncement() {
             setSuccess("Announcement deleted successfully!");
             setAnnouncementsList(announcementsList.filter(item => item.announcements_id !== announcementId));
             setAncId(null);
-
             window.location.reload();
         } catch (error) {
             console.error("Error deleting announcement:", error);
@@ -130,6 +118,7 @@ export default function InActiveAnnouncement() {
     }
 
     const HandleAnnouncements = () => {
+        setLoading(true)
         window.location.replace('/ticketsystem/announcements');
     }
 
@@ -257,8 +246,24 @@ export default function InActiveAnnouncement() {
                     </div>
                 )}
             </div>
-
-
+            {loading && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <Spinner animation="border" variant="light" />
+                </div>
+            )}
         </Container>
     );
 }

@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+
 import {
   Card,
   Row,
@@ -10,11 +10,11 @@ import {
   Alert
 } from 'react-bootstrap';
 import FeatherIcon from 'feather-icons-react';
-import logoDark from 'assets/images/logo-dark.svg';
-import newLogo from 'assets/images/new-logo.png';
+
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import config from 'config';
+import Spinner from 'react-bootstrap/Spinner';
 
 import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
 
@@ -35,6 +35,8 @@ export default function SignUp1() {
   const [successful, setSuccessful] = useState('');
   const [currentUser, setCurrentUser] = useState('');
 
+  const [loading, setLoading] = useState(false);
+
   const firstNameRef = useRef();
   const lastNameRef = useRef();
   const userNameRef = useRef();
@@ -54,20 +56,32 @@ export default function SignUp1() {
   };
 
   useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 2000);
+      return () => clearTimeout(timer)
+    }
+  }, [loading])
+
+  // Clear error and success messages after 3 seconds
+  useEffect(() => {
     if (error || successful) {
       const timer = setTimeout(() => {
         setError('');
         setSuccessful('');
-      }, 3000);
+      }, 6000);
       return () => clearTimeout(timer);
     }
   }, [error, successful]);
 
+  // Fetch user from localStorage
   useEffect(() => {
     const empInfo = JSON.parse(localStorage.getItem("user"));
     setCurrentUser(empInfo?.user_name);
   })
 
+  // Register function
   const Register = (e) => {
     e.preventDefault();
 
@@ -160,23 +174,22 @@ export default function SignUp1() {
       return;
     }
 
+    setLoading(true);
 
-
-    axios
-      .post(`${config.baseApi}/authentication/register`, {
-        emp_firstname: firstname,
-        emp_lastname: lastname,
-        user_name: username,
-        emp_email: email,
-        pass_word: password,
-        emp_tier: tier,
-        emp_role: role,
-        emp_phone: phone,
-        emp_location: location,
-        emp_department: department,
-        emp_position: position,
-        current_user: currentUser
-      })
+    axios.post(`${config.baseApi}/authentication/register`, {
+      emp_firstname: firstname,
+      emp_lastname: lastname,
+      user_name: username,
+      emp_email: email,
+      pass_word: password,
+      emp_tier: tier,
+      emp_role: role,
+      emp_phone: phone,
+      emp_location: location,
+      emp_department: department,
+      emp_position: position,
+      current_user: currentUser
+    })
       .then((res) => {
         setSuccessful(
           'Registered ' +
@@ -475,8 +488,25 @@ export default function SignUp1() {
             </Col>
           </Row>
         </Container>
-
       </AnimatedContent>
+      {loading && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <Spinner animation="border" variant="light" />
+        </div>
+      )}
     </div>
   );
 }

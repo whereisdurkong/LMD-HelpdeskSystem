@@ -61,6 +61,7 @@ router.get('/all-knowledgebase', async (req, res) => {
     try {
         const knowledgebase = await knex('knowledgebase_master').select('*');
         res.json(knowledgebase);
+        console.log('Triggered all-knowledgebase');
     } catch (err) {
         console.error('Error fetching knowledgebase:', err);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -142,7 +143,5 @@ router.post('/delete-knowledgebase', async (req, res) => {
         console.log('INTERNAL ERROR: ', err)
     }
 })
-
-
 
 module.exports = router;

@@ -8,7 +8,7 @@ const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
 const fsp = require('fs/promises');
-const { type } = require('os');
+const { type, userInfo } = require('os');
 require('dotenv').config();
 const archiver = require('archiver');
 const { assign } = require('nodemailer/lib/shared');
@@ -137,7 +137,7 @@ const Tickets = db.define('ticket_master', {
     tableName: 'ticket_master'
 })
 
-
+//Create a ticket function
 router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
     const currentTimestamp = new Date();
     try {
@@ -151,14 +151,21 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
             asset_number,
             Description,
             assigned_location,
-            created_by
+            created_by,
+            user_id
         } = req.body;
+
+        //Get the current user's information
+        const empInfo = await knex('users_master').where('user_id', user_id).first();
+        // Capitalize the first letter of the user's first name
+        const Fullname = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
 
         let attachmentPath = null;
         if (req.files && req.files.length > 0) {
             attachmentPath = req.files.map(file => file.path).join(';'); // Save multiple paths separated by ;
         }
 
+        // Insert the ticket into the database
         const [createTicket] = await knex('ticket_master').insert({
             ticket_subject,
             ticket_type,
@@ -178,8 +185,7 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
 
         const ticket_id = createTicket.ticket_id || createTicket;
 
-        console.log('Created a ticket: ', ticket_id)
-
+        // Insert into ticket logs
         await knex('ticket_logs').insert({
             ticket_id: ticket_id,
             ticket_status: 'open',
@@ -191,6 +197,90 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
             changes_made: `${created_by} submmited the ticket, Ticket ID: ${ticket_id}`
         })
 
+        //Email Function
+        try {
+            const transporter = nodemailer.createTransport({
+                host: process.env.EMAIL_HOST,
+                secure: false,
+                auth: {
+                    user: process.env.EMAIL,
+                    pass: process.env.EMAIL_PASS
+                },
+                tls: {
+                    rejectUnauthorized: false
+                }
+            });
+            let email = [];
+
+            //If HD created a ticket do not send an email
+            if (['tier1', 'tier2', 'tier3'].includes(empInfo.emp_tier)) {
+                console.log('HD created a ticket, no email sent');
+            } else if (empInfo.emp_tier === 'none') {
+                console.log('User created a ticket');
+                const allHdEmails = await knex('users_master').select('*').whereIn('emp_tier', ['tier1', 'tier2', 'tier3']);
+
+                const hdEmail = allHdEmails.map(email => email.emp_email);
+                email = hdEmail;
+
+                var start = 'Good Day, <br><br>'
+                    + 'This is to inform you that a new support ticket has been successfully created in our system. Below are the details for your reference: <br><br>'
+                    + `<b>Ticket Number: </b>${ticket_id} <br>
+                       <b>Ticket Subject: </b> ${ticket_subject} <br>
+                       <b>Created By: </b> ${created_by} <br>
+                       <b>Date Created: </b> ${currentTimestamp} <br>
+                       <b>Description: </b> ${Description} <br><br>`
+
+                var body = 'Kindly review the ticket and take the necessary action in accordance with our standard support procedures.<br>'
+                    + `You may access and update the ticket via the <a href=192.168.4.251:3007/ticketsystem/view-hd-ticket?id=${ticket_id}>Click me to view ticket</a>` + ' link.<br><br>'
+
+                var end = 'Thank you for your prompt attention to this matter.<br><br>'
+                var footer = 'Best regards,<br> Lepanto Helpdesk System';
+                var privacy = '<br><p style="color:gray;font-size:12px">Privacy Notice: </p>' +
+                    '<p style="color:gray;font-size:12px">The content of this email is intended for the person ' +
+                    'or entity to which it is addressed only. This email may contain confidential information. If you are not the person ' +
+                    'to whom this message is addressed, be aware that any use, reproduction, or distribution of this message is strictly ' +
+                    'prohibited.</p>'
+
+                var useremail = `Hello ${Fullname},<br><br>`
+                    + `Thank you for submitting a ticket. Below are the details of your ticket: <br><br>`
+                    + `<b>Ticket Number: </b>${ticket_id} <br>
+                       <b>Ticket Subject: </b> ${ticket_subject} <br>
+                       <b>Created By: </b> ${created_by} <br>
+                       <b>Date Created: </b> ${currentTimestamp} <br>
+                       <b>Description: </b> ${Description} <br><br>`
+                    + `Our support team will review your ticket and get back to you as soon as possible.<br>`
+                    + `You can track the status of your ticket by logging into the system and navigating to the "My Tickets" section.<br><br>`
+                    + `If you have additional information to provide you can update your ticket directly in the system.<br><br>`
+                    + 'Best regards,<br> Lepanto Helpdesk System';
+
+                var UserWholeEmail = useremail + privacy
+
+                var wholeEmail = start + body + end + footer + privacy
+                //Email for all helpdesk personnel
+                const mailOption = {
+                    from: process.env.EMAIL,
+                    to: email,
+                    subject: `Help Desk System Notification - New Ticket Created`,
+                    html: wholeEmail
+                }
+                //Email for the user who created the ticket
+                const userMailOption = {
+                    from: process.env.EMAIL,
+                    to: empInfo.emp_email,
+                    subject: `Help Desk System Notification - New Ticket Created`,
+                    html: UserWholeEmail
+                }
+
+                await transporter.sendMail(mailOption);
+                await transporter.sendMail(userMailOption);
+                return res.status(200).json({
+                    message: 'Ticket created successfully and email sent to HD'
+                });
+            }
+        } catch (err) {
+            console.log('Unable to submit email: ', err);
+        }
+
         console.log('Created a ticket successfully by ' + `${created_by}`)
         res.status(200).json({ message: 'Ticket created successfully' });
     } catch (err) {
@@ -199,6 +289,7 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
     }
 });
 
+//Get all tickets
 router.get('/get-all-ticket', async (req, res) => {
     try {
         const alltickets = await knex('ticket_master').select('*');
@@ -210,7 +301,7 @@ router.get('/get-all-ticket', async (req, res) => {
     }
 })
 
-
+//Setting notify to true
 router.post('/notified-true', async (req, res) => {
     try {
         const { ticket_id, user_id } = req.body;
@@ -237,6 +328,7 @@ router.post('/notified-true', async (req, res) => {
     }
 })
 
+//Setting notify to false
 router.post('/update-notified-false', async (req, res) => {
     try {
         const { ticket_id, user_id } = req.body;
@@ -263,6 +355,7 @@ router.post('/update-notified-false', async (req, res) => {
     }
 })
 
+//Get ticket by ID
 router.get('/ticket-by-id', async (req, res, next) => {
     try {
         const getById = await Tickets.findAll({
@@ -279,7 +372,6 @@ router.get('/ticket-by-id', async (req, res, next) => {
 })
 
 router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
-    console.log('UPDATE TICKET BODY: ', req.body);
     const currentTimestamp = new Date()
     try {
         const {
@@ -295,9 +387,17 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             assigned_collaborators,
             ticket_for,
             changes_made,
-            assigned_location
+            assigned_location,
+            ticket_for_UserId,
+            assigned_to_UserId,
+            CloseReason,
+            asset_number
         } = req.body;
 
+        // Get the current user's information
+        const updateByInfo = await knex('users_master').where('user_id', updated_by).first();
+        //Get the assigned HD User's Information
+        const assignedToInfo = await knex('users_master').where('user_id', assigned_to_UserId).first();
 
         let attachmentPath = null;
 
@@ -335,18 +435,173 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             attachmentPath = req.body.Attachments;
         }
 
-        if (ticket_status === 'open') {
-            await knex('ticket_master').where('ticket_id', ticket_id).update({
-                assigned_to: '',
-                assigned_group: ''
-            })
-        }
+        if (ticket_status) {
+            try {
+                const transporter = nodemailer.createTransport({
+                    host: process.env.EMAIL_HOST,
+                    secure: false,
+                    auth: {
+                        user: process.env.EMAIL,
+                        pass: process.env.EMAIL_PASS
+                    },
+                    tls: {
+                        rejectUnauthorized: false
+                    }
+                });
 
+                //Setting assigned HD username
+                const hdname = assignedToInfo.user_name
+                const HDFullname = hdname.charAt(0).toUpperCase() + hdname.slice(1).toLowerCase();
+
+                var end = `Best regards,<br> Lepanto Helpdesk System`;
+                var privacy = '<br><p style="color:gray;font-size:12px">Privacy Notice: </p>' +
+                    '<p style="color:gray;font-size:12px">The content of this email is intended for the person ' +
+                    'or entity to which it is addressed only. This email may contain confidential information. If you are not the person ' +
+                    'to whom this message is addressed, be aware that any use, reproduction, or distribution of this message is strictly ' +
+                    'prohibited.</p>'
+                //For HD push Emails
+                if (ticket_status === 'open') {
+                    await knex('ticket_master').where('ticket_id', ticket_id).update({
+                        assigned_to: '',
+                        assigned_group: ''
+                    });
+                }
+                if (ticket_status === 'in-progress') {
+                    const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
+                    const name = ticketForInfo.user_name
+                    const Fullname = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+                    var body = `Good News! One of our support team members has started working on the ticket that you submitted.<br>`
+                        + `Below are the details of your ticket: <br><br>`
+                        + `<b>Ticket Number: </b>${ticket_id} <br>`
+                        + `<b>Ticket Subject: </b> ${ticket_subject} <br>`
+                        + `<b>Ticket Status: </b> ${ticket_status} <br><br>`
+                        + `You will receive further updates as soon as there are developments or when the issue is resolved.<br>`
+                        + `If you have additional information to provide you can update your ticket directly in the system.<br><br>`
+                    var start = `Hello ${Fullname}, <br><br>`
+                    var wholeEmail = start + body + end + privacy;
+
+                    const mailOption = {
+                        from: process.env.EMAIL,
+                        to: ticketForInfo.emp_email,
+                        subject: `Help Desk System Notification - Ticket Updated`,
+                        html: wholeEmail
+                    }
+                    await transporter.sendMail(mailOption);
+                    console.log(`Email sent to ${ticketForInfo.emp_email} regarding ticket update`);
+                }
+                if (ticket_status === 'escalate2' || ticket_status === 'escalate3') {
+                    const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
+                    const name = ticketForInfo.user_name
+                    const Fullname = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+                    var body = `This is to inform you that your ticket has been escalated to the next level of support.<br>`
+                        + `Below are the details of your ticket: <br><br>`
+                        + `<b>Ticket Number: </b>${ticket_id} <br>`
+                        + `<b>Ticket Subject: </b> ${ticket_subject} <br>`
+                        + `<b>Ticket Status: </b> ${ticket_status} <br><br>`
+                        + `You will receive further updates as soon as there are developments or when the issue is resolved.<br>`
+                        + `If you have additional information to provide you can update your ticket directly in the system.<br><br>`
+                    var start = `Hello ${Fullname}, <br><br>`
+                    var wholeEmail = start + body + end + privacy;
+                    const mailOption = {
+                        from: process.env.EMAIL,
+                        to: ticketForInfo.emp_email,
+                        subject: `Help Desk System Notification - Ticket Updated`,
+                        html: wholeEmail
+                    }
+                    await transporter.sendMail(mailOption);
+                    console.log(`Email sent to ${ticketForInfo.emp_email} regarding ticket update`);
+                }
+                if (ticket_status === 'resolved') {
+                    const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
+                    const name = ticketForInfo.user_name
+                    const Fullname = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+                    var body = `This is to inform you that your ticket has been resolved by our support team.<br>`
+                        + `Below are the details of your ticket: <br><br>`
+                        + `<b>Ticket Number: </b>${ticket_id} <br>`
+                        + `<b>Ticket Subject: </b> ${ticket_subject} <br>`
+                        + `<b>Ticket Status: </b> ${ticket_status} <br><br>`
+                        + `To help us improve our service, we kindly request you to leave a review regarding your experience.<br>`
+                        + `<a href=192.168.4.251:3007/ticketsystem/view-hd-ticket?id=${ticket_id}>Click me to view the ticket</a><br>`
+                        + `Your feedback is highly valuable to us and helps ensure we continue to provide the best support possible.<br><br>`
+                        + `If you are still having this issue/error, you can re-open the ticket status or create a new ticket.<br><br>`
+                    var start = `Hello ${Fullname}, <br><br>`
+                    var wholeEmail = start + body + end + privacy;
+                    const mailOption = {
+                        from: process.env.EMAIL,
+                        to: ticketForInfo.emp_email,
+                        subject: `Help Desk System Notification - Ticket Updated`,
+                        html: wholeEmail
+                    }
+                    await transporter.sendMail(mailOption);
+                    console.log(`Email sent to ${ticketForInfo.emp_email} regarding ticket update`);
+
+                    await knex('ticket_master').where('ticket_id', ticket_id).update({
+                        resolved_at: currentTimestamp,
+                        resolved_by: updateByInfo.user_name
+                    })
+                }
+
+                //For User push Emails
+                if (ticket_status === 're-opened') {
+                    var start = `Hello ${HDFullname}<br><br>`
+                    var body = `The following support ticket has been re-opened by the user and requires further attention.<br>`
+                        + `Below are the details of the ticket: <br><br>`
+                        + `<b>Ticket Number: </b>${ticket_id} <br>`
+                        + `<b>Ticket Subject: </b> ${ticket_subject} <br>`
+                        + `<b>Ticket Status: </b> ${ticket_status} <br><br>`
+                        + `Please review the ticket details and continue with the necessary follow-up actions.`
+
+                    var wholeEmail = start + body + end + privacy;
+                    const mailOption = {
+                        from: process.env.EMAIL,
+                        to: assignedToInfo.emp_email,
+                        subject: `Help Desk System Notification - Ticket Updated`,
+                        html: wholeEmail
+                    }
+
+                    await transporter.sendMail(mailOption);
+                    console.log(`Email sent to ${assignedToInfo.emp_email} regarding ticket update`);
+
+                    await knex('ticket_master').where('ticket_id', ticket_id).update({
+                        is_reviewed: false
+                    })
+                }
+                if (ticket_status === 'closed') {
+                    var start = `Hello ${HDFullname}<br><br>`
+                    var body = `The following support ticket has been closed:<br>`
+                        + `Below are the details of the ticket: <br><br>`
+                        + `<b>Ticket Number: </b>${ticket_id} <br>`
+                        + `<b>Ticket Subject: </b> ${ticket_subject} <br>`
+                        + `<b>Ticket Status: </b> ${ticket_status} <br><br>`
+                        + `<b>Reason for closing: ${CloseReason}</b>`
+                        + `No further action is required at this time. If the issue reoccurs or the user needs additional assistance, the ticket may be re-opened.`
+
+                    var wholeEmail = start + body + end + privacy;
+                    const mailOption = {
+                        from: process.env.EMAIL,
+                        to: assignedToInfo.emp_email,
+                        subject: `Help Desk System Notification - Ticket Updated`,
+                        html: wholeEmail
+                    }
+
+                    await transporter.sendMail(mailOption);
+                    console.log(`Email sent to ${assignedToInfo.emp_email} regarding ticket update`);
+
+                    await knex('ticket_master').where('ticket_id', ticket_id).update({
+                        is_reviewed: false
+                    })
+                }
+            } catch (err) {
+                console.log('INTERNAL ERROR: ', err)
+            }
+        }
+        // Update the ticket in the database
         await knex('ticket_master').where('ticket_id', ticket_id).update({
             ticket_subject,
             ticket_type,
             ticket_status,
             ticket_urgencyLevel,
+            asset_number,
             ticket_category,
             ticket_SubCategory,
             Attachments: attachmentPath,
@@ -355,33 +610,21 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             assigned_location,
             ticket_for,
             updated_at: currentTimestamp,
-            updated_by
+            updated_by: updateByInfo.user_name,
         });
-
-        if (ticket_status === 'resolved') {
-            await knex('ticket_master').where('ticket_id', ticket_id).update({
-                resolved_at: currentTimestamp,
-                resolved_by: updated_by
-            })
-        }
-        if (ticket_status === 're-opened') {
-            await knex('ticket_master').where('ticket_id', ticket_id).update({
-                is_reviewed: false
-            })
-        }
-
+        // Insert into ticket logs
         await knex('ticket_logs').insert({
             ticket_id,
             ticket_status,
             ticket_subject,
             ticket_urgencyLevel,
             ticket_category: ticket_category,
-            created_by: updated_by,
+            created_by: updateByInfo.user_name,
             time_date: currentTimestamp,
             changes_made
         });
 
-        console.log(`Ticket ${ticket_id} was updated by ${updated_by} `)
+        console.log(`Ticket ${ticket_id} was updated by ${updateByInfo.user_name} `)
         res.status(200).json({ message: 'Ticket updated successfully' });
     } catch (err) {
         console.error('Error updating ticket:', err);
@@ -389,6 +632,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
     }
 })
 
+//Update ticket when accepting a ticket
 router.post('/update-accept-ticket', async (req, res, next) => {
     const currentTimestamp = new Date()
 
@@ -396,7 +640,6 @@ router.post('/update-accept-ticket', async (req, res, next) => {
         const { user_id, ticket_id, ticket_status } = req.body
         const empInfo = await knex('users_master').where('user_id', user_id).first();
         const ticketInfo = await knex('ticket_master').where('ticket_id', ticket_id).first();
-        console.log('EMPOINFO CONMSOLE:', empInfo)
 
         if (ticket_status === 'closed') {
             console.log('CLOSED TICKET');
@@ -419,7 +662,6 @@ router.post('/update-accept-ticket', async (req, res, next) => {
                 time_date: currentTimestamp,
                 changes_made: `${empInfo.user_name} accepted closed ticket and re-opened the ticket, Ticket ID: ${ticket_id}`
             })
-            console.log('Closed: ', closed)
         } else {
             const notclosed = await knex('ticket_master').where('ticket_id', ticket_id).update({
                 assigned_to: empInfo.user_name,
@@ -428,7 +670,6 @@ router.post('/update-accept-ticket', async (req, res, next) => {
                 responded_at: currentTimestamp,
                 ticket_status: 'assigned'
             })
-            console.log('NOT CLOSED: ', notclosed)
         }
 
         if (ticket_status === 'open') {
@@ -485,7 +726,7 @@ router.post('/update-accept-ticket', async (req, res, next) => {
     }
 
 })
-
+//Adding a note to a ticket
 router.post('/note-post', async (req, res, next) => {
     const currentTimestamp = new Date()
 
@@ -540,13 +781,11 @@ router.get('/get-all-feedback', async (req, res) => {
         console.log('INTERNAL ERROR: ', err);
     }
 })
-
+//Adding a feedback to a ticket
 router.post('/feedback', async (req, res) => {
     const currentTimestamp = new Date();
     try {
-
         const { review, user_id, created_by, ticket_id } = req.body;
-
         await knex('review_master').insert({
             review,
             user_id,
@@ -557,9 +796,66 @@ router.post('/feedback', async (req, res) => {
         await knex('ticket_master').where({ ticket_id: ticket_id }).update({
             is_reviewed: true
         });
+        console.log(`${created_by} placed a feedback successfully`);
         res.json(200);
     } catch (err) {
         console.log('INTERNAL ERROR: ', err)
+    }
+})
+
+router.post('/send-notification-review', async (req, res) => {
+
+    try {
+        const { ticket_for_id, ticket_id } = req.body;
+        const ticketForInfo = await knex('users_master').where('user_id', ticket_for_id).first();
+
+        const transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST,
+            secure: false,
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
+
+        const ticketname = ticketForInfo.user_name;
+        const Fullname = ticketname.charAt(0).toUpperCase() + ticketname.slice(1).toLowerCase();
+
+        var start = `Hello ${Fullname},<br><br>`;
+        var body = `We’re glad to inform you that your ticket #${ticket_id} has been successfully resolved.`
+            + ` At this stage, you may now proceed to close the ticket if you are satisfied with the resolution.<br>`
+            + `We would also appreciate it if you could take a moment to provide your review or feedback on your `
+            + `experience. Your input is valuable and helps us continue improving our support services.<br><br>`
+            + `<a href={192.168.4.251:3007/ticketsystem/view-ticket?id=${ticket_id}}>Submit Your Feedback Here.</a><br><br>`
+            + `If the issue persists or you require further assistance, you may reopen the ticket at any time.<br><br>`
+            + `Thank you for your cooperation and support!<br><br>`;
+
+        var end = `Best regards,<br> Lepanto Helpdesk System`;
+        var privacy = '<br><p style="color:gray;font-size:12px">Privacy Notice: </p>' +
+            '<p style="color:gray;font-size:12px">The content of this email is intended for the person ' +
+            'or entity to which it is addressed only. This email may contain confidential information. If you are not the person ' +
+            'to whom this message is addressed, be aware that any use, reproduction, or distribution of this message is strictly ' +
+            'prohibited.</p>'
+
+        var wholeEmail = start + body + end + privacy;
+
+        const mailOption = {
+            from: process.env.EMAIL,
+            to: ticketForInfo.emp_email,
+            subject: `Ticket #${ticket_id} Resolved – Awaiting Your Feedback`,
+            html: wholeEmail
+        }
+
+        await transporter.sendMail(mailOption);
+        return res.status(200).json({
+            message: 'Ticket created successfully and email sent to HD'
+        });
+
+    } catch (err) {
+        console.log('INTERNAL ERROR: ', err);
     }
 })
 module.exports = router;

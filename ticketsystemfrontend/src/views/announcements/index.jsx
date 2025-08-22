@@ -3,6 +3,9 @@ import { Table, Container, Button, Card, Form, Row, Col, Alert } from 'react-boo
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import axios from 'axios';
 import config from 'config';
+import Spinner from 'react-bootstrap/Spinner';
+
+
 
 export default function Announcements() {
     const [announcementText, setAnnouncementText] = useState('');
@@ -22,6 +25,8 @@ export default function Announcements() {
     const [currentPage, setCurrentPage] = useState(1);
     const announcementsPerPage = 5;
 
+    const [loading, setLoading] = useState(false);
+
     // Pagination logic
     const indexOfLast = currentPage * announcementsPerPage;
     const indexOfFirst = indexOfLast - announcementsPerPage;
@@ -31,6 +36,17 @@ export default function Announcements() {
 
     const [access, setAccess] = useState(false);
 
+    //Loading state
+    useEffect(() => {
+        if (loading) {
+            const timer = setTimeout(() => {
+                setLoading(false);
+            }, 2000);
+            return () => clearTimeout(timer)
+        }
+    }, [loading])
+
+    //Validations 
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
 
@@ -41,9 +57,11 @@ export default function Announcements() {
         }
     })
 
+    // Fetch announcements and usernames
     useEffect(() => {
         const fetchAnnouncements = async () => {
             try {
+                /// Fetch all announcements
                 const res = await axios.get(`${config.baseApi}/announcements/get-all-anc`);
                 const active = res.data.filter(data => data.is_active === true);
                 const sorted = active.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -51,7 +69,7 @@ export default function Announcements() {
 
 
                 const usernames = res.data.map(data => data.created_by);
-
+                // Fetch usernames for the announcements
                 const getUsernames = await axios.get(`${config.baseApi}/authentication/get-all-notes-usernames`, {
                     params: { user_name: JSON.stringify(usernames) }
                 });
@@ -75,6 +93,7 @@ export default function Announcements() {
         setAnnouncementText('');
     };
 
+    // Handle save announcement
     const HandleSave = async () => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
 
@@ -83,6 +102,7 @@ export default function Announcements() {
             return;
         }
         try {
+            setLoading(true);
             await axios.post(`${config.baseApi}/announcements/add-anc`, {
                 announcements: announcementText,
                 created_by: empInfo.user_name,
@@ -99,8 +119,8 @@ export default function Announcements() {
         }
     };
 
+    // Handle edit announcement setting up values for editing
     const handleEditClick = (announcement) => {
-        console.log("Editing announcement:", announcement);
         setAnnouncementText(announcement.announcements);
         setAnnouncementTitleText(announcement.announcementTitle)
         setEditId(announcement.announcements_id);
@@ -108,11 +128,12 @@ export default function Announcements() {
         setShowCard(true);
         setAncId(null);
     };
-
+    //Edit Announcement Function
     const handleUpdate = async () => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         console.log("Updating announcement with ID:", editId, "Text:", announcementText, "User:", empInfo.user_name);
         try {
+            setLoading(true);
             await axios.post(`${config.baseApi}/announcements/update-anc`, {
                 announcement_id: editId,
                 announcements: announcementText,
@@ -134,12 +155,14 @@ export default function Announcements() {
         }
     };
 
+    //Handle Archive Announcements
     const handleDelete = async (announcementId) => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
-        if (!window.confirm("Are you sure you want to delete this announcement?")) {
+        if (!window.confirm("Are you sure you want to archive this announcement?")) {
             return;
         }
         try {
+            setLoading(true);
             await axios.post(`${config.baseApi}/announcements/delete-anc`, {
                 announcement_id: announcementId,
                 updated_by: empInfo.user_name
@@ -155,6 +178,7 @@ export default function Announcements() {
         }
     }
     const HandleArchive = () => {
+        setLoading(true);
         window.location.replace('/ticketsystem/inactive-announcements');
     }
 
@@ -357,6 +381,24 @@ export default function Announcements() {
                         </div>
                     </Form>
                 </Card>
+            )}
+            {loading && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <Spinner animation="border" variant="light" />
+                </div>
             )}
         </Container>
     );

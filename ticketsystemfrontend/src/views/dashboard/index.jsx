@@ -2,12 +2,20 @@ import { Form, Button, Card, Row, Col, Container, Alert } from 'react-bootstrap'
 import axios from 'axios';
 import config from 'config';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router';
 
 export default function Dashboard() {
+    const navigate = useNavigate();
 
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         console.log(empInfo)
+
+        if (['tier1', 'tier2', 'tier3'].includes(empInfo.emp_tier)) {
+            navigate('/dashboard-hd');
+        } else {
+            navigate('/dashboard-user');
+        }
     })
 
     return (

@@ -4,6 +4,7 @@ import config from "config";
 import { Container, Card, Accordion, ListGroup, Modal, Button, Form, ButtonGroup, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { PencilSquare, Trash3Fill, Archive } from 'react-bootstrap-icons';
+import Spinner from 'react-bootstrap/Spinner';
 
 export default function HardwareArchive() {
     const [loaded] = useState(true);
@@ -21,6 +22,17 @@ export default function HardwareArchive() {
     const [editMode, setEditMode] = useState(false);
 
     const [access, setAccess] = useState(false)
+    const [loading, setLoading] = useState(false);
+
+
+    useEffect(() => {
+        if (loading === true) {
+            const timer = setTimeout(() => {
+                setLoading(false);
+            }, 2000);
+            return () => clearTimeout(timer)
+        }
+    }, [loading])
 
     // Check user access
     useEffect(() => {
@@ -69,6 +81,7 @@ export default function HardwareArchive() {
         fetchData();
     }, []);
     const handleUnArchive = async (id) => {
+        setLoading(true)
 
         try {
             const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -86,15 +99,18 @@ export default function HardwareArchive() {
 
     // Pre-fill editor when editing
     useEffect(() => {
+
         if (showModal && contentRef.current) {
             contentRef.current.innerHTML = newContent;
         }
     }, [showModal]);
 
     const handleDelete = async (id) => {
+
         const empInfo = JSON.parse(localStorage.getItem("user"));
         if (window.confirm("Are you sure you want to delete ?")) {
             try {
+                setLoading(true)
                 await axios.post(`${config.baseApi}/knowledgebase/delete-knowledgebase`, { kb_id: id, updated_by: empInfo.user_name });
                 setSuccess("Hardware troubleshooting step deleted successfully");
                 window.location.reload(); // Reload to reflect changes
@@ -114,6 +130,7 @@ export default function HardwareArchive() {
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));
             try {
+                setLoading(true)
                 await axios.post(`${config.baseApi}/knowledgebase/update-knowledgebase`, {
                     kb_id: kbID,
                     kb_title: newTitle,
@@ -142,6 +159,7 @@ export default function HardwareArchive() {
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));
             try {
+                setLoading(true)
                 await axios.post(`${config.baseApi}/knowledgebase/add-knowledgebase`, {
                     kb_title: newTitle,
                     kb_desc: newContent,
@@ -360,6 +378,24 @@ export default function HardwareArchive() {
                     </Button>
                 </Modal.Footer>
             </Modal>
+            {loading && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <Spinner animation="border" variant="light" />
+                </div>
+            )}
         </Container>
     );
 }

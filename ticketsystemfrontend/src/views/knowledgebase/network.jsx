@@ -4,6 +4,7 @@ import config from "config";
 import { Container, Card, Accordion, ListGroup, Modal, Button, Form, ButtonGroup, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { PencilSquare, Archive } from 'react-bootstrap-icons';
+import Spinner from 'react-bootstrap/Spinner';
 
 export default function Network() {
     const [loaded] = useState(true);
@@ -21,6 +22,16 @@ export default function Network() {
     const [editMode, setEditMode] = useState(false);
 
     const [access, setAccess] = useState(false)
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (loading) {
+            const timer = setTimeout(() => {
+                setLoading(false);
+            }, 2000);
+            return () => clearTimeout(timer)
+        }
+    }, [loading])
 
     // Check user access
     useEffect(() => {
@@ -79,6 +90,7 @@ export default function Network() {
     const handleArchive = async (id) => {
 
         try {
+            setLoading(true)
             const empInfo = JSON.parse(localStorage.getItem("user"));
             await axios.post(`${config.baseApi}/knowledgebase/archive-knowledgebase`, { kb_id: id, updated_by: empInfo.user_name })
 
@@ -101,6 +113,7 @@ export default function Network() {
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));
             try {
+                setLoading(true)
                 await axios.post(`${config.baseApi}/knowledgebase/update-knowledgebase`, {
                     kb_id: kbID,
                     kb_title: newTitle,
@@ -129,6 +142,7 @@ export default function Network() {
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));
             try {
+                setLoading(true)
                 await axios.post(`${config.baseApi}/knowledgebase/add-knowledgebase`, {
                     kb_title: newTitle,
                     kb_desc: newContent,
@@ -331,6 +345,24 @@ export default function Network() {
                     </Button>
                 </Modal.Footer>
             </Modal>
+            {loading && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <Spinner animation="border" variant="light" />
+                </div>
+            )}
         </Container>
     );
 }

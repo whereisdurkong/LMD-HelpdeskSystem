@@ -56,6 +56,7 @@ const Announcement = db.define('users_master', {
     tableName: 'users_master'
 });
 
+//Add Announcement
 router.post('/add-anc', async (req, res) => {
     const currentTimestamp = new Date();
     const { announcements, created_by, announcementTitle } = req.body;
@@ -86,6 +87,7 @@ router.post('/add-anc', async (req, res) => {
 
 });
 
+//Get All Announcements
 router.get('/get-all-anc', async (req, res) => {
     try {
         const fetchall = await knex('announcements_master').select('*');
@@ -96,6 +98,7 @@ router.get('/get-all-anc', async (req, res) => {
     }
 })
 
+//Update Announcement
 router.post('/update-anc', async (req, res) => {
     const currentTimestamp = new Date();
     try {
@@ -127,6 +130,7 @@ router.post('/update-anc', async (req, res) => {
     }
 })
 
+//Reactivate Announcement
 router.post('/reactivate-anc', async (req, res) => {
     const currentTimestamp = new Date();
     try {
@@ -134,7 +138,6 @@ router.post('/reactivate-anc', async (req, res) => {
             announcement_id,
             updated_by
         } = req.body;
-        console.log('ANNOUNCEMENT ID: ', announcement_id)
 
         await knex('announcements_master').where({ announcements_id: announcement_id }).update({
             updated_at: currentTimestamp,
@@ -156,7 +159,7 @@ router.post('/reactivate-anc', async (req, res) => {
     }
 })
 
-
+//De-Activate Announcement
 router.post('/delete-anc', async (req, res) => {
     const currentTimestamp = new Date();
     try {
@@ -181,11 +184,11 @@ router.post('/delete-anc', async (req, res) => {
     }
 })
 
+//Delete Announcement Permanently
 router.post('/perma-delete-anc', async (req, res) => {
     try {
         const currentTimestamp = new Date();
         const { announcement_id, updated_by } = req.body;
-        console.log('DELETED ANNOUNCEMENT: ', announcement_id);
 
         await knex('announcements_logs').insert({
             announcements_id: announcement_id,

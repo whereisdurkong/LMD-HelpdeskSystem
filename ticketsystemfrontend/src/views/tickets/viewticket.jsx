@@ -28,11 +28,87 @@ export default function ViewTicket() {
     const [error, setError] = useState('');
     const [successful, setSuccessful] = useState('');
 
+    const [collaboratorState, setCollaboratorState] = useState(false);
+    const [allHDUser, setAllHDUser] = useState([]);
+
     const subCategoryOptions = {
-        hardware: ['Computer', 'Laptop', 'Monitor', 'Printer/Scanner', 'Peripherals', 'Fax', 'Others'],
-        network: ['Internet Connectivity', 'Wi-Fi', 'Email/Server Access', 'Network Printer/Scanner', 'Firewall', 'Others'],
-        software: ['Application Not Responding', 'Installation/Uninstallation', 'System Updates', 'Login Issue', 'Outlook', 'Security', 'Others'],
+        hardware: [
+            'Desktop',
+            'Laptop',
+            'Monitor',
+            'Printer',
+            'Scanner',
+            'Printer/Scanner Combo',
+            'Peripherals (Keyboard, Mouse, Webcam, External Drive)',
+            'Docking Station',
+            'Projector',
+            'Fax Machine',
+            'Telephone',
+            'Server Hardware',
+            'UPS (Uninterruptible Power Supply)',
+            'Cabling & Ports',
+            'Others'
+        ],
+
+        network: [
+            'Internet Connectivity',
+            'Wi-Fi',
+            'LAN (Local Area Network)',
+            'WAN (Wide Area Network)',
+            'Server Access',
+            'Network Printer/Scanner',
+            'VPN Connection',
+            'Firewall',
+            'Router/Switch Configuration',
+            'MPLS',
+            'ISP',
+            'Network Security (Intrusion Detection/Prevention)',
+            'Bandwidth Issues',
+            'Others'
+        ],
+
+        software: [
+            'Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)',
+            'Oracle (PROD/BIPUB)',
+            'Email (Setup, Creation, Error, Backup)',
+            'System Updates & Patches',
+            'Active Directory (User Creation, Login, Password)',
+            'Zoom / Video Conferencing Tools',
+            'FoxPro (Accounting System)',
+            'GEMCOM',
+            'SURPAC',
+            'FTP (Access Creation, Change Password)',
+            'PDF (Conversion, Reduce Size, Editing)',
+            'Antivirus / Security Software',
+            'Operating System (Windows, macOS, Linux)',
+            'Custom In-house Applications',
+            'Backup & Restore Tools',
+            'Cloud Services (OneDrive, Google Drive, Dropbox)',
+            'Others'
+        ]
     };
+
+    useEffect(() => {
+        axios.get(`${config.baseApi}/authentication/get-all-users`)
+            .then((res) => {
+
+                const allHD = res.data.filter(hd => hd.emp_tier === 'tier1' || hd.emp_tier === 'tier2' || hd.emp_tier === 'tier3');
+                setAllHDUser(allHD);
+                console.log('ALL HD USERS:', allHD)
+            })
+            .catch((err) => {
+                console.error("Error fetching users:", err);
+            });
+    }, [])
+
+    useEffect(() => {
+        if (!formData.assigned_collaborators) {
+            setCollaboratorState(false);
+        } else {
+            setCollaboratorState(true)
+
+        }
+    }, [formData.assigned_collaborators])
 
     //Alert timeout effect
     useEffect(() => {
@@ -164,7 +240,7 @@ export default function ViewTicket() {
         const { name, value } = e.target;
         setFormData(prev => {
             const updatedForm = { ...prev, [name]: value };
-            const fieldsToCheck = ['ticket_subject', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
+            const fieldsToCheck = ['ticket_subject', 'asset_number', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
             const changed = fieldsToCheck.some(field => updatedForm[field] !== originalData[field]);
             setHasChanges(changed);
             return updatedForm;
@@ -182,7 +258,7 @@ export default function ViewTicket() {
             };
             setFormData(updatedForm);
 
-            const fieldsToCheck = ['ticket_subject', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
+            const fieldsToCheck = ['ticket_subject', 'asset_number', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
             const changed = fieldsToCheck.some(field => updatedForm[field] !== originalData[field]);
             setHasChanges(changed);
         }
@@ -263,7 +339,7 @@ export default function ViewTicket() {
         try {
             //check any changes to save logs
             const changedFields = [];
-            const fieldsToCheck = ['ticket_subject', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
+            const fieldsToCheck = ['ticket_subject', 'asset_number', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
             fieldsToCheck.forEach(field => {
                 const original = originalData[field];
                 const current = formData[field];
@@ -287,7 +363,11 @@ export default function ViewTicket() {
             dataToSend.append('ticket_urgencyLevel', formData.ticket_urgencyLevel);
             dataToSend.append('Description', formData.Description);
             dataToSend.append('changes_made', changesMade);
-            dataToSend.append('updated_by', currentUserData.user_name);
+            dataToSend.append('updated_by', currentUserData.user_id);
+            dataToSend.append('assigned_to_UserId', hdUser.user_id);
+            dataToSend.append('CloseReason', closureReason);
+            dataToSend.append('asset_number', formData.asset_number);
+
 
             if (formData.attachmentFiles && formData.attachmentFiles.length > 0) {
                 formData.attachmentFiles.forEach(file => {
@@ -428,17 +508,17 @@ export default function ViewTicket() {
 
                         <h6 className="text-muted fw-semibold mb-2">Dates</h6>
                         <Row>
-                            {['created_at', 'updated_at', 'responded_at', 'resolved_at'].map((field, index) => (
+                            {['created_at', 'resolved_at'].map((field, index) => (
                                 <Form.Group as={Col} md={6} className="mb-2" key={index}>
                                     <Form.Label>{field.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</Form.Label>
                                     <Form.Control name={field} value={formData[field] ? new Date(formData[field]).toLocaleString() : '-'} disabled />
                                 </Form.Group>
                             ))}
                         </Row>
-
+                        {/* DETAILS */}
                         <h6 className="text-muted fw-semibold mt-4 mb-2">Details</h6>
                         <Row>
-                            <Col md={6} className="mb-2">
+                            <Col md={6} className="mb-2" hidden>
                                 <Form.Label>Created By</Form.Label>
                                 <InputGroup>
                                     <InputGroup.Text>
@@ -447,7 +527,7 @@ export default function ViewTicket() {
                                     <Form.Control name="created_by" value={formData.created_by ?? '-'} disabled />
                                 </InputGroup>
                             </Col>
-                            <Col md={6} className="mb-2">
+                            <Col md={6} className="mb-2" hidden>
                                 <Form.Label>Employee</Form.Label>
                                 <InputGroup>
                                     <InputGroup.Text>
@@ -456,7 +536,7 @@ export default function ViewTicket() {
                                     <Form.Control value={ticketForData.emp_FirstName + " " + ticketForData.emp_LastName ?? ''} disabled />
                                 </InputGroup>
                             </Col>
-                            <Col md={6} className="mb-2">
+                            <Col md={6} className="mb-2" hidden>
                                 <Form.Label>Department</Form.Label>
                                 <InputGroup>
                                     <InputGroup.Text>
@@ -465,7 +545,7 @@ export default function ViewTicket() {
                                     <Form.Control value={ticketForData.emp_department ?? ''} disabled />
                                 </InputGroup>
                             </Col>
-                            <Col md={6} className="mb-2">
+                            <Col md={6} className="mb-2" hidden>
                                 <Form.Label>Position</Form.Label>
                                 <InputGroup>
                                     <InputGroup.Text>
@@ -501,6 +581,83 @@ export default function ViewTicket() {
                                 </InputGroup>
                             </Col>
                         </Row>
+                        {/* XXX */}
+
+
+                        {collaboratorState && (
+                            <Col md={6} className="mb-2">
+                                <Form.Label
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    <span>Collaborators</span>
+                                </Form.Label>
+
+                                <InputGroup>
+                                    <InputGroup.Text>
+                                        <FeatherIcon icon="users" />
+                                    </InputGroup.Text>
+
+                                    {(() => {
+                                        // Normalize assigned_collaborators into an array
+                                        const collaboratorsArray = Array.isArray(formData.assigned_collaborators)
+                                            ? formData.assigned_collaborators
+                                            : typeof formData.assigned_collaborators === "string" &&
+                                                formData.assigned_collaborators.trim() !== ""
+                                                ? formData.assigned_collaborators.split(",")
+                                                : [];
+
+                                        // Convert usernames to full names
+                                        const collaborators = collaboratorsArray.map((user_name) => {
+                                            const user = allHDUser.find(
+                                                (u) => u.user_name === user_name.trim()
+                                            );
+                                            return user ? `${user.emp_FirstName} ${user.emp_LastName}` : user_name;
+                                        });
+
+                                        if (collaborators.length > 1) {
+                                            // Show dropdown if more than 1 collaborator
+                                            return (
+                                                <Form.Select defaultValue="">
+                                                    <option value="" disabled>
+                                                        {collaborators[0]} and {collaborators.length - 1} more
+                                                    </option>
+                                                    {collaborators.map((c, idx) => (
+                                                        <option key={idx} value={c} disabled>
+                                                            {c}
+                                                        </option>
+                                                    ))}
+                                                </Form.Select>
+                                            );
+
+                                        } else {
+                                            // Show single name or NONE if empty
+                                            return (
+                                                <Form.Control
+                                                    value={collaborators[0] || "NONE"}
+                                                    disabled
+                                                />
+                                            );
+                                        }
+                                    })()}
+                                </InputGroup>
+                            </Col>
+                        )}
+
+
+
+
+
+
+
+
+
+
+
+
 
                         <h6 className="text-muted fw-semibold mt-4 mb-2">Request Info</h6>
                         <Row>
@@ -512,7 +669,7 @@ export default function ViewTicket() {
                                 <Form.Label>Ticket Subject</Form.Label>
                                 <Form.Control name="ticket_subject" value={formData.ticket_subject ?? ''} onChange={handleChange} disabled={!close} />
                             </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
+                            <Form.Group as={Col} md={6} className="mb-2" hidden>
                                 <Form.Label>Ticket Type</Form.Label>
                                 <Form.Select name="ticket_type" value={formData.ticket_type ?? ''} onChange={handleChange} required disabled={!close}>
                                     <option value="incident">Incident</option>
@@ -543,7 +700,7 @@ export default function ViewTicket() {
                                     <option value="critical">Critical</option>
                                 </Form.Select>
                             </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
+                            <Form.Group as={Col} md={6} className="mb-2" hidden>
                                 <Form.Label>Category</Form.Label>
                                 <Form.Select
                                     name="ticket_category"
@@ -557,7 +714,7 @@ export default function ViewTicket() {
                                     <option value="software">Software</option>
                                 </Form.Select>
                             </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
+                            <Form.Group as={Col} md={6} className="mb-2" hidden>
                                 <Form.Label>Sub Category</Form.Label>
                                 <Form.Select
                                     name="ticket_SubCategory"
@@ -577,7 +734,7 @@ export default function ViewTicket() {
                             </Form.Group>
                             <Form.Group as={Col} md={6} className="mb-3">
                                 <Form.Label>Asset Tag</Form.Label>
-                                <Form.Control name="asset_number" value={formData.asset_number ?? ''} disabled />
+                                <Form.Control name="asset_number" value={formData.asset_number ?? ''} onChange={handleChange} />
                             </Form.Group>
 
                             <Form.Group as={Col} md={12} className="mb-2">

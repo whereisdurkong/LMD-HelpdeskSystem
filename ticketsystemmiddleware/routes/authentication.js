@@ -57,6 +57,9 @@ const Users1 = db.define('users_master', {
   emp_role: {
     type: DataTypes.STRING
   },
+  emp_phone: {
+    type: DataTypes.STRING
+  },
   emp_tier: {
     type: DataTypes.STRING
   },
@@ -81,8 +84,8 @@ const Users1 = db.define('users_master', {
   tableName: 'users_master'
 })
 
+//Log in Function
 router.get('/login', async function (req, res, next) {
-  console.log(Users1)
   try {
     const user = await Users1.findAll({
       where: {
@@ -99,9 +102,6 @@ router.get('/login', async function (req, res, next) {
       console.log('INCORRECT PASSWORD')
       return res.status(401).json({ msg: 'Incorrect password. Try again...' })
     }
-
-    console.log('USE RESULTS:', user[0])
-
 
     await knex('users_master')
       .where({ user_id: user[0].user_id })
@@ -130,6 +130,7 @@ router.get('/login', async function (req, res, next) {
   }
 })
 
+//Register function
 router.post('/register', async function (req, res, next) {
   const currentTimestamp = new Date();
   const {
@@ -172,6 +173,47 @@ router.post('/register', async function (req, res, next) {
   }
 })
 
+//Update a user
+router.post('/update-user', async (req, res, next) => {
+  const currentTimestamp = new Date();
+  const {
+    user_id,
+    emp_FirstName,
+    emp_LastName,
+    user_name,
+    emp_email,
+    emp_tier,
+    emp_phone,
+    emp_role,
+    emp_location,
+    emp_department,
+    emp_position
+  } = req.body;
+
+  try {
+    await knex('users_master').where({ user_id: user_id }).update({
+      emp_FirstName: emp_FirstName,
+      emp_LastName: emp_LastName,
+      user_name: user_name,
+      emp_email: emp_email,
+      emp_tier: emp_tier,
+      emp_phone: emp_phone,
+      emp_role: emp_role,
+      emp_location: emp_location,
+      emp_department: emp_department,
+      emp_position: emp_position,
+      updated_at: currentTimestamp
+    })
+
+    console.log(`User was updated ${user_name} with ID ${user_id} `);
+    res.status(200).json({ message: "User updated successfully" });
+  } catch (err) {
+    console.log("INTERNAL ERROR: ", err)
+  }
+
+})
+
+//Get all users
 router.get('/get-all-users', async (req, res, next) => {
   try {
     const getAllUsers = await knex('users_master').select('*');
@@ -183,6 +225,7 @@ router.get('/get-all-users', async (req, res, next) => {
   }
 })
 
+//Get User by their username
 router.get('/get-by-username', async (req, res, next) => {
   try {
     const getCreatedBy = await Users1.findAll({
@@ -191,11 +234,13 @@ router.get('/get-by-username', async (req, res, next) => {
       }
     })
     res.json(getCreatedBy[0])
-    console.log(getCreatedBy[0])
+    console.log('Triggered /get-by-username')
   } catch (err) {
     console.log('GET BY USERNAME CONOSOLE: ', err)
   }
 })
+
+//Get User by their user_id
 router.get('/get-by-id', async (req, res, next) => {
   try {
     const getCreatedBy = await Users1.findAll({
@@ -204,6 +249,7 @@ router.get('/get-by-id', async (req, res, next) => {
       }
     })
     res.json(getCreatedBy[0])
+    console.log('Triggered /get-by-id')
   } catch (err) {
     console.log('GET BY USERNAME CONOSOLE: ', err)
   }
@@ -211,6 +257,7 @@ router.get('/get-by-id', async (req, res, next) => {
 
 const { Op } = require('sequelize');
 
+//Get all notes using their usernames
 router.get('/get-all-notes-usernames', async (req, res) => {
   try {
     const usernames = JSON.parse(req.query.user_name); // Convert string back to array
@@ -220,13 +267,14 @@ router.get('/get-all-notes-usernames', async (req, res) => {
       }
     });
     res.json(users);
-    console.log(users)
+    console.log('Triggered /get-all-notes-usernames')
   } catch (err) {
     console.error('Error fetching multiple users:', err);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
+//Get all Reviews by their usernanmes
 router.get('/get-all-review-usernames', async (req, res) => {
   try {
     const usernames = JSON.parse(req.query.user_name); // Convert string back to array
@@ -236,13 +284,14 @@ router.get('/get-all-review-usernames', async (req, res) => {
       }
     });
     res.json(users);
-    console.log(users)
+    console.log('Triggered /get-all-review-usernames')
   } catch (err) {
     console.error('Error fetching multiple users:', err);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
+//get all users using their user_id
 router.get('/get-all-by-id', async (req, res) => {
   try {
     const user_id = JSON.parse(req.query.user_id); // Convert string back to array
@@ -251,18 +300,19 @@ router.get('/get-all-by-id', async (req, res) => {
         user_id: { [Op.in]: user_id }
       }
     });
+    console.log('Triggered /get-all-by-id')
     res.json(users);
-    console.log(users)
   } catch (err) {
     console.error('Error fetching multiple users:', err);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
-
+//Get all the notes
 router.get('/get-all-notes', async (req, res) => {
   try {
     const getAll = await knex('notes_master').select('*');
+    console.log('Triggered /get-all-notes')
     res.json(getAll)
   } catch (err) {
     console.log('INTERNAL ERROR: ', err)

@@ -150,7 +150,7 @@ export default function GetAllByCategory({ filterType }) {
         <div style={{ width: "100%" }}>
             {chartData && (
                 <Bar
-                    data={chartData} z
+                    data={chartData} style={{ zIndex: 10 }}
                     options={{
                         responsive: true,
                         indexAxis: filterType === "perMonth" ? "y" : "x", // horizontal for perMonth

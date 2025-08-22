@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from 'config';
-
+import Spinner from 'react-bootstrap/Spinner';
 // react-bootstrap
 import { Card, Row, Col, Button, Form, InputGroup, Alert } from 'react-bootstrap';
 
@@ -21,6 +21,9 @@ export default function SignIn1() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
+  const [loading, setLoading] = useState(false);
+
+  // Modal effect to clear login error after 3 seconds
   useEffect(() => {
     if (loginError) {
       const timer = setTimeout(() => {
@@ -31,7 +34,16 @@ export default function SignIn1() {
     }
   }, [loginError]);
 
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 2000);
+      return () => clearTimeout(timer)
+    }
+  }, [loading])
 
+  // Function to handle authentication
   const Auth = async (e) => {
     e.preventDefault();
     console.log('USER: ', username, password);
@@ -46,6 +58,7 @@ export default function SignIn1() {
     }
 
     try {
+      setLoading(true);
       const response = await axios.get(`${config.baseApi}/authentication/login`, {
         params: {
           user_name: username,
@@ -56,7 +69,6 @@ export default function SignIn1() {
         localStorage.setItem('user', JSON.stringify(response.data));
         localStorage.setItem('status', JSON.stringify([{ id: 0, value: 'Login' }]));
         window.location.replace(`ticketsystem/dashboard`);
-        console.log('Login success:', response.data);
       }
     } catch (err) {
       if (err.response) {
@@ -125,7 +137,24 @@ export default function SignIn1() {
                 <Card.Body className="card-body" >
                   <img src={newLogo} alt="" className="img-fluid mb-4" />
                   <h4 className="mb-3 f-w-400"><b>Log in</b></h4>
-
+                  {loading && (
+                    <div
+                      style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                      }}
+                    >
+                      <Spinner animation="border" variant="light" />
+                    </div>
+                  )}
                   {/* ALERT BAR */}
                   {loginError && (
                     <div

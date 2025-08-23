@@ -5,6 +5,7 @@ import axios from 'axios';
 import config from 'config';
 import Select from 'react-select';
 import FeatherIcon from 'feather-icons-react';
+import Spinner from 'react-bootstrap/Spinner';
 
 export default function ViewHDTicket() {
     const [formData, setFormData] = useState({});
@@ -43,62 +44,94 @@ export default function ViewHDTicket() {
     const [showUserCard, setShowUserCard] = useState(false);
 
     const [notifyReview, setNotifyReview] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const subCategoryOptions = {
-        hardware: [
-            'Desktop',
-            'Laptop',
-            'Monitor',
-            'Printer',
-            'Scanner',
-            'Printer/Scanner Combo',
-            'Peripherals (Keyboard, Mouse, Webcam, External Drive)',
-            'Docking Station',
-            'Projector',
-            'Fax Machine',
-            'Telephone',
-            'Server Hardware',
-            'UPS (Uninterruptible Power Supply)',
-            'Cabling & Ports',
-            'Others'
-        ],
-
-        network: [
-            'Internet Connectivity',
-            'Wi-Fi',
-            'LAN (Local Area Network)',
-            'WAN (Wide Area Network)',
-            'Server Access',
-            'Network Printer/Scanner',
-            'VPN Connection',
-            'Firewall',
-            'Router/Switch Configuration',
-            'MPLS',
-            'ISP',
-            'Network Security (Intrusion Detection/Prevention)',
-            'Bandwidth Issues',
-            'Others'
-        ],
-
-        software: [
-            'Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)',
-            'Oracle (PROD/BIPUB)',
-            'Email (Setup, Creation, Error, Backup)',
-            'System Updates & Patches',
-            'Active Directory (User Creation, Login, Password)',
-            'Zoom / Video Conferencing Tools',
-            'FoxPro (Accounting System)',
-            'GEMCOM',
-            'SURPAC',
-            'FTP (Access Creation, Change Password)',
-            'PDF (Conversion, Reduce Size, Editing)',
-            'Antivirus / Security Software',
-            'Operating System (Windows, macOS, Linux)',
-            'Custom In-house Applications',
-            'Backup & Restore Tools',
-            'Cloud Services (OneDrive, Google Drive, Dropbox)',
-            'Others'
-        ]
+        incident: {
+            hardware: [
+                "Desktop",
+                "Laptop",
+                "Monitor",
+                "Printer",
+                "Scanner",
+                "Printer/Scanner Combo",
+                "Peripherals (Keyboard, Mouse, Webcam, External Drive)",
+                "Docking Station",
+                "Projector",
+                "Fax Machine",
+                "Telephone",
+                "Server Hardware",
+                "UPS (Uninterruptible Power Supply)",
+                "Cabling & Ports",
+                "Others",
+            ],
+            network: [
+                "Internet Connectivity",
+                "Wi-Fi",
+                "LAN (Local Area Network)",
+                "WAN (Wide Area Network)",
+                "Server Access",
+                "Network Printer/Scanner",
+                "VPN Connection",
+                "Firewall",
+                "Router/Switch Configuration",
+                "MPLS",
+                "ISP",
+                "Network Security (Intrusion Detection/Prevention)",
+                "Bandwidth Issues",
+                "Others",
+            ],
+            software: [
+                "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
+                "Oracle (PROD/BIPUB)",
+                "Email (Setup, Creation, Error, Backup)",
+                "System Updates & Patches",
+                "Active Directory (User Creation, Login, Password)",
+                "Zoom / Video Conferencing Tools",
+                "FoxPro (Accounting System)",
+                "GEMCOM",
+                "SURPAC",
+                "FTP (Access Creation, Change Password)",
+                "PDF (Conversion, Reduce Size, Editing)",
+                "Antivirus / Security Software",
+                "Operating System (Windows, macOS, Linux)",
+                "Custom In-house Applications",
+                "Backup & Restore Tools",
+                "Cloud Services (OneDrive, Google Drive, Dropbox)",
+                "Others",
+            ],
+        },
+        request: {
+            hardware: [
+                "New Laptop Request",
+                "New Monitor Request",
+                "Printer Installation",
+                "Additional Peripherals",
+                "Hardware Upgrade",
+                "Others",
+            ],
+            network: [
+                "New VPN Access",
+                "Firewall Rule Request",
+                "New Router/Switch Setup",
+                "Bandwidth Upgrade",
+                "ISP Request",
+                "Others",
+            ],
+            software: [
+                "New Software Installation",
+                "License Renewal",
+                "User Account Creation",
+                "Database Access Request",
+                "Cloud Storage Request",
+                "Others",
+            ],
+        },
+        inquiry: {
+            hardware: ["Warranty Inquiry", "Specs Inquiry", "Others"],
+            network: ["Network Policy Inquiry", "Coverage Inquiry", "Others"],
+            software: ["Software Policy Inquiry", "Version Inquiry", "Others"],
+        },
     };
 
     const customSelectStyles = {
@@ -138,6 +171,16 @@ export default function ViewHDTicket() {
             },
         }),
     };
+
+    useEffect(() => {
+        if (loading) {
+            const timer = setTimeout(() => {
+                setLoading(false);
+            }, 2000);
+            return () => clearTimeout(timer)
+        }
+    }, [loading])
+
     //Alerts timeout
     useEffect(() => {
         if (error || successful) {
@@ -418,6 +461,7 @@ export default function ViewHDTicket() {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         //tikcetfor
         try {
+            setLoading(true);
             axios.post(`${config.baseApi}/ticket/send-notification-review`, {
                 ticket_for_id: ticketForData.user_id,
                 ticket_id: ticket_id,
@@ -442,6 +486,7 @@ export default function ViewHDTicket() {
         const empInfo = JSON.parse(localStorage.getItem('user'));
 
         try {
+            setLoading(true);
             axios.post(`${config.baseApi}/ticket/update-accept-ticket`, {
                 user_id: empInfo.user_id,
                 ticket_id: ticket_id,
@@ -472,6 +517,7 @@ export default function ViewHDTicket() {
             if (notes === template) {
                 setNoteAlert(true)
             } else {
+                setLoading(true);
                 await axios.post(`${config.baseApi}/ticket/note-post`, {
                     notes,
                     current_user: empInfo.user_name,
@@ -497,7 +543,7 @@ export default function ViewHDTicket() {
         const { name, value } = e.target;
         setFormData(prev => {
             const updatedForm = { ...prev, [name]: value };
-            const fieldsToCheck = ['ticket_subject', 'assigned_collaborators', 'ticket_for', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory'];
+            const fieldsToCheck = ['ticket_subject', 'assigned_to', 'assigned_collaborators', 'ticket_for', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory'];
             const changed = fieldsToCheck.some(field => updatedForm[field] !== originalData[field]);
             setHasChanges(changed);
 
@@ -518,6 +564,7 @@ export default function ViewHDTicket() {
 
         const empInfo = JSON.parse(localStorage.getItem('user'));
         try {
+            setLoading(true);
             await axios.post(`${config.baseApi}/ticket/note-post`, {
                 notes: resolution,
                 current_user: empInfo.user_name,
@@ -539,6 +586,7 @@ export default function ViewHDTicket() {
     }
 
     const handleSave = async () => {
+        console.log(formData.assigned_to)
         try {
             console.log(formData.ticket_for)
             //Check changes
@@ -569,6 +617,7 @@ export default function ViewHDTicket() {
             dataToSend.append('changes_made', changesMade);
             dataToSend.append('assigned_collaborators', formData.assigned_collaborators);
 
+
             const changedTicketFor = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
                 params: { user_name: formData.ticket_for }
             })
@@ -583,6 +632,20 @@ export default function ViewHDTicket() {
                 const newticketfor = changedTicketFor.data;
                 const newTF_location = newticketfor.emp_location;
                 dataToSend.append('assigned_location', newTF_location);
+            }
+            if (formData.assigned_to) {
+                try {
+                    await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
+                        assigned_to: formData.assigned_to,
+                        updated_by: empInfo.user_id,
+                        ticket_id: formData.ticket_id
+                    })
+                    setSuccessful('Ticket updated successfully.');
+                    window.location.reload();
+                } catch (err) {
+                    console.log('Error assigning the ticket')
+                }
+
 
             }
 
@@ -593,7 +656,7 @@ export default function ViewHDTicket() {
             } else {
                 dataToSend.append('Attachments', formData.Attachments || '');
             }
-
+            setLoading(true);
             await axios.post(`${config.baseApi}/ticket/notified-true`, {
                 ticket_id: ticket_id,
                 user_id: empInfo.user_id
@@ -650,6 +713,16 @@ export default function ViewHDTicket() {
             </div>
         );
     };
+
+    const AddCollab = () => {
+        const empInfo = JSON.parse(localStorage.getItem('user'));
+        if (empInfo.user_name === formData.assigned_to) {
+            setCollaboratorState(true)
+        } else {
+            setCollaboratorState(false)
+            setError('Make sure you are assigned to this ticket to add collaborators!')
+        }
+    }
 
     return (
         <Container
@@ -884,27 +957,58 @@ export default function ViewHDTicket() {
                                 </InputGroup>
                             </Col>
                             {/* XXX */}
-                            <Col md={6} className="mb-2">
+                            <Col md={6} className="mb-2" style={{ position: 'relative' }}>
                                 <Form.Label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span>Assigned To</span>
-                                    <span onClick={() => setCollaboratorState(true)} style={{ fontSize: '0.85rem', color: '#002E05', cursor: 'pointer' }}>
+                                    <span onClick={AddCollab} style={{ fontSize: '0.85rem', color: '#002E05', cursor: 'pointer' }}>
                                         Add collaborators
                                     </span>
                                 </Form.Label>
-                                <InputGroup>
-                                    <InputGroup.Text>
-                                        <FeatherIcon icon="user" />
-                                    </InputGroup.Text>
-                                    <Form.Control
-                                        name="assigned_to"
-                                        value={
-                                            hdUser?.emp_FirstName && hdUser?.emp_LastName
-                                                ? `${hdUser.emp_FirstName} ${hdUser.emp_LastName}`
-                                                : '-'
-                                        }
-                                        disabled
-                                    />
-                                </InputGroup>
+
+                                {hdUser?.emp_FirstName && hdUser?.emp_LastName ? (
+                                    <InputGroup >
+                                        <InputGroup.Text>
+                                            <FeatherIcon icon="user" />
+                                        </InputGroup.Text>
+                                        <Form.Control
+                                            name="assigned_to"
+                                            value={`${hdUser.emp_FirstName} ${hdUser.emp_LastName}`}
+                                            disabled
+                                        />
+                                    </InputGroup>
+                                ) : (
+                                    <InputGroup style={{ height: '43px' }}>
+                                        <div style={{ position: 'relative' }}>
+                                            <InputGroup.Text>
+                                                <FeatherIcon icon="user" />
+                                            </InputGroup.Text>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <Select
+                                                name="assigned_to"
+                                                placeholder="Select Employee"
+                                                value={`${hdUser.emp_FirstName} ${hdUser.emp_LastName}`}
+
+                                                options={allHDUser.map(u => ({
+                                                    label: `${u.emp_FirstName} ${u.emp_LastName}`,
+                                                    value: u.user_name,
+                                                }))}
+                                                onChange={option =>
+                                                    handleChange({
+                                                        target: {
+                                                            name: "assigned_to",
+                                                            value: option ? option.value : "",
+                                                        },
+                                                    })
+                                                }
+                                                isClearable
+                                                styles={customSelectStyles}
+                                                classNamePrefix="react-select"
+                                            />
+                                        </div>
+                                    </InputGroup>
+                                )}
+
                             </Col>
 
                             {collaboratorState && (
@@ -942,7 +1046,7 @@ export default function ViewHDTicket() {
                                                                 const user = allHDUser.find((u) => u.user_name === username.trim());
                                                                 return user
                                                                     ? { value: user.user_name, label: `${user.emp_FirstName} ${user.emp_LastName}` }
-                                                                    : '';
+                                                                    : '-';
                                                             })
                                                     }
                                                     onChange={selectedOptions =>
@@ -1032,6 +1136,7 @@ export default function ViewHDTicket() {
                                     required
                                     disabled={!isEditable}
                                 >
+                                    <option value='' hidden>-</option>
                                     <option value="incident">Incident</option>
                                     <option value="request">Request</option>
                                     <option value="inquiry">Inquiry</option>
@@ -1046,6 +1151,7 @@ export default function ViewHDTicket() {
                                     required
                                     disabled={!isEditable}
                                 >
+                                    <option value="" hidden>-</option>
                                     <option value="open" >Open</option>
                                     <option value="assigned" hidden>Assigned</option>
                                     <option value="in-progress">In Progress</option>
@@ -1065,6 +1171,7 @@ export default function ViewHDTicket() {
                                     required
                                     disabled={!isEditable}
                                 >
+                                    <option value="" hidden>-</option>
                                     <option value="low">Low</option>
                                     <option value="medium">Medium</option>
                                     <option value="high">High</option>
@@ -1080,6 +1187,7 @@ export default function ViewHDTicket() {
                                     required
                                     disabled={!isEditable}
                                 >
+                                    <option value="" hidden>-</option>
                                     <option value="hardware">Hardware</option>
                                     <option value="network">Network</option>
                                     <option value="software">Software</option>
@@ -1091,10 +1199,11 @@ export default function ViewHDTicket() {
                                     name="ticket_SubCategory"
                                     value={formData.ticket_SubCategory ?? ''}
                                     onChange={handleChange}
-                                    required
                                     disabled={!isEditable}
+                                    required
                                 >
-                                    {subCategoryOptions[formData.ticket_category]?.map(
+                                    <option value="">Select</option>
+                                    {subCategoryOptions[formData.ticket_type]?.[formData.ticket_category]?.map(
                                         (subcat, idx) => (
                                             <option key={idx} value={subcat}>
                                                 {subcat}
@@ -1303,6 +1412,27 @@ export default function ViewHDTicket() {
                     </Modal.Footer>
                 </Modal>
             </Container>
+
+            {loading && (
+
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <Spinner animation="border" variant="light" />
+                </div>
+            )}
+
         </Container>
     );
 }

@@ -138,16 +138,11 @@ const Tickets = db.define('ticket_master', {
 })
 
 //Create a ticket function
-router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
+router.post('/create-ticket-user', upload.array('Attachments'), async (req, res) => {
     const currentTimestamp = new Date();
     try {
         const {
             ticket_subject,
-            ticket_type,
-            ticket_status,
-            ticket_urgencyLevel,
-            ticket_category,
-            ticket_SubCategory,
             asset_number,
             Description,
             assigned_location,
@@ -168,11 +163,11 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
         // Insert the ticket into the database
         const [createTicket] = await knex('ticket_master').insert({
             ticket_subject,
-            ticket_type,
+            ticket_type: '',
             ticket_status: 'open',
-            ticket_urgencyLevel,
-            ticket_category,
-            ticket_SubCategory,
+            ticket_urgencyLevel: '',
+            ticket_category: '',
+            ticket_SubCategory: '',
             ticket_for: created_by,
             assigned_location,
             asset_number,
@@ -189,12 +184,9 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
         await knex('ticket_logs').insert({
             ticket_id: ticket_id,
             ticket_status: 'open',
-            ticket_subject,
-            ticket_urgencyLevel,
-            ticket_category,
             created_by,
             time_date: currentTimestamp,
-            changes_made: `${created_by} submmited the ticket, Ticket ID: ${ticket_id}`
+            changes_made: `User ${created_by} submmited the ticket, Ticket ID: ${ticket_id}`
         })
 
         //Email Function
@@ -289,6 +281,74 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
     }
 });
 
+//Create a ticket function
+router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
+    const currentTimestamp = new Date();
+    try {
+        const {
+            ticket_subject,
+            ticket_type,
+            ticket_status,
+            ticket_urgencyLevel,
+            ticket_category,
+            ticket_SubCategory,
+            asset_number,
+            Description,
+            assigned_location,
+            created_by,
+            user_id
+        } = req.body;
+
+        //Get the current user's information
+        const empInfo = await knex('users_master').where('user_id', user_id).first();
+        // Capitalize the first letter of the user's first name
+        const Fullname = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
+
+        let attachmentPath = null;
+        if (req.files && req.files.length > 0) {
+            attachmentPath = req.files.map(file => file.path).join(';'); // Save multiple paths separated by ;
+        }
+
+        // Insert the ticket into the database
+        const [createTicket] = await knex('ticket_master').insert({
+            ticket_subject,
+            ticket_type,
+            ticket_status: 'open',
+            ticket_urgencyLevel,
+            ticket_category,
+            ticket_SubCategory,
+            ticket_for: created_by,
+            assigned_location,
+            asset_number,
+            Description,
+            created_by,
+            created_at: currentTimestamp,
+            Attachments: attachmentPath,
+            is_active: true
+        }).returning('ticket_id')
+
+        const ticket_id = createTicket.ticket_id || createTicket;
+
+        // Insert into ticket logs
+        await knex('ticket_logs').insert({
+            ticket_id: ticket_id,
+            ticket_status: 'open',
+            ticket_subject,
+            ticket_urgencyLevel,
+            ticket_category,
+            created_by,
+            time_date: currentTimestamp,
+            changes_made: `${created_by} submmited the ticket, Ticket ID: ${ticket_id}`
+        })
+
+        console.log('Created a ticket successfully by ' + `${created_by}`)
+        res.status(200).json({ message: 'Ticket created successfully' });
+    } catch (err) {
+        console.error('Error creating ticket:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 //Get all tickets
 router.get('/get-all-ticket', async (req, res) => {
     try {
@@ -371,6 +431,37 @@ router.get('/ticket-by-id', async (req, res, next) => {
     }
 })
 
+router.post('/update-ticket-assigned', async (req, res) => {
+    try {
+        const currentTimestamp = new Date()
+        const {
+            assigned_to,
+            updated_by,
+            ticket_id,
+        } = req.body
+        const updateByInfo = await knex('users_master').where('user_id', updated_by).first();
+
+        await knex('ticket_master').where('ticket_id', ticket_id).update({
+            assigned_to,
+            ticket_status: 'assigned',
+            updated_by: updateByInfo.user_name,
+            updated_at: currentTimestamp
+        })
+
+        await knex('ticket_logs').insert({
+            ticket_id,
+            ticket_status: 'assigned',
+            created_by: updateByInfo.user_name,
+            time_date: currentTimestamp,
+            changes_made: `${updateByInfo.user_name} assinged the ticket to ${assigned_to}`
+        });
+        res.status(200).json({ message: 'Ticket updated successfully' });
+
+    } catch (err) {
+        console.log('INTERNAL ERROR: ', err)
+    }
+})
+
 router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
     const currentTimestamp = new Date()
     try {
@@ -390,6 +481,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             assigned_location,
             ticket_for_UserId,
             assigned_to_UserId,
+            assigned_to,
             CloseReason,
             asset_number
         } = req.body;
@@ -595,6 +687,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
                 console.log('INTERNAL ERROR: ', err)
             }
         }
+
         // Update the ticket in the database
         await knex('ticket_master').where('ticket_id', ticket_id).update({
             ticket_subject,
@@ -609,6 +702,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             assigned_collaborators,
             assigned_location,
             ticket_for,
+            assigned_to,
             updated_at: currentTimestamp,
             updated_by: updateByInfo.user_name,
         });

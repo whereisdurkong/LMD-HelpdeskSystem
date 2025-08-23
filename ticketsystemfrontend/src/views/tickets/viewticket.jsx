@@ -4,6 +4,7 @@ import { Container, Row, Col, Form, Card, Button, Modal, Alert, InputGroup } fro
 import axios from 'axios';
 import config from 'config';
 import FeatherIcon from 'feather-icons-react';
+import Spinner from 'react-bootstrap/Spinner';
 
 export default function ViewTicket() {
     const [formData, setFormData] = useState({});
@@ -31,62 +32,104 @@ export default function ViewTicket() {
     const [collaboratorState, setCollaboratorState] = useState(false);
     const [allHDUser, setAllHDUser] = useState([]);
 
+    const [loading, setLoading] = useState(false);
+
     const subCategoryOptions = {
-        hardware: [
-            'Desktop',
-            'Laptop',
-            'Monitor',
-            'Printer',
-            'Scanner',
-            'Printer/Scanner Combo',
-            'Peripherals (Keyboard, Mouse, Webcam, External Drive)',
-            'Docking Station',
-            'Projector',
-            'Fax Machine',
-            'Telephone',
-            'Server Hardware',
-            'UPS (Uninterruptible Power Supply)',
-            'Cabling & Ports',
-            'Others'
-        ],
-
-        network: [
-            'Internet Connectivity',
-            'Wi-Fi',
-            'LAN (Local Area Network)',
-            'WAN (Wide Area Network)',
-            'Server Access',
-            'Network Printer/Scanner',
-            'VPN Connection',
-            'Firewall',
-            'Router/Switch Configuration',
-            'MPLS',
-            'ISP',
-            'Network Security (Intrusion Detection/Prevention)',
-            'Bandwidth Issues',
-            'Others'
-        ],
-
-        software: [
-            'Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)',
-            'Oracle (PROD/BIPUB)',
-            'Email (Setup, Creation, Error, Backup)',
-            'System Updates & Patches',
-            'Active Directory (User Creation, Login, Password)',
-            'Zoom / Video Conferencing Tools',
-            'FoxPro (Accounting System)',
-            'GEMCOM',
-            'SURPAC',
-            'FTP (Access Creation, Change Password)',
-            'PDF (Conversion, Reduce Size, Editing)',
-            'Antivirus / Security Software',
-            'Operating System (Windows, macOS, Linux)',
-            'Custom In-house Applications',
-            'Backup & Restore Tools',
-            'Cloud Services (OneDrive, Google Drive, Dropbox)',
-            'Others'
-        ]
+        incident: {
+            hardware: [
+                "Desktop",
+                "Laptop",
+                "Monitor",
+                "Printer",
+                "Scanner",
+                "Printer/Scanner Combo",
+                "Peripherals (Keyboard, Mouse, Webcam, External Drive)",
+                "Docking Station",
+                "Projector",
+                "Fax Machine",
+                "Telephone",
+                "Server Hardware",
+                "UPS (Uninterruptible Power Supply)",
+                "Cabling & Ports",
+                "Others",
+            ],
+            network: [
+                "Internet Connectivity",
+                "Wi-Fi",
+                "LAN (Local Area Network)",
+                "WAN (Wide Area Network)",
+                "Server Access",
+                "Network Printer/Scanner",
+                "VPN Connection",
+                "Firewall",
+                "Router/Switch Configuration",
+                "MPLS",
+                "ISP",
+                "Network Security (Intrusion Detection/Prevention)",
+                "Bandwidth Issues",
+                "Others",
+            ],
+            software: [
+                "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
+                "Oracle (PROD/BIPUB)",
+                "Email (Setup, Creation, Error, Backup)",
+                "System Updates & Patches",
+                "Active Directory (User Creation, Login, Password)",
+                "Zoom / Video Conferencing Tools",
+                "FoxPro (Accounting System)",
+                "GEMCOM",
+                "SURPAC",
+                "FTP (Access Creation, Change Password)",
+                "PDF (Conversion, Reduce Size, Editing)",
+                "Antivirus / Security Software",
+                "Operating System (Windows, macOS, Linux)",
+                "Custom In-house Applications",
+                "Backup & Restore Tools",
+                "Cloud Services (OneDrive, Google Drive, Dropbox)",
+                "Others",
+            ],
+        },
+        request: {
+            hardware: [
+                "New Laptop Request",
+                "New Monitor Request",
+                "Printer Installation",
+                "Additional Peripherals",
+                "Hardware Upgrade",
+                "Others",
+            ],
+            network: [
+                "New VPN Access",
+                "Firewall Rule Request",
+                "New Router/Switch Setup",
+                "Bandwidth Upgrade",
+                "ISP Request",
+                "Others",
+            ],
+            software: [
+                "New Software Installation",
+                "License Renewal",
+                "User Account Creation",
+                "Database Access Request",
+                "Cloud Storage Request",
+                "Others",
+            ],
+        },
+        inquiry: {
+            hardware: ["Warranty Inquiry", "Specs Inquiry", "Others"],
+            network: ["Network Policy Inquiry", "Coverage Inquiry", "Others"],
+            software: ["Software Policy Inquiry", "Version Inquiry", "Others"],
+        },
     };
+
+    useEffect(() => {
+        if (loading) {
+            const timer = setTimeout(() => {
+                setLoading(false);
+            }, 2000);
+            return () => clearTimeout(timer)
+        }
+    }, [loading])
 
     useEffect(() => {
         axios.get(`${config.baseApi}/authentication/get-all-users`)
@@ -281,6 +324,7 @@ export default function ViewTicket() {
         if (!closureReason.trim()) return;
         try {
             //place a note
+            setLoading(true)
             await axios.post(`${config.baseApi}/ticket/note-post`, {
                 notes: closureReason,
                 current_user: empInfo.user_name,
@@ -317,6 +361,7 @@ export default function ViewTicket() {
 
         if (formData.ticket_status === 'closed') {
             try {
+                setLoading(true)
                 await axios.post(`${config.baseApi}/ticket/feedback`, {
                     review: userfeedback,
                     user_id: hdUser.user_id,
@@ -388,6 +433,7 @@ export default function ViewTicket() {
             }
 
             // Send notification to HD
+            setLoading(true)
             await axios.post(`${config.baseApi}/ticket/notified-true`, {
                 ticket_id: ticket_id,
                 user_id: currentUserData.user_id
@@ -693,7 +739,7 @@ export default function ViewTicket() {
                             </Form.Group>
                             <Form.Group as={Col} md={6} className="mb-2">
                                 <Form.Label>Urgency</Form.Label>
-                                <Form.Select name="ticket_urgencyLevel" value={formData.ticket_urgencyLevel ?? ''} onChange={handleChange} required disabled={!close}>
+                                <Form.Select name="ticket_urgencyLevel" value={formData.ticket_urgencyLevel ?? ''} onChange={handleChange} required disabled>
                                     <option value="low">Low</option>
                                     <option value="medium">Medium</option>
                                     <option value="high">High</option>
@@ -720,10 +766,11 @@ export default function ViewTicket() {
                                     name="ticket_SubCategory"
                                     value={formData.ticket_SubCategory ?? ''}
                                     onChange={handleChange}
-                                    required
                                     disabled={!close}
+                                    required
                                 >
-                                    {subCategoryOptions[formData.ticket_category]?.map(
+                                    <option value="">Select</option>
+                                    {subCategoryOptions[formData.ticket_type]?.[formData.ticket_category]?.map(
                                         (subcat, idx) => (
                                             <option key={idx} value={subcat}>
                                                 {subcat}
@@ -875,6 +922,28 @@ export default function ViewTicket() {
                 </Modal>
 
             </Container>
+            {loading && (
+
+
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <Spinner animation="border" variant="light" />
+                </div>
+
+            )}
+
         </Container>
     );
 }

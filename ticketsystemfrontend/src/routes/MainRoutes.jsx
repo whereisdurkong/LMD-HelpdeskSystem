@@ -5,6 +5,7 @@ import { Navigate } from 'react-router-dom';
 
 
 
+
 // Lazy imports
 const Typography = lazy(() => import('../views/ui-elements/basic/BasicTypography'));
 const Color = lazy(() => import('../views/ui-elements/basic/BasicColor'));
@@ -30,7 +31,11 @@ const ANetwork = lazy(() => import('views/knowledgebase/networkarchive'));
 const Reports = lazy(() => import('views/report/reports'));
 
 const Tickets = lazy(() => import('views/tickets'))
+
 const CreateTicket = lazy(() => import('views/tickets/createticket'))
+const CreateTicketUser = lazy(() => import('views/tickets/createticket-user'))
+const CreateTicketHD = lazy(() => import('views/tickets/createticket-hd'))
+
 const OpenTicket = lazy(() => import('views/tickets/openticket'))
 const Alltickets = lazy(() => import('views/tickets/alltickets'));
 const ViewTicket = lazy(() => import('views/tickets/viewticket'));
@@ -146,6 +151,14 @@ const MainRoutes = {
     {
       path: '/create-ticket',
       element: withSpinner(<CreateTicket />)
+    },
+    {
+      path: '/create-ticket-user',
+      element: withSpinner(<CreateTicketUser />)
+    },
+    {
+      path: '/create-ticket-hd',
+      element: withSpinner(<CreateTicketHD />)
     },
     {
       path: '/open-ticket',

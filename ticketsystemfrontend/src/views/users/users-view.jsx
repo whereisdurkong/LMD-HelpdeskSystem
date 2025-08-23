@@ -13,6 +13,7 @@ import axios from 'axios';
 import config from 'config';
 import FeatherIcon from 'feather-icons-react';
 import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
+import Spinner from 'react-bootstrap/Spinner';
 
 export default function UsersView() {
     const user_id = new URLSearchParams(window.location.search).get('id');
@@ -22,8 +23,6 @@ export default function UsersView() {
     const [lastname, setLastName] = useState('');
     const [username, setUserName] = useState('');
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmpassword, setConfirmPassword] = useState('');
     const [tier, setTier] = useState('');
     const [phone, setPhone] = useState('');
     const [role, setRole] = useState('');
@@ -35,8 +34,6 @@ export default function UsersView() {
     const lastNameRef = useRef();
     const userNameRef = useRef();
     const emailRef = useRef();
-    const passwordRef = useRef();
-    const confirmPasswordRef = useRef();
     const tierRef = useRef();
     const phoneRef = useRef();
     const roleRef = useRef();
@@ -47,10 +44,21 @@ export default function UsersView() {
     const [error, setError] = useState('');
     const [successful, setSuccessful] = useState('');
 
+    const [loading, setLoading] = useState(false);
+
     const departmentOptions = {
         lmd: ['MISD', 'HR', 'IOSD', 'SMED', 'Mill', 'IMD', 'PCES', 'MOG', 'Accounting', 'Expolartion', 'Assay'],
         corp: ['Legal', 'Accounting', 'Executive', 'HRAD', 'Treasury', 'MISD']
     };
+
+    useEffect(() => {
+        if (loading) {
+            const timer = setTimeout(() => {
+                setLoading(false);
+            }, 2000);
+            return () => clearTimeout(timer)
+        }
+    }, [loading])
 
     useEffect(() => {
         if (error || successful) {
@@ -108,6 +116,7 @@ export default function UsersView() {
         };
 
         try {
+            setLoading(true)
             const response = await axios.post(`${config.baseApi}/authentication/update-user`, updatedUser);
             console.log("Update response:", response.data);
 
@@ -354,6 +363,25 @@ export default function UsersView() {
                 </Container>
 
             </AnimatedContent>
+
+            {loading && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <Spinner animation="border" variant="light" />
+                </div>
+            )}
         </div>
     );
 }

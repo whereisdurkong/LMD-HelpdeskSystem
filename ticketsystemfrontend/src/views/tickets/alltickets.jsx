@@ -143,7 +143,7 @@ export default function Alltickets() {
             case 'critical':
                 style = { ...baseStyle, backgroundColor: '#fd0000ff', color: '#fefefeff' }; label = 'Critical'; break;
             default:
-                style = { ...baseStyle, backgroundColor: '#6c757d' }; break;
+                style = { ...baseStyle, backgroundColor: '#6c757d' }; label = 'NONE'; break;
         }
 
         return <span style={style}>{label}</span>;
@@ -249,9 +249,10 @@ export default function Alltickets() {
                                 >
                                     <td>{ticket.ticket_id}</td>
                                     <td>{ticket.ticket_subject}</td>
-                                    <td>{ticket.ticket_type}</td>
+                                    <td>{ticket.ticket_type === null || ticket.ticket_type === "" ? "NONE" : ticket.ticket_type}</td>
+
                                     <td>{renderStatusBadge(ticket.ticket_status)}</td>
-                                    <td>{renderUrgencyBadge(ticket.ticket_urgencyLevel)}</td>
+                                    <td>{renderUrgencyBadge(ticket.ticket_urgencyLevel) || ''}</td>
                                     <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                         {ticket.Description}
                                     </td>

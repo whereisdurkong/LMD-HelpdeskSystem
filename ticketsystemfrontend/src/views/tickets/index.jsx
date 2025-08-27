@@ -34,41 +34,73 @@ export default function Tickets() {
                 paddingTop: '100px',
             }}
         >
-            <Tabs
-                defaultActiveKey="my"
-                transition={false}
-                id="justify-tab-example"
-                className="mb-3"
-                justify
+            {/* Outer Center Wrapper */}
+            <div
+                style={{
+                    maxWidth: "1500px", // match your table width
+                    margin: "0 auto",
+                }}
             >
-                <Tab eventKey="my" title={<span style={{ color: '#5d3600ff', fontWeight: 'bold' }}>My Tickets</span>} >
-                    <Myticket />
-                </Tab>
-                {hdaccess && (
-                    <Tab eventKey="open" title={<span style={{ color: '#5d3600ff', fontWeight: 'bold' }}>Open Tickets</span>} >
-                        <Openticket />
+                <Tabs
+                    defaultActiveKey="my"
+                    transition={false}
+                    id="justify-tab-example"
+                    justify
+                    style={{
+                        borderBottom: "2px solid #ddd",
+                    }}
+                >
+                    <Tab
+                        eventKey="my"
+                        title={
+                            <span style={{ color: "#5d3600ff", fontWeight: "bold" }}>
+                                My Tickets
+                            </span>
+                        }
+                    >
+                        <Myticket />
                     </Tab>
-                )}
-                {adminaccess && (
-                    <Tab eventKey="all" title={<span style={{ color: '#5d3600ff', fontWeight: 'bold' }}>All Tickets</span>} >
-                        <Alltickets />
-                    </Tab>
-                )}
-                {hdaccess && (
-                    <Tab eventKey="all" title={<span style={{ color: '#5d3600ff', fontWeight: 'bold' }}>All Tickets</span>} >
-                        <Alltickets />
-                    </Tab>
-                )}
-                <Tab eventKey="history" title={<span style={{ color: '#5d3600ff', fontWeight: 'bold' }}>History</span>} >
-                    <History />
-                </Tab>
-                {/* <Tab eventKey="contact" title="Contact" disabled>
-                    Tab content for Contact
-                </Tab> */}
-            </Tabs>
 
+                    {hdaccess && (
+                        <Tab
+                            eventKey="open"
+                            title={
+                                <span style={{ color: "#5d3600ff", fontWeight: "bold" }}>
+                                    Open Tickets
+                                </span>
+                            }
+                        >
+                            <Openticket />
+                        </Tab>
+                    )}
 
+                    {adminaccess && (
+                        <Tab
+                            eventKey="all"
+                            title={
+                                <span style={{ color: "#5d3600ff", fontWeight: "bold" }}>
+                                    All Tickets
+                                </span>
+                            }
+                        >
+                            <Alltickets />
+                        </Tab>
+                    )}
+
+                    {hdaccess && (<Tab eventKey="all" title={<span style={{ color: '#5d3600ff', fontWeight: 'bold' }}>All Tickets</span>} > <Alltickets /> </Tab>)}
+
+                    <Tab
+                        eventKey="history"
+                        title={
+                            <span style={{ color: "#5d3600ff", fontWeight: "bold" }}>
+                                History
+                            </span>
+                        }
+                    >
+                        <History />
+                    </Tab>
+                </Tabs>
+            </div>
         </Container>
-    )
-
+    );
 }

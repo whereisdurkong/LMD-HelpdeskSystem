@@ -879,13 +879,14 @@ router.get('/get-all-feedback', async (req, res) => {
 router.post('/feedback', async (req, res) => {
     const currentTimestamp = new Date();
     try {
-        const { review, user_id, created_by, ticket_id } = req.body;
+        const { review, user_id, created_by, ticket_id, score } = req.body;
         await knex('review_master').insert({
             review,
             user_id,
             created_at: currentTimestamp,
             created_by,
-            ticket_id
+            ticket_id,
+            score
         })
         await knex('ticket_master').where({ ticket_id: ticket_id }).update({
             is_reviewed: true

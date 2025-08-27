@@ -25,6 +25,7 @@ export default function ViewTicket() {
 
     const [showCloseReviewModal, setShowCloseReviewModal] = useState(false);
     const [userfeedback, setUserFeedback] = useState('');
+    const [value, setValue] = useState(3);
 
     const [error, setError] = useState('');
     const [successful, setSuccessful] = useState('');
@@ -33,6 +34,17 @@ export default function ViewTicket() {
     const [allHDUser, setAllHDUser] = useState([]);
 
     const [loading, setLoading] = useState(false);
+
+
+    const labels = {
+        1: "Very Dissatisfied",
+        2: "Dissatisfied",
+        3: "Neutral",
+        4: "Satisfied",
+        5: "Very Satisfied",
+    };
+
+    const thumbLeft = `${10 + (value - 1) * 20}%`;
 
     const subCategoryOptions = {
         incident: {
@@ -125,6 +137,7 @@ export default function ViewTicket() {
     useEffect(() => {
         if (loading) {
             const timer = setTimeout(() => {
+                window.location.reload()
                 setLoading(false);
             }, 2000);
             return () => clearTimeout(timer)
@@ -145,10 +158,13 @@ export default function ViewTicket() {
     }, [])
 
     useEffect(() => {
-        if (!formData.assigned_collaborators) {
-            setCollaboratorState(false);
-        } else {
-            setCollaboratorState(true)
+        if (formData.assigned_collaborators) {
+            setCollaboratorState(true);
+        } else if (formData.assigned_collaborators === null) {
+            setCollaboratorState(false)
+        }
+        else {
+            setCollaboratorState(false)
 
         }
     }, [formData.assigned_collaborators])
@@ -352,12 +368,25 @@ export default function ViewTicket() {
         }
     }
 
+    // 0910
+
+
+    const handleSubmit = () => {
+        console.log("Selected Number:", value);
+        console.log("Selected Label:", labels[value]);
+    };
+    // compute thumb position (percent)
 
 
 
     const handleReview = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         console.log('was triggered. ', `Review ${userfeedback} HelpDesk: ${hdUser.user_id} Reviewed by: ${empInfo.user_name}`)
+
+        if (!userfeedback) {
+            setError('Feedback must not be empty!');
+            return
+        }
 
         if (formData.ticket_status === 'closed') {
             try {
@@ -366,11 +395,12 @@ export default function ViewTicket() {
                     review: userfeedback,
                     user_id: hdUser.user_id,
                     created_by: empInfo.user_name,
-                    ticket_id: formData.ticket_id
+                    ticket_id: formData.ticket_id,
+                    score: value
                 })
                 setShowCloseReviewModal(false);
                 setUserFeedback('');
-                window.location.reload();
+                setLoading(true)
             } catch (err) {
                 console.log('Unable to submit review: ', err)
             }
@@ -463,6 +493,9 @@ export default function ViewTicket() {
             setError('Failed to update ticket.');
         }
     };
+
+
+
 
 
 
@@ -891,35 +924,136 @@ export default function ViewTicket() {
                 </Modal>
 
                 {/* Review Ticket */}
+                {/* Review Ticket with Scale + Feedback */}
                 <Modal show={showCloseReviewModal} onHide={() => setShowCloseReviewModal(false)} centered>
                     <Modal.Header closeButton>
                         <Modal.Title>Leave a Feedback (Required)</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form.Group controlId="userfeedback">
+                        {/* Feedback Textarea */}
+                        <Form.Group controlId="userfeedback" className="mb-3">
                             <Form.Label>How was our service?</Form.Label>
                             <Form.Control
                                 as="textarea"
                                 rows={3}
                                 value={userfeedback}
                                 onChange={(e) => setUserFeedback(e.target.value)}
-                                placeholder="Your feedback will help us to improve our service"
+                                placeholder="Your feedback will help us improve our service"
                             />
                         </Form.Group>
+
+                        {/* SCALE SLIDER */}
+                        <Container fluid className="text-center mt-3">
+                            <h5>SCALE</h5>
+                            <Row className="justify-content-center">
+                                <Col xs={12} sm={10} md={8}>
+                                    <div style={{ position: "relative", width: "100%" }}>
+                                        {/* colored bar */}
+                                        <div
+                                            style={{
+                                                height: 12,
+                                                borderRadius: 6,
+                                                display: "flex",
+                                                overflow: "hidden",
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <div style={{ flex: 1, background: "#e74c3c" }} />
+                                            <div style={{ flex: 1, background: "#e67e22" }} />
+                                            <div style={{ flex: 1, background: "#f1c40f" }} />
+                                            <div style={{ flex: 1, background: "#2ecc71" }} />
+                                            <div style={{ flex: 1, background: "#27ae60" }} />
+                                        </div>
+
+                                        {/* custom thumb */}
+                                        <div
+                                            style={{
+                                                position: "absolute",
+                                                top: "50%",
+                                                left: thumbLeft,
+                                                transform: "translate(-50%, -50%)",
+                                                width: 18,
+                                                height: 18,
+                                                borderRadius: "50%",
+                                                background: "#333",
+                                                boxShadow: "0 0 0 3px rgba(0,0,0,0.08)",
+                                                zIndex: 2,
+                                                pointerEvents: "none",
+                                            }}
+                                        />
+
+                                        {/* invisible range */}
+                                        <Form.Range
+                                            min={1}
+                                            max={5}
+                                            step={1}
+                                            value={value}
+                                            onChange={(e) => setValue(Number(e.target.value))}
+                                            style={{
+                                                position: "absolute",
+                                                top: -12,
+                                                left: 0,
+                                                right: 0,
+                                                width: "100%",
+                                                height: 36,
+                                                opacity: 0,
+                                                cursor: "pointer",
+                                                zIndex: 3,
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Numbers aligned */}
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "repeat(5, 1fr)",
+                                            marginTop: 8,
+                                            fontSize: "clamp(0.8rem, 2vw, 1rem)",
+                                        }}
+                                    >
+                                        {["1", "2", "3", "4", "5"].map((n) => (
+                                            <div key={n} style={{ textAlign: "center" }}>
+                                                {n}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Labels aligned */}
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "repeat(5, 1fr)",
+                                            marginTop: 4,
+                                            fontSize: "clamp(0.55rem, 1.2vw, 0.75rem)", // smaller min size for phones
+
+                                            wordBreak: "break-word", // break words if needed on very small screens
+                                        }}
+                                    >
+                                        <div style={{ textAlign: "center", color: "#e74c3c" }}>Very Dissatisfied</div>
+                                        <div style={{ textAlign: "center", color: "#e67e22" }}>Dissatisfied</div>
+                                        <div style={{ textAlign: "center", color: "#f1c40f" }}>Neutral</div>
+                                        <div style={{ textAlign: "center", color: "#2ecc71" }}>Satisfied</div>
+                                        <div style={{ textAlign: "center", color: "#27ae60" }}>Very Satisfied</div>
+                                    </div>
+                                </Col>
+                            </Row>
+                        </Container>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowCloseReasonModal(false)}>
+                        <Button variant="secondary" onClick={() => setShowCloseReviewModal(false)}>
                             Cancel
                         </Button>
                         <Button
                             variant="primary"
-                            onClick={handleReview}
-                            disabled={userfeedback.trim() === ''}
+                            onClick={() => handleReview(value, userfeedback)}
+                            disabled={userfeedback.trim() === ""}
                         >
                             Confirm
                         </Button>
                     </Modal.Footer>
                 </Modal>
+
 
             </Container>
             {loading && (

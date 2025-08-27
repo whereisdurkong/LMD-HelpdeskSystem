@@ -173,7 +173,7 @@ export default function Alltickets() {
             }}
         >
             {/* Search and Filter */}
-            <Row className="align-items-center g-3 mb-4">
+            <Row className="align-items-center g-3 mb-4" >
                 <Col xs={12} md={8} lg={9}>
                     <Form.Group controlId="search" style={{ width: '100%' }}>
                         <Form.Control
@@ -219,8 +219,8 @@ export default function Alltickets() {
             </Row>
 
             {/* Desktop Table */}
-            <div className="d-none d-md-block">
-                <table className="table mb-0 table-hover align-middle">
+            <div className="d-none d-md-block" >
+                <table className="table mb-0 table-hover align-middle" >
                     <thead style={{ fontSize: '14px', textTransform: 'uppercase', color: '#555', background: '#f8f9fa' }}>
                         <tr>
                             <th>Ticket #</th>

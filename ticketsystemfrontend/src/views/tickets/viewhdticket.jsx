@@ -588,7 +588,16 @@ export default function ViewHDTicket() {
     const handleSave = async () => {
         console.log(formData.assigned_to)
         try {
-            console.log(formData.ticket_for)
+
+            if (formData.ticket_status === 'in-progress') {
+                if (!formData.ticket_type || !formData.ticket_status || !formData.ticket_category || !formData.ticket_SubCategory) {
+                    setError('Unable to save empty fields! Please try again!');
+                    return;
+                }
+
+
+            }
+
             //Check changes
             const empInfo = JSON.parse(localStorage.getItem('user'));
             const changedFields = [];
@@ -634,19 +643,11 @@ export default function ViewHDTicket() {
                 dataToSend.append('assigned_location', newTF_location);
             }
             if (formData.assigned_to) {
-                try {
-                    await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
-                        assigned_to: formData.assigned_to,
-                        updated_by: empInfo.user_id,
-                        ticket_id: formData.ticket_id
-                    })
-                    setSuccessful('Ticket updated successfully.');
-                    window.location.reload();
-                } catch (err) {
-                    console.log('Error assigning the ticket')
-                }
-
-
+                await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
+                    assigned_to: formData.assigned_to,
+                    updated_by: empInfo.user_id,
+                    ticket_id: formData.ticket_id
+                })
             }
 
             if (formData.attachmentFiles && formData.attachmentFiles.length > 0) {
@@ -1010,20 +1011,16 @@ export default function ViewHDTicket() {
                                 )}
 
                             </Col>
-
+                            {/* Collaborators */}
                             {collaboratorState && (
                                 <Col md={6} className="mb-2">
                                     <Form.Label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <span>Collaborators</span>
-                                        {collaboratorState ? (
+                                        {
                                             <span onClick={() => setCollaboratorState(false)} style={{ fontSize: '0.85rem', color: '#002E05', cursor: 'pointer' }}>
                                                 <FeatherIcon icon="x" />
                                             </span>
-                                        ) : (
-                                            <span onClick={() => setCollaboratorState(true)} style={{ fontSize: '0.85rem', color: '#002E05', cursor: 'pointer' }}>
-                                                Add collaborators
-                                            </span>
-                                        )}
+                                        }
                                     </Form.Label>
                                     <InputGroup>
                                         <InputGroup.Text>
@@ -1046,8 +1043,9 @@ export default function ViewHDTicket() {
                                                                 const user = allHDUser.find((u) => u.user_name === username.trim());
                                                                 return user
                                                                     ? { value: user.user_name, label: `${user.emp_FirstName} ${user.emp_LastName}` }
-                                                                    : '-';
+                                                                    : null;
                                                             })
+                                                            .filter(Boolean)
                                                     }
                                                     onChange={selectedOptions =>
                                                         handleChange({
@@ -1086,10 +1084,11 @@ export default function ViewHDTicket() {
                                                             const user = allHDUser.find((u) => u.user_name === username.trim());
                                                             return user ? `${user.emp_FirstName} ${user.emp_LastName}` : username;
                                                         })
-                                                        .join(', ') || ' NONE'
+                                                        .join(', ')
 
                                                 }
                                                 disabled
+                                                placeholder='NONE'
                                             />
                                         )}
                                     </InputGroup>
@@ -1340,41 +1339,61 @@ export default function ViewHDTicket() {
                                         {allfeedback && allfeedback.length > 0 ? (
                                             [...allfeedback]
                                                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                                                .map((feedback, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="mb-3 p-3 rounded-3 shadow-sm bg-body-tertiary border border-light-subtle"
-                                                    >
+                                                .map((feedback, index) => {
+                                                    const scoreMap = {
+                                                        1: { label: 'Very Dissatisfied', color: '#e74c3c' },
+                                                        2: { label: 'Dissatisfied', color: '#e67e22' },
+                                                        3: { label: 'Neutral', color: '#f1c40f' },
+                                                        4: { label: 'Satisfied', color: '#2ecc71' },
+                                                        5: { label: 'Very Satisfied', color: '#27ae60' },
+                                                    };
+
+                                                    const scoreInfo = scoreMap[feedback.score] || { label: 'No rating', color: '#7f8c8d' };
+
+                                                    return (
                                                         <div
-                                                            className="text-dark"
-                                                            style={{
-                                                                fontSize: '0.95rem',
-                                                                whiteSpace: 'pre-wrap',
-                                                            }}
+                                                            key={index}
+                                                            className="mb-3 p-3 rounded-3 shadow-sm bg-body-tertiary border border-light-subtle"
                                                         >
-                                                            {feedback.review}
+                                                            <div
+                                                                className="text-dark"
+                                                                style={{
+                                                                    fontSize: '0.95rem',
+                                                                    whiteSpace: 'pre-wrap',
+                                                                }}
+                                                            >
+                                                                {feedback.review}
+                                                            </div>
+
+                                                            <div
+                                                                style={{
+                                                                    fontSize: '0.70rem',
+                                                                    color: scoreInfo.color,
+                                                                    fontWeight: '600',
+                                                                }}
+                                                            >
+                                                                {scoreInfo.label}
+                                                            </div>
+
+                                                            <div className="d-flex justify-content-between align-items-center mt-2">
+                                                                <small className="text-muted fst-italic">
+                                                                    {feedbackuser[feedback.created_by] || feedback.created_by || 'Unknown'}
+                                                                </small>
+                                                                <small className="text-muted">
+                                                                    {feedback.created_at
+                                                                        ? new Date(feedback.created_at).toLocaleString()
+                                                                        : ''}
+                                                                </small>
+                                                            </div>
                                                         </div>
-                                                        <div className="d-flex justify-content-between align-items-center mt-2">
-                                                            <small className="text-muted fst-italic">
-                                                                {feedbackuser[feedback.created_by] || feedback.created_by || 'Unknown'}
-                                                            </small>
-                                                            <small className="text-muted">
-                                                                {feedback.created_at
-                                                                    ? new Date(
-                                                                        feedback.created_at
-                                                                    ).toLocaleString()
-                                                                    : ''}
-                                                            </small>
-                                                        </div>
-                                                    </div>
-                                                ))
+                                                    );
+                                                })
                                         ) : (
-                                            <div className="text-muted fst-italic">
-                                                No notes available.
-                                            </div>
+                                            <div className="text-muted fst-italic">No notes available.</div>
                                         )}
                                     </div>
                                 </Form.Group>
+
 
                             </Card.Body>
                         </Card>

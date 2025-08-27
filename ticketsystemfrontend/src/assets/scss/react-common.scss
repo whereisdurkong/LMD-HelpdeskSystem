@@ -306,3 +306,49 @@ button.close {
 .accordion-button:hover {
   background-color: #f8f9fa;
 }
+
+
+/* Hide native track */
+.custom-slider::-webkit-slider-runnable-track {
+  background: transparent;
+  border: none;
+}
+
+.custom-slider::-moz-range-track {
+  background: transparent;
+}
+
+.custom-slider::-ms-track {
+  background: transparent;
+  border: none;
+  color: transparent;
+}
+
+/* Thumb styling */
+.custom-slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: #333;
+  /* dark gray thumb */
+  cursor: pointer;
+  margin-top: -4px;
+  /* keeps it centered on bar */
+}
+
+.custom-slider::-moz-range-thumb {
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: #333;
+  cursor: pointer;
+}
+
+.custom-slider::-ms-thumb {
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: #333;
+  cursor: pointer;
+}

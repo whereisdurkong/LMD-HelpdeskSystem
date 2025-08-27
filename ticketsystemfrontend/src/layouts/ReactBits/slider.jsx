@@ -1,26 +1,7 @@
-// import { Form, Button, Card, Row, Col, Container, Alert } from 'react-bootstrap';
-
-// export default function Assets() {
-//     return (
-//         <Container
-//             fluid
-//             className="pt-100"
-//             style={{
-//                 background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)',
-//                 minHeight: '100vh',
-//             }}
-//         >
-//             <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
-
-//             </div>
-//         </Container>
-//     );
-// }
-
 import React, { useState } from "react";
 import { Button, Container, Row, Col, Form } from "react-bootstrap";
 
-export default function Assets() {
+export default function Slider() {
     const [value, setValue] = useState(3);
 
     const labels = {
@@ -41,7 +22,6 @@ export default function Assets() {
     return (
         <Container
             className="mt-5 text-center"
-            style={{ paddingTop: '200px' }}
         >
             <h4>SCALE</h4>
             <Row className="justify-content-center">
@@ -136,17 +116,16 @@ export default function Assets() {
                         <div style={{ textAlign: "center", color: "#27ae60" }}>Very Satisfied</div>
                     </div>
 
-
+                    <Button
+                        variant="success"
+                        className="mt-3"
+                        style={{ width: "100%", maxWidth: "200px" }}
+                        onClick={handleSubmit}
+                    >
+                        Submit
+                    </Button>
                 </Col>
             </Row>
-            <Button
-                variant="success"
-                className="mt-3"
-                style={{ width: "100%", maxWidth: "200px" }}
-                onClick={handleSubmit}
-            >
-                Submit
-            </Button>
         </Container>
     );
 

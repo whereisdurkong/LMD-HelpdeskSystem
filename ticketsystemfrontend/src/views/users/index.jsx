@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Container } from 'react-bootstrap';
+import { Table, Container, Button } from 'react-bootstrap';
 import axios from 'axios';
 import config from 'config';
 
@@ -28,6 +28,10 @@ export default function Users() {
         const params = new URLSearchParams({ id: user.user_id })
         window.location.replace(`/ticketsystem/users-view?${params.toString()}`)
     }
+    const HandleRegister = () => {
+
+        window.location.replace(`/ticketsystem/register`)
+    }
 
     return (
         <Container
@@ -39,8 +43,13 @@ export default function Users() {
                 paddingTop: '100px',
             }}
         >
-            <h3 style={{ fontWeight: 600, marginBottom: '5px' }}>Users</h3>
+
             <Container style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }} >
+                    <h3 style={{ fontWeight: 600, marginBottom: '5px' }}>Users</h3>
+                    <Button onClick={HandleRegister}>+ Register</Button>
+                </div>
+
                 <div style={{
                     background: '#fff',
                     borderRadius: '12px',
@@ -86,6 +95,6 @@ export default function Users() {
                     </Table>
                 </div>
             </Container>
-        </Container>
+        </Container >
     );
 }

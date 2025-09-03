@@ -3,8 +3,10 @@ import { Form, Button, Card, Row, Col, Container, Alert } from 'react-bootstrap'
 import axios from 'axios';
 import config from 'config';
 import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
+import Spinner from 'react-bootstrap/Spinner';
 
 export default function CreateTicketUser() {
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [validationErrors, setValidationErrors] = useState({});
@@ -18,6 +20,16 @@ export default function CreateTicketUser() {
     const [currentUser, setCurrentUser] = useState('');
     const [fullname, setFullName] = useState('');
     const desc = 'Issue: \nWhen did it start: \nHave you tried any troubleshooting steps: \nAdditional notes: ';
+
+    useEffect(() => {
+        if (loading) {
+            const timer = setTimeout(() => {
+                setLoading(false);
+            }, 2000);
+            return () => clearTimeout(timer)
+        }
+    }, [loading])
+
 
     useEffect(() => {
         if (error || success) {
@@ -140,6 +152,7 @@ export default function CreateTicketUser() {
         e.preventDefault();
         setError('');
         setSuccess('');
+        setLoading(true)
 
         const empInfo = JSON.parse(localStorage.getItem('user'));
 
@@ -385,6 +398,24 @@ export default function CreateTicketUser() {
                     </Col>
                 </Row>
             </AnimatedContent>
+            {loading && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <Spinner animation="border" variant="light" />
+                </div>
+            )}
         </Container>
     );
 }

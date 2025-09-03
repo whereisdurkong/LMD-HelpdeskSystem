@@ -432,21 +432,39 @@ router.get('/ticket-by-id', async (req, res, next) => {
 })
 
 router.post('/update-ticket-assigned', async (req, res) => {
+    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     try {
         const currentTimestamp = new Date()
         const {
             assigned_to,
             updated_by,
             ticket_id,
+            ticket_status
         } = req.body
-        const updateByInfo = await knex('users_master').where('user_id', updated_by).first();
 
+        const updateByInfo = await knex('users_master').where('user_id', updated_by).first();
+        console.log(req.body)
+
+        // await knex('ticket_master').where('ticket_id', ticket_id).update({
+        //     assigned_to: assigned_to,
+        //     ticket_status: 'assigned',
+        //     updated_by: updateByInfo.user_name,
+        //     updated_at: currentTimestamp
+        // })
+        const updateByInfo1 = await knex('ticket_master').where('ticket_id', ticket_id).first();
+
+
+        console.log('1111111111111111HHHHHHHHHHHHHHHAAAAAAAAAAAAAAATTTTTDDDOOOOGGG')
         await knex('ticket_master').where('ticket_id', ticket_id).update({
-            assigned_to,
-            ticket_status: 'assigned',
+            assigned_to: assigned_to,
+            ticket_status,
             updated_by: updateByInfo.user_name,
             updated_at: currentTimestamp
         })
+
+
+
+
 
         await knex('ticket_logs').insert({
             ticket_id,
@@ -485,11 +503,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             CloseReason,
             asset_number
         } = req.body;
-
-        // Get the current user's information
         const updateByInfo = await knex('users_master').where('user_id', updated_by).first();
-        //Get the assigned HD User's Information
-        const assignedToInfo = await knex('users_master').where('user_id', assigned_to_UserId).first();
 
         let attachmentPath = null;
 
@@ -527,6 +541,26 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             attachmentPath = req.body.Attachments;
         }
 
+        const updateByInfo1 = await knex('ticket_master').where('ticket_id', ticket_id).first();
+
+
+        if (ticket_status === 'open') {
+            await knex('ticket_master').where('ticket_id', ticket_id).update({
+                assigned_to: '',
+                assigned_group: ''
+            });
+        } else if (assigned_to && assigned_to.trim() !== '') {
+            // If status is not open and assigned_to exists, update normally
+            await knex('ticket_master').where('ticket_id', ticket_id).update({
+                assigned_to,
+                assigned_group: '',
+                updated_by: updateByInfo.user_name,
+                updated_at: currentTimestamp
+            });
+            console.log(`Ticket ${ticket_id} assigned to ${assigned_to}`);
+        }
+
+
         if (ticket_status) {
             try {
                 const transporter = nodemailer.createTransport({
@@ -540,24 +574,15 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
                         rejectUnauthorized: false
                     }
                 });
-
                 //Setting assigned HD username
-                const hdname = assignedToInfo.user_name
-                const HDFullname = hdname.charAt(0).toUpperCase() + hdname.slice(1).toLowerCase();
-
                 var end = `Best regards,<br> Lepanto Helpdesk System`;
                 var privacy = '<br><p style="color:gray;font-size:12px">Privacy Notice: </p>' +
                     '<p style="color:gray;font-size:12px">The content of this email is intended for the person ' +
                     'or entity to which it is addressed only. This email may contain confidential information. If you are not the person ' +
                     'to whom this message is addressed, be aware that any use, reproduction, or distribution of this message is strictly ' +
                     'prohibited.</p>'
-                //For HD push Emails
-                if (ticket_status === 'open') {
-                    await knex('ticket_master').where('ticket_id', ticket_id).update({
-                        assigned_to: '',
-                        assigned_group: ''
-                    });
-                }
+                // For HD push Emails
+
                 if (ticket_status === 'in-progress') {
                     const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
                     const name = ticketForInfo.user_name
@@ -635,6 +660,11 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
 
                 //For User push Emails
                 if (ticket_status === 're-opened') {
+
+                    const assignedToInfo = await knex('users_master').where('user_id', assigned_to_UserId).first();
+                    const hdname = assignedToInfo.user_name
+                    const HDFullname = hdname.charAt(0).toUpperCase() + hdname.slice(1).toLowerCase();
+
                     var start = `Hello ${HDFullname}<br><br>`
                     var body = `The following support ticket has been re-opened by the user and requires further attention.<br>`
                         + `Below are the details of the ticket: <br><br>`
@@ -659,6 +689,10 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
                     })
                 }
                 if (ticket_status === 'closed') {
+                    const assignedToInfo = await knex('users_master').where('user_id', assigned_to_UserId).first();
+                    const hdname = assignedToInfo.user_name
+                    const HDFullname = hdname.charAt(0).toUpperCase() + hdname.slice(1).toLowerCase();
+
                     var start = `Hello ${HDFullname}<br><br>`
                     var body = `The following support ticket has been closed:<br>`
                         + `Below are the details of the ticket: <br><br>`
@@ -702,7 +736,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             assigned_collaborators,
             assigned_location,
             ticket_for,
-            assigned_to,
+            // assigned_to,
             updated_at: currentTimestamp,
             updated_by: updateByInfo.user_name,
         });

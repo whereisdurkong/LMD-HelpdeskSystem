@@ -1,0 +1,51 @@
+.blob-splash-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 36px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #ffffff;
+    width: 50%;
+    border: 2px solid #004606;
+    border-radius: 15px;
+    background: #048500;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), color 0.8s ease-in-out;
+}
+
+.blob-splash-btn:hover {
+    transform: scale(1.02);
+    /* slight pop effect */
+}
+
+.blob-splash-bg {
+    position: absolute;
+    bottom: -50%;
+    right: -40%;
+    width: 250%;
+    height: 250%;
+
+    background: #005007;
+    border-radius: 58% 42% 42% 58% / 50% 70% 30% 50%;
+    transform: scale(0);
+    transform-origin: bottom right;
+    transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+    z-index: 0;
+}
+
+.blob-splash-btn:hover .blob-splash-bg {
+    transform: scale(1.2);
+}
+
+.blob-splash-label {
+    position: relative;
+    z-index: 1;
+    transition: color 0.2s ease;
+}
+
+.blob-splash-btn:hover .blob-splash-label {
+    color: #fff;
+}

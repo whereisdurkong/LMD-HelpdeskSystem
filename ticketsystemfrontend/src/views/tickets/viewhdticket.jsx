@@ -28,6 +28,7 @@ export default function ViewHDTicket() {
     const [notes, setNotes] = useState(template)
     const [allnotes, setAllNotes] = useState([]);
     const [notesofhduser, setnoteofhduser] = useState('')
+    const [originalNotes, setOriginalNotes] = useState("");
 
     const [error, setError] = useState('');
     const [successful, setSuccessful] = useState('');
@@ -45,6 +46,8 @@ export default function ViewHDTicket() {
 
     const [notifyReview, setNotifyReview] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    const [assignToState, setAssignedToState] = useState(false);
 
     const subCategoryOptions = {
         incident: {
@@ -171,6 +174,14 @@ export default function ViewHDTicket() {
             },
         }),
     };
+
+    useEffect(() => {
+        if (formData.ticket_status === 'open') {
+            setAssignedToState(true)
+        } else {
+            setAssignedToState(false)
+        }
+    }, [formData.ticket_status])
 
     useEffect(() => {
         if (loading) {
@@ -457,6 +468,18 @@ export default function ViewHDTicket() {
             });
     }, [])
 
+
+    // handle text area change
+    const handleNoteChange = (e) => {
+        const { value } = e.target;
+        setNotes(value);
+
+        // check if note is different from original
+        const changed = value !== originalNotes;
+        setHasChanges(changed);
+    };
+
+
     const handleNotifyReview = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         //tikcetfor
@@ -543,13 +566,14 @@ export default function ViewHDTicket() {
         const { name, value } = e.target;
         setFormData(prev => {
             const updatedForm = { ...prev, [name]: value };
-            const fieldsToCheck = ['ticket_subject', 'assigned_to', 'assigned_collaborators', 'ticket_for', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory'];
+            const fieldsToCheck = ['ticket_subject', 'notes', 'assigned_to', 'assigned_collaborators', 'ticket_for', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory'];
             const changed = fieldsToCheck.some(field => updatedForm[field] !== originalData[field]);
             setHasChanges(changed);
 
             return updatedForm;
         });
     };
+
 
     const handleChecker = async () => {
         if (formData.ticket_status === 'resolved') {
@@ -586,7 +610,6 @@ export default function ViewHDTicket() {
     }
 
     const handleSave = async () => {
-        console.log(formData.assigned_to)
         try {
 
             if (formData.ticket_status === 'in-progress') {
@@ -594,14 +617,13 @@ export default function ViewHDTicket() {
                     setError('Unable to save empty fields! Please try again!');
                     return;
                 }
-
-
             }
+
 
             //Check changes
             const empInfo = JSON.parse(localStorage.getItem('user'));
             const changedFields = [];
-            const fieldsToCheck = ['ticket_subject', 'assigned_collaborators', 'ticket_for', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
+            const fieldsToCheck = ['ticket_subject', 'notes', 'assigned_collaborators', 'ticket_for', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
             fieldsToCheck.forEach(field => {
                 const original = originalData[field];
                 const current = formData[field];
@@ -624,8 +646,9 @@ export default function ViewHDTicket() {
             dataToSend.append('Description', formData.Description);
             dataToSend.append('updated_by', empInfo.user_id)
             dataToSend.append('changes_made', changesMade);
-            dataToSend.append('assigned_collaborators', formData.assigned_collaborators);
-
+            if (formData.assigned_collaborators) {
+                dataToSend.append('assigned_collaborators', formData.assigned_collaborators);
+            }
 
             const changedTicketFor = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
                 params: { user_name: formData.ticket_for }
@@ -633,6 +656,7 @@ export default function ViewHDTicket() {
             const TicketforEmail = changedTicketFor.data
             dataToSend.append('ticket_for_UserId', TicketforEmail.user_id);
             dataToSend.append('assigned_to_UserId', hdUser.user_id);
+            dataToSend.append('assigned_to', formData.assigned_to);
 
             if (formData.ticket_for) {
                 const changedTicketFor = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
@@ -641,13 +665,6 @@ export default function ViewHDTicket() {
                 const newticketfor = changedTicketFor.data;
                 const newTF_location = newticketfor.emp_location;
                 dataToSend.append('assigned_location', newTF_location);
-            }
-            if (formData.assigned_to) {
-                await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
-                    assigned_to: formData.assigned_to,
-                    updated_by: empInfo.user_id,
-                    ticket_id: formData.ticket_id
-                })
             }
 
             if (formData.attachmentFiles && formData.attachmentFiles.length > 0) {
@@ -667,6 +684,40 @@ export default function ViewHDTicket() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
+            if (formData.ticket_status === 'open') {
+                if (!formData.assigned_to || formData.assigned_to.trim() === '') {
+                    // Case 1: Open and no assigned user
+                    console.log('OPEN AND EMPTY');
+                    await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
+                        assigned_to: '',
+                        ticket_status: 'open',
+                        updated_by: empInfo.user_id,
+                        ticket_id: formData.ticket_id
+                    });
+                } else {
+                    // Case 2: Open but has assigned user → treat as assigned
+                    console.log('OPEN WITH ASSIGN (saving as assigned)', formData.assigned_to);
+                    await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
+                        assigned_to: formData.assigned_to,
+                        ticket_status: 'assigned',
+                        updated_by: empInfo.user_id,
+                        ticket_id: formData.ticket_id
+                    });
+                }
+            }
+
+            // Case 3: If status changed to open from another status → reset assigned_to
+            if (originalData.ticket_status !== 'open' && formData.ticket_status === 'open') {
+                console.log('CHANGED TO OPEN → clearing assigned_to');
+                await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
+                    assigned_to: '',
+                    ticket_status: 'open',
+                    updated_by: empInfo.user_id,
+                    ticket_id: formData.ticket_id
+                });
+            }
+
+
             setSuccessful('Ticket updated successfully.');
             setOriginalData(formData);
             setHasChanges(false);
@@ -674,6 +725,34 @@ export default function ViewHDTicket() {
         } catch (err) {
             console.error("Error updating ticket:", err);
             setError('Failed to update ticket. Please try again later.');
+        }
+
+        if (notes) {
+            const empInfo = JSON.parse(localStorage.getItem('user'));
+            try {
+                if (notes === template) {
+                    setNoteAlert(true)
+                } else {
+                    setLoading(true);
+                    await axios.post(`${config.baseApi}/ticket/note-post`, {
+                        notes,
+                        current_user: empInfo.user_name,
+                        ticket_id: ticket_id
+                    });
+
+                    await axios.post(`${config.baseApi}/ticket/notified-true`, {
+                        ticket_id: ticket_id,
+                        user_id: empInfo.user_id
+                    })
+                    setNoteAlert(false);
+                    setNotes('');
+                    console.log('Submitted a note succesfully');
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.log('Unable to submit note: ', err)
+            }
+
         }
     };
 
@@ -966,7 +1045,50 @@ export default function ViewHDTicket() {
                                     </span>
                                 </Form.Label>
 
-                                {hdUser?.emp_FirstName && hdUser?.emp_LastName ? (
+                                <InputGroup style={{ height: '43px' }} >
+                                    <div style={{ position: 'relative' }}>
+                                        <InputGroup.Text>
+                                            <FeatherIcon icon="user" />
+                                        </InputGroup.Text>
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <Select
+
+                                            name="assigned_to"
+                                            placeholder="Select Employee"
+                                            // value={`${hdUser.emp_FirstName} ${hdUser.emp_LastName}`}
+                                            value={
+                                                allHDUser.find(u => u.user_name === formData.assigned_to)
+                                                    ? {
+                                                        value: formData.assigned_to,
+                                                        label: `${allHDUser.find(u => u.user_name === formData.assigned_to).emp_FirstName} ${allHDUser.find(u => u.user_name === formData.assigned_to).emp_LastName}`
+                                                    }
+                                                    : null
+                                            }
+
+                                            onChange={option => {
+                                                handleChange({
+                                                    target: {
+                                                        name: 'assigned_to',
+                                                        value: option ? option.value : ''
+                                                    }
+                                                })
+                                            }
+                                            }
+                                            options={allHDUser.map(u => ({
+                                                label: `${u.emp_FirstName} ${u.emp_LastName}`,
+                                                value: u.user_name,
+                                            }))}
+                                            isDisabled={!assignToState}
+                                            isClearable
+                                            styles={customSelectStyles}
+                                            classNamePrefix="react-select"
+                                        />
+                                    </div>
+                                </InputGroup>
+
+
+                                {/* {hdUser?.emp_FirstName && hdUser?.emp_LastName ? (
                                     <InputGroup >
                                         <InputGroup.Text>
                                             <FeatherIcon icon="user" />
@@ -988,27 +1110,36 @@ export default function ViewHDTicket() {
                                             <Select
                                                 name="assigned_to"
                                                 placeholder="Select Employee"
-                                                value={`${hdUser.emp_FirstName} ${hdUser.emp_LastName}`}
+                                                // value={`${hdUser.emp_FirstName} ${hdUser.emp_LastName}`}
+                                                value={
+                                                    allHDUser.find(u => u.user_name === formData.assigned_to)
+                                                        ? {
+                                                            value: formData.assigned_to,
+                                                            label: `${allHDUser.find(u => u.user_name === formData.assigned_to).emp_FirstName} ${allHDUser.find(u => u.user_name === formData.assigned_to).emp_LastName}`
+                                                        }
+                                                        : null
+                                                }
 
+                                                onChange={option => {
+                                                    handleChange({
+                                                        target: {
+                                                            name: 'assigned_to',
+                                                            value: option ? option.value : ''
+                                                        }
+                                                    })
+                                                }
+                                                }
                                                 options={allHDUser.map(u => ({
                                                     label: `${u.emp_FirstName} ${u.emp_LastName}`,
                                                     value: u.user_name,
                                                 }))}
-                                                onChange={option =>
-                                                    handleChange({
-                                                        target: {
-                                                            name: "assigned_to",
-                                                            value: option ? option.value : "",
-                                                        },
-                                                    })
-                                                }
                                                 isClearable
                                                 styles={customSelectStyles}
                                                 classNamePrefix="react-select"
                                             />
                                         </div>
                                     </InputGroup>
-                                )}
+                                )} */}
 
                             </Col>
                             {/* Collaborators */}
@@ -1306,27 +1437,19 @@ export default function ViewHDTicket() {
                                                 rows={5}
                                                 name="notes"
                                                 placeholder="Type your note here..."
-                                                value={notes}
-                                                onChange={(e) => setNotes(e.target.value)}
+                                                value={notes || ''}
+                                                onChange={handleNoteChange}
                                                 disabled={!hdnotesState}
                                                 style={{ resize: 'none', fontSize: '0.95rem' }}
                                             />
                                         </Form.Group>
 
-                                        <div className="d-flex justify-content-end mt-3">
-                                            <Button
-                                                variant="primary"
-                                                size="sm"
-                                                onClick={handleSubmitNote}
-                                            >
-                                                Save Note
-                                            </Button>
-                                        </div>
+
                                     </>
                                 )}
 
                                 {/* USER FEEDBACK */}
-                                <h6 className="text-muted fw-semibold mb-2">User Feedback</h6>
+                                <h6 className="text-muted fw-semibold mb-2 mt-2">User Feedback</h6>
 
                                 <Form.Group className="mb-2">
                                     <div

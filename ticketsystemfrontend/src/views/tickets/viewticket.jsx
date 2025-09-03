@@ -155,6 +155,8 @@ export default function ViewTicket() {
             .catch((err) => {
                 console.error("Error fetching users:", err);
             });
+
+        console.log(ticket_id)
     }, [])
 
     useEffect(() => {
@@ -425,7 +427,7 @@ export default function ViewTicket() {
             console.log('Changed Fields:', changedFields);
             const changesMade = changedFields.length > 0 ? changedFields.join('; ') : '';
 
-            console.log(changesMade)
+            console.log('CHANGES MADE:', changesMade)
 
 
             const dataToSend = new FormData();
@@ -439,10 +441,12 @@ export default function ViewTicket() {
             dataToSend.append('Description', formData.Description);
             dataToSend.append('changes_made', changesMade);
             dataToSend.append('updated_by', currentUserData.user_id);
-            dataToSend.append('assigned_to_UserId', hdUser.user_id);
+
             dataToSend.append('CloseReason', closureReason);
             dataToSend.append('asset_number', formData.asset_number);
-
+            dataToSend.append('assigned_to_UserId', hdUser.user_id);// ISSUE WHEN SAVING AN OPEN TICKET AND NO HD USE WAS ASSIGNED  
+            console.log('HS USER ID:', hdUser.user_id)
+            console.log('UPDATED USER ID:', currentUserData.user_id)
 
             if (formData.attachmentFiles && formData.attachmentFiles.length > 0) {
                 formData.attachmentFiles.forEach(file => {
@@ -483,8 +487,6 @@ export default function ViewTicket() {
                 setSuccessful('Ticket updated successfully.');
                 setOriginalData(formData);
                 setHasChanges(false);
-
-                window.location.reload()
             }
 
 
@@ -612,7 +614,8 @@ export default function ViewTicket() {
                                     <InputGroup.Text>
                                         <FeatherIcon icon="user" />
                                     </InputGroup.Text>
-                                    <Form.Control value={ticketForData.emp_FirstName + " " + ticketForData.emp_LastName ?? ''} disabled />
+                                    <Form.Control
+                                        value={`${ticketForData?.emp_FirstName ?? '-'} ${ticketForData?.emp_LastName ?? '-'}`} disabled />
                                 </InputGroup>
                             </Col>
                             <Col md={6} className="mb-2" hidden>

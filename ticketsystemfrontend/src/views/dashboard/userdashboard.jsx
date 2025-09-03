@@ -2,18 +2,26 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import config from "config";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
+import Dashboardbtn from "layouts/ReactBits/dashboardbtn";
+import Squares from "layouts/ReactBits/Squares";
+import { useNavigate } from 'react-router-dom';
 
 export default function UserDashboard() {
     const [announcements, setAnnouncements] = useState("");
+    const [exitAnc, setExitAnc] = useState(true);
 
+    const navigate = useNavigate()
     const empInfo = JSON.parse(localStorage.getItem("user"));
     const userName = empInfo?.user_name || "";
-    const allcaps = userName.charAt(0).toUpperCase() + userName.slice(1).toLowerCase();
+    const allcaps =
+        userName.charAt(0).toUpperCase() + userName.slice(1).toLowerCase();
 
     useEffect(() => {
         const fetchAnc = async () => {
             try {
-                const res = await axios.get(`${config.baseApi}/announcements/get-all-anc`);
+                const res = await axios.get(
+                    `${config.baseApi}/announcements/get-all-anc`
+                );
                 const allAnc = res.data || [];
 
                 if (allAnc.length > 0) {
@@ -33,139 +41,202 @@ export default function UserDashboard() {
         fetchAnc();
     }, []);
 
+    const handleCreate = () => {
+        navigate('/create-ticket')
+    }
+
     return (
         <Container
             fluid
             style={{
-                background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)',
                 minHeight: "100vh",
-                paddingTop: '100px',
-
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                position: "relative",
+                textAlign: "center",
+                padding: "20px",
+                overflow: "hidden", // ensure background doesn’t overflow
             }}
         >
-            <Row className="align-items-start" style={{ padding: '20px' }}>
-                {/* Left side */}
-                <Col xs={12} md={6} className="mb-4">
-                    {/* Welcome Text */}
-                    <h1 style={{ fontSize: "4.5rem", fontWeight: "bold", marginBottom: "20px", color: '#012500ff' }}>
-                        Welcome, {allcaps}
-                    </h1>
+            {/* Squares as background */}
+            <div
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    zIndex: 0,
+                    background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)'
+                }}
+            >
+                <Squares
+                    speed={0.1}
+                    squareSize={100}
+                    direction="down"
+                    borderColor="rgba(255, 229, 112, 0.37)"
+                    hoverFillColor="#dbcc40ff"
 
-                    {/* Ticket Prompt */}
-                    <p style={{ fontSize: "2.1rem", marginBottom: "15px" }}>
-                        Create a ticket now so we can <br /> address your concern.
-                    </p>
+                />
+            </div>
 
-                    {/* Create Ticket Button */}
-                    <Button
-                        variant="success"
-                        style={{ fontSize: "1rem", padding: "10px 20px" }}
-                    >
-                        Create a Ticket
-                    </Button>
-                </Col>
+            {/* Foreground content */}
+            <div style={{ zIndex: 1 }}>
+                <h1
+                    style={{
+                        fontSize: "4.5rem",
+                        fontWeight: "bold",
+                        marginBottom: "20px",
+                        color: "#012500ff",
+                    }}
+                >
+                    Welcome, {allcaps}
+                </h1>
 
-                {/* Right side - Announcement Card */}
-                <Col xs={12} md={6} className="d-flex justify-content-md-end">
-                    <Card
+                <p style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "15px" }}>
+                    Create a ticket now so we can <br /> address your concern.
+                </p>
+                <Dashboardbtn onClick={handleCreate}>
+
+                    Create a Ticket
+
+                </Dashboardbtn>
+            </div>
+
+            {/* Fixed bottom-right card */}
+            {exitAnc && (
+                <Card
+                    className="popup-card"
+                    style={{
+                        width: "90%",
+                        maxWidth: "900px",
+                        border: "2px solid #000",
+                        borderRadius: "4px",
+                        boxShadow: "4px 4px 0px #888",
+                        overflow: "hidden",
+                        backgroundColor: "#f1f1f1",
+                        position: "fixed",
+                        bottom: "0px",
+                        right: "20px",
+                        textAlign: "start",
+                        zIndex: 2, // higher than background
+                    }}
+                >
+                    {/* Fake Browser Title Bar */}
+                    <div
                         style={{
-                            width: "100%",
-                            maxWidth: "1000px",
-                            border: "2px solid #000",
-                            borderRadius: "4px",
-                            boxShadow: "4px 4px 0px #888",
-                            overflow: "hidden",
-                            backgroundColor: "#f1f1f1",
+                            background: "linear-gradient(to right, #d4d0c8, #c0c0c0)",
+                            padding: "4px 8px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            borderBottom: "2px solid #000",
+                            fontSize: "0.85rem",
+                            fontWeight: "bold",
                         }}
                     >
-                        {/* Fake Browser Title Bar */}
-                        <div
+                        <span>🗔 Announcement</span>
+                        <div>
+                            <button
+                                style={{
+                                    marginLeft: "4px",
+                                    border: "1px solid #000",
+                                    background: "#e0e0e0",
+                                    width: "20px",
+                                    height: "20px",
+                                    fontSize: "0.7rem",
+                                    lineHeight: "1",
+                                }}
+                                onClick={() => setExitAnc(false)}
+                            >
+                                _
+                            </button>
+                            <button
+                                style={{
+                                    marginLeft: "4px",
+                                    border: "1px solid #000",
+                                    background: "#e0e0e0",
+                                    width: "20px",
+                                    height: "20px",
+                                    fontSize: "0.7rem",
+                                    lineHeight: "1",
+                                }}
+                                onClick={() => navigate('/announcements')}
+                            >
+                                □
+                            </button>
+                            <button
+                                style={{
+                                    marginLeft: "4px",
+                                    border: "1px solid #000",
+                                    background: "#e0e0e0",
+                                    width: "20px",
+                                    height: "20px",
+                                    fontSize: "0.7rem",
+                                    lineHeight: "1",
+                                }}
+                                onClick={() => setExitAnc(false)}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <Card.Body style={{ backgroundColor: "white", padding: "10px" }}>
+                        <Row className="align-items-center mb-2">
+                            <Col>
+                                <Card.Title
+                                    className="fw-bold"
+                                    style={{
+                                        fontSize: "1rem",
+                                        fontFamily: "Tahoma, Verdana, sans-serif",
+                                    }}
+                                >
+                                    {announcements.announcementTitle ||
+                                        "Announcement title"}
+                                </Card.Title>
+                            </Col>
+                            <Col className="text-end">
+                                <Card.Text
+                                    className="text-muted"
+                                    style={{
+                                        fontSize: "0.85rem",
+                                        fontFamily: "Tahoma, Verdana, sans-serif",
+                                    }}
+                                >
+                                    {announcements?.created_at &&
+                                        new Date(
+                                            announcements.created_at
+                                        ).toLocaleDateString()}
+                                </Card.Text>
+                            </Col>
+                        </Row>
+                        <Card.Text
                             style={{
-                                background: "linear-gradient(to right, #d4d0c8, #c0c0c0)",
-                                padding: "4px 8px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                borderBottom: "2px solid #000",
-                                fontSize: "0.85rem",
-                                fontWeight: "bold",
+                                fontSize: "0.95rem",
+                                fontFamily: "Tahoma, Verdana, sans-serif",
                             }}
                         >
-                            <span>🗔 Announcement</span>
-                            <div>
-                                <button
-                                    style={{
-                                        marginLeft: "4px",
-                                        border: "1px solid #000",
-                                        background: "#e0e0e0",
-                                        width: "20px",
-                                        height: "20px",
-                                        fontSize: "0.7rem",
-                                        lineHeight: "1",
-                                    }}
-                                >
-                                    _
-                                </button>
-                                <button
-                                    style={{
-                                        marginLeft: "4px",
-                                        border: "1px solid #000",
-                                        background: "#e0e0e0",
-                                        width: "20px",
-                                        height: "20px",
-                                        fontSize: "0.7rem",
-                                        lineHeight: "1",
-                                    }}
-                                >
-                                    □
-                                </button>
-                                <button
-                                    style={{
-                                        marginLeft: "4px",
-                                        border: "1px solid #000",
-                                        background: "#e0e0e0",
-                                        width: "20px",
-                                        height: "20px",
-                                        fontSize: "0.7rem",
-                                        lineHeight: "1",
-                                    }}
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
+                            {announcements.announcements || "CONTEXT"}
+                        </Card.Text>
+                    </Card.Body>
+                </Card>
+            )}
 
-                        {/* Content */}
-                        <Card.Body style={{ backgroundColor: "white", padding: "10px" }}>
-                            <Row className="align-items-center mb-2">
-                                <Col>
-                                    <Card.Title
-                                        className="fw-bold"
-                                        style={{ fontSize: "1rem", fontFamily: "Tahoma, Verdana, sans-serif" }}
-                                    >
-                                        {announcements.announcementTitle || "Announcement title"}
-                                    </Card.Title>
-                                </Col>
-                                <Col className="text-end">
-                                    <Card.Text
-                                        className="text-muted"
-                                        style={{ fontSize: "0.85rem", fontFamily: "Tahoma, Verdana, sans-serif" }}
-                                    >
-                                        {announcements?.created_at &&
-                                            new Date(announcements.created_at).toLocaleDateString()}
-                                    </Card.Text>
-                                </Col>
-                            </Row>
-                            <Card.Text
-                                style={{ fontSize: "0.95rem", fontFamily: "Tahoma, Verdana, sans-serif" }}
-                            >
-                                {announcements.announcements || "CONTEXT"}
-                            </Card.Text>
-                        </Card.Body>
-                    </Card>
+            {/* Animation styles */}
+            <style>{`
+                @keyframes popup {
+                    0% { transform: scale(0.7); opacity: 0; }
+                    60% { transform: scale(1.05); opacity: 1; }
+                    100% { transform: scale(1); }
+                }
 
-                </Col>
-            </Row>
+                .popup-card {
+                    animation: popup 0.4s ease-out;
+                }
+            `}</style>
         </Container>
     );
 }

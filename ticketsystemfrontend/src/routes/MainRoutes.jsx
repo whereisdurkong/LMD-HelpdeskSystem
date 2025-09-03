@@ -52,6 +52,8 @@ const AllTicketbyType = lazy(() => import('views/report/allticketbytype'));
 const AllTicketByTAT = lazy(() => import('views/report/allticketbytat'));
 const AllData = lazy(() => import('views/report/alldata'));
 
+const SubCatDepartment = lazy(() => import('views/report/subcat_department'));
+
 const UserDashboard = lazy(() => import('views/dashboard/userdashboard'));
 const HDDashboard = lazy(() => import('views/dashboard/hddashboard'));
 
@@ -111,6 +113,10 @@ const MainRoutes = {
     {
       path: '/sample6',
       element: withSpinner(<AllData />)
+    },
+    {
+      path: '/1',
+      element: withSpinner(<SubCatDepartment />)
     },
     {
       path: '/dashboard',

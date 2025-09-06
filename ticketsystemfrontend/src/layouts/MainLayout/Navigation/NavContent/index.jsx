@@ -15,6 +15,7 @@ import SimpleBar from 'simplebar-react';
 // assets
 import logo from 'assets/images/logo.svg';
 import newLogo from 'assets/images/new-logo.png';
+import lmdblack from 'assets/images/lmdlogo/lmd-black.png';
 
 // -----------------------|| NAV CONTENT ||-----------------------//
 
@@ -45,9 +46,9 @@ export default function NavContent({ navigation, activeNav }) {
     <div className="m-header" style={{ display: 'flex', justifyContent: 'center', alignContent: 'center', padding: '38px 0' }}>
       <Link to="/dashboard" className="b-brand">
         <img
-          src={newLogo}
+          src={lmdblack}
           alt="logo"
-          style={{ width: '150px', height: 'auto' }}
+          style={{ width: '200px', height: 'auto' }}
         />
       </Link>
     </div>

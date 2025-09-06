@@ -437,6 +437,7 @@ router.post('/update-ticket-assigned', async (req, res) => {
         const currentTimestamp = new Date()
         const {
             assigned_to,
+            assigned_group,
             updated_by,
             ticket_id,
             ticket_status
@@ -457,6 +458,7 @@ router.post('/update-ticket-assigned', async (req, res) => {
         console.log('1111111111111111HHHHHHHHHHHHHHHAAAAAAAAAAAAAAATTTTTDDDOOOOGGG')
         await knex('ticket_master').where('ticket_id', ticket_id).update({
             assigned_to: assigned_to,
+            assigned_group: assigned_group,
             ticket_status,
             updated_by: updateByInfo.user_name,
             updated_at: currentTimestamp

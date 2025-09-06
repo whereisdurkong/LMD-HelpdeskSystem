@@ -12,6 +12,10 @@ export default function ViewTicket() {
     const [hasChanges, setHasChanges] = useState(false);
     const [ticketForData, setTicketForData] = useState({});
     const [currentUserData, setCurrentUserData] = useState({});
+
+    const [attachmentState, setAttachmentState] = useState(false)
+    const [attachmentButtonState, setAttachmentButtonState] = useState(false)
+
     const [hdUser, setHDUser] = useState({});
     const [tier, setTier] = useState('')
     const ticket_id = new URLSearchParams(window.location.search).get('id');
@@ -297,6 +301,20 @@ export default function ViewTicket() {
         }
     }, [formData.ticket_for]);
 
+    useEffect(() => {
+        if (formData.Attachments && formData.Attachments !== '') {
+            setAttachmentState(true);
+        } else {
+            setAttachmentState(true);
+        }
+
+        if (attachmentButtonState === true) {
+            setAttachmentState(false)
+        }
+
+    }, [formData, attachmentState, attachmentButtonState]);
+
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => {
@@ -408,6 +426,7 @@ export default function ViewTicket() {
             }
         }
     }
+
 
 
 
@@ -525,6 +544,7 @@ export default function ViewTicket() {
                     const fileUrl = `${config.baseApi}/${filePath.replace(/\\/g, '/')}`;
 
                     return (
+
                         <Card key={idx} className="shadow-sm border-0 mb-1" style={{ backgroundColor: '#fdedd3ff' }}>
                             <Card.Body className="d-flex align-items-center justify-content-between p-2">
                                 <div className="d-flex align-items-center">
@@ -536,8 +556,11 @@ export default function ViewTicket() {
                                 </a>
                             </Card.Body>
                         </Card>
+
                     );
-                })}
+                })
+
+                }
             </div>
         );
     };
@@ -729,18 +752,6 @@ export default function ViewTicket() {
                             </Col>
                         )}
 
-
-
-
-
-
-
-
-
-
-
-
-
                         <h6 className="text-muted fw-semibold mt-4 mb-2">Request Info</h6>
                         <Row>
                             <Form.Group as={Col} md={6} className="mb-2">
@@ -821,9 +832,18 @@ export default function ViewTicket() {
                             </Form.Group>
 
                             <Form.Group as={Col} md={12} className="mb-2">
-                                <Form.Label>Attachments</Form.Label>
-                                {renderAttachment()}
-                                <Form.Control type="file" multiple onChange={handleFileChange} className="mt-1" disabled={!close} />
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <Form.Label>Attachments</Form.Label>
+                                    {attachmentState && (
+                                        <Form.Text onClick={() => setAttachmentButtonState(true)} style={{ color: '#DEA22B' }}>+ Add document</Form.Text>
+                                    )}
+                                </div>
+                                {attachmentState && (renderAttachment())}
+                                {attachmentButtonState && (
+
+                                    < Form.Control type="file" multiple onChange={handleFileChange} className="mt-1" disabled={!close} />
+                                )}
+
                             </Form.Group>
                         </Row>
 

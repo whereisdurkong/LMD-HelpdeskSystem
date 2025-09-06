@@ -12,6 +12,7 @@ import FeatherIcon from 'feather-icons-react';
 // assets
 import logoDark from 'assets/images/logo-dark.svg';
 import newLogo from 'assets/images/new-logo.png'
+import lmdblack from 'assets/images/lmdlogo/lmd-white.png';
 import Waves from 'layouts/ReactBits/Paticles';
 import FadeContent from 'layouts/ReactBits/FadeContent';
 import RoundedSlideButton from 'layouts/ReactBits/RoundedSlideButton';
@@ -135,7 +136,7 @@ export default function SignIn1() {
             <Row className="align-items-center text-center" >
               <Col >
                 <Card.Body className="card-body" >
-                  <img src={newLogo} alt="" className="img-fluid mb-4" />
+                  <img src={lmdblack} alt="" className="img-fluid mb-4" />
                   <h4 className="mb-3 f-w-400"><b>Log in</b></h4>
                   {loading && (
                     <div

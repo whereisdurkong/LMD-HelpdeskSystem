@@ -38,7 +38,7 @@ export default function Openticket() {
         axios.get(`${config.baseApi}/ticket/get-all-ticket`)
             .then((res) => {
                 const userTickets = res.data.filter(
-                    (ticket) => ticket.ticket_status === tierGroup
+                    (ticket) => ticket.ticket_status === tierGroup || ticket.ticket_status === 'open'
                 );
                 setAllTicket(userTickets);
             })

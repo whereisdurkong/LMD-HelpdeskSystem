@@ -38,7 +38,7 @@ export default function ViewHDTicket() {
 
     const [showCloseResolutionModal, setShowCloseResolutionModal] = useState(false);
     const [resolution, setResolution] = useState('');
-    //XXX
+
     const [collaboratorState, setCollaboratorState] = useState(false);
     const ticket_id = new URLSearchParams(window.location.search).get('id');
 
@@ -404,6 +404,7 @@ export default function ViewHDTicket() {
         }
         if (formData.assigned_group === 'tier1') {
             setTier('Tier 1')
+            console.log(tier)
         } else if (formData.assigned_group === 'tier2') {
             setTier('Tier 2')
         } else if (formData.assigned_group === 'tier3') {
@@ -533,34 +534,34 @@ export default function ViewHDTicket() {
 
     }
 
-    const handleSubmitNote = async (e) => {
-        e.preventDefault();
-        const empInfo = JSON.parse(localStorage.getItem('user'));
-        try {
-            if (notes === template) {
-                setNoteAlert(true)
-            } else {
-                setLoading(true);
-                await axios.post(`${config.baseApi}/ticket/note-post`, {
-                    notes,
-                    current_user: empInfo.user_name,
-                    ticket_id: ticket_id
-                });
+    // const handleSubmitNote = async (e) => {
+    //     e.preventDefault();
+    //     const empInfo = JSON.parse(localStorage.getItem('user'));
+    //     try {
+    //         if (notes === template) {
+    //             setNoteAlert(true)
+    //         } else {
+    //             setLoading(true);
+    //             await axios.post(`${config.baseApi}/ticket/note-post`, {
+    //                 notes,
+    //                 current_user: empInfo.user_name,
+    //                 ticket_id: ticket_id
+    //             });
 
-                await axios.post(`${config.baseApi}/ticket/notified-true`, {
-                    ticket_id: ticket_id,
-                    user_id: empInfo.user_id
-                })
-                setNoteAlert(false);
-                setNotes('');
-                console.log('Submitted a note succesfully');
-                window.location.reload();
-            }
-        } catch (err) {
-            console.log('Unable to submit note: ', err)
-        }
+    //             await axios.post(`${config.baseApi}/ticket/notified-true`, {
+    //                 ticket_id: ticket_id,
+    //                 user_id: empInfo.user_id
+    //             })
+    //             setNoteAlert(false);
+    //             setNotes('');
+    //             console.log('Submitted a note succesfully');
+    //             window.location.reload();
+    //         }
+    //     } catch (err) {
+    //         console.log('Unable to submit note: ', err)
+    //     }
 
-    }
+    // }
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -690,6 +691,7 @@ export default function ViewHDTicket() {
                     console.log('OPEN AND EMPTY');
                     await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
                         assigned_to: '',
+                        assigned_group: '',
                         ticket_status: 'open',
                         updated_by: empInfo.user_id,
                         ticket_id: formData.ticket_id
@@ -698,7 +700,8 @@ export default function ViewHDTicket() {
                     // Case 2: Open but has assigned user → treat as assigned
                     console.log('OPEN WITH ASSIGN (saving as assigned)', formData.assigned_to);
                     await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
-                        assigned_to: formData.assigned_to,
+                        assigned_to: hdUser.user_name,
+                        assigned_group: hdUser.emp_tier,
                         ticket_status: 'assigned',
                         updated_by: empInfo.user_id,
                         ticket_id: formData.ticket_id
@@ -711,6 +714,7 @@ export default function ViewHDTicket() {
                 console.log('CHANGED TO OPEN → clearing assigned_to');
                 await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
                     assigned_to: '',
+                    assigned_group: '',
                     ticket_status: 'open',
                     updated_by: empInfo.user_id,
                     ticket_id: formData.ticket_id

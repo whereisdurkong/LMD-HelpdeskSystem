@@ -1,5 +1,7 @@
-import React, { useState } from "react";
-import { Table, ButtonGroup, Button } from "react-bootstrap";
+import React, { useEffect, useState } from "react";
+import { Table, Form } from "react-bootstrap";
+import axios from "axios";
+import config from "config";
 
 const subCategoryOptions = {
     incident: {
@@ -58,104 +60,133 @@ const subCategoryOptions = {
     },
 };
 
-const departments = ["IT", "HR", "Finance"];
-
 const TicketSummaryTable = () => {
     const [filter, setFilter] = useState("ALL");
+    const [departments, setDepartments] = useState([]);
+    const [deptSubcatCount, setDeptSubcatCount] = useState({});
 
-    // Mock data: you should replace this with real counts from backend
-    const ticketCounts = {
-        Desktop: { IT: 12, HR: 3, Finance: 1 },
-        Laptop: { IT: 8, HR: 5, Finance: 2 },
-        Monitor: { IT: 6, HR: 1, Finance: 0 },
-    };
+    useEffect(() => {
+        const fetch = async () => {
+            try {
+                // 1. Get all tickets
+                const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
+                const tickets = res.data || [];
 
-    // Collect subcategories based on filter
-    let subcategories = [];
+                // 2. Get unique ticket_for usernames
+                const uniqueUsernames = [...new Set(tickets.map(ticket => ticket.ticket_for))];
+
+                // 3. Fetch user details for each username
+                const userRequests = uniqueUsernames.map(username =>
+                    axios.get(`${config.baseApi}/authentication/get-by-username`, {
+                        params: { user_name: username },
+                    })
+                );
+
+                const responses = await Promise.all(userRequests);
+                const userDataArray = responses.map(res => res.data);
+
+                // 4. Build a map: username -> department
+                const userDeptMap = {};
+                userDataArray.forEach(user => {
+                    userDeptMap[user.user_name] = user.emp_department;
+                });
+
+                // 5. Count subcategories per department
+                const deptSubcatCountTemp = {};
+                tickets.forEach(ticket => {
+                    const dept = userDeptMap[ticket.ticket_for];
+                    const subcat = ticket.ticket_SubCategory;
+
+                    if (dept && subcat) {
+                        if (!deptSubcatCountTemp[dept]) {
+                            deptSubcatCountTemp[dept] = {};
+                        }
+                        deptSubcatCountTemp[dept][subcat] =
+                            (deptSubcatCountTemp[dept][subcat] || 0) + 1;
+                    }
+                });
+
+                setDeptSubcatCount(deptSubcatCountTemp);
+                setDepartments(Object.keys(deptSubcatCountTemp));
+            } catch (err) {
+                console.log("Unable to fetch Data: ", err);
+            }
+        };
+        fetch();
+    }, []);
+
+    // Flatten all subcategories
+    const allSubcategories = Object.values(subCategoryOptions.incident).flat();
+
+    // Apply category filter
+    let filteredSubcategories = [];
     if (filter === "ALL") {
-        subcategories = [
-            ...subCategoryOptions.incident.hardware,
-            ...subCategoryOptions.incident.network,
-            ...subCategoryOptions.incident.software,
-        ];
+        filteredSubcategories = allSubcategories;
     } else {
-        subcategories = subCategoryOptions.incident[filter.toLowerCase()];
+        filteredSubcategories = subCategoryOptions.incident[filter] || [];
     }
-
-    // Calculate department totals
-    const departmentTotals = {};
-    let grandTotal = 0;
-
-    subcategories.forEach((sub) => {
-        departments.forEach((dept) => {
-            const value = ticketCounts[sub]?.[dept] || 0;
-            departmentTotals[dept] = (departmentTotals[dept] || 0) + value;
-            grandTotal += value;
-        });
-    });
 
     return (
         <div style={{ paddingTop: '100px' }}>
-            <h3>Ticket Summary by Subcategory</h3>
-            <ButtonGroup className="mb-3">
-                <Button
-                    variant={filter === "ALL" ? "primary" : "outline-primary"}
-                    onClick={() => setFilter("ALL")}
-                >
-                    All
-                </Button>
-                <Button
-                    variant={filter === "Hardware" ? "primary" : "outline-primary"}
-                    onClick={() => setFilter("Hardware")}
-                >
-                    Hardware
-                </Button>
-                <Button
-                    variant={filter === "Network" ? "primary" : "outline-primary"}
-                    onClick={() => setFilter("Network")}
-                >
-                    Network
-                </Button>
-                <Button
-                    variant={filter === "Software" ? "primary" : "outline-primary"}
-                    onClick={() => setFilter("Software")}
-                >
-                    Software
-                </Button>
-            </ButtonGroup>
+            <h3>Ticket Summary by Department & Subcategory</h3>
+
+            {/* Filter */}
+            <Form.Group className="mb-3" style={{ maxWidth: "300px" }}>
+                <Form.Label>Filter by Category</Form.Label>
+                <Form.Select value={filter} onChange={e => setFilter(e.target.value)}>
+                    <option value="ALL">All</option>
+                    <option value="hardware">Hardware</option>
+                    <option value="network">Network</option>
+                    <option value="software">Software</option>
+                </Form.Select>
+            </Form.Group>
 
             <Table striped bordered hover>
                 <thead>
                     <tr>
                         <th>Subcategory</th>
-                        {departments.map((dept) => (
+                        {departments.map(dept => (
                             <th key={dept}>{dept}</th>
                         ))}
                         <th>Total</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {subcategories.map((sub) => {
-                        const rowTotal = departments.reduce(
-                            (sum, dept) => sum + (ticketCounts[sub]?.[dept] || 0),
-                            0
-                        );
+                    {filteredSubcategories.map(subcat => {
+                        let rowTotal = 0;
                         return (
-                            <tr key={sub}>
-                                <td>{sub}</td>
-                                {departments.map((dept) => (
-                                    <td key={dept}>{ticketCounts[sub]?.[dept] || 0}</td>
-                                ))}
+                            <tr key={subcat}>
+                                <td>{subcat}</td>
+                                {departments.map(dept => {
+                                    const count = deptSubcatCount[dept]?.[subcat] || 0;
+                                    rowTotal += count;
+                                    return <td key={dept}>{count}</td>;
+                                })}
                                 <td>{rowTotal}</td>
                             </tr>
                         );
                     })}
-                    <tr>
-                        <td><strong>Total</strong></td>
-                        {departments.map((dept) => (
-                            <td key={dept}><strong>{departmentTotals[dept] || 0}</strong></td>
-                        ))}
-                        <td><strong>{grandTotal}</strong></td>
+                    {/* Totals Row */}
+                    <tr style={{ fontWeight: "bold", backgroundColor: "#f1f1f1" }}>
+                        <td>Total</td>
+                        {departments.map(dept => {
+                            const deptTotal = filteredSubcategories.reduce(
+                                (sum, subcat) => sum + (deptSubcatCount[dept]?.[subcat] || 0),
+                                0
+                            );
+                            return <td key={dept}>{deptTotal}</td>;
+                        })}
+                        <td>
+                            {filteredSubcategories.reduce((grandTotal, subcat) => {
+                                return (
+                                    grandTotal +
+                                    departments.reduce(
+                                        (sum, dept) => sum + (deptSubcatCount[dept]?.[subcat] || 0),
+                                        0
+                                    )
+                                );
+                            }, 0)}
+                        </td>
                     </tr>
                 </tbody>
             </Table>

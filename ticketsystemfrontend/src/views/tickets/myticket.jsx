@@ -31,7 +31,7 @@ export default function Myticket() {
         axios.get(`${config.baseApi}/ticket/get-all-ticket`)
             .then((res) => {
                 //All of the ticket the user created.
-                if (user.emp_tier === 'none') {
+                if (user.emp_tier === 'user') {
                     const userTickets = res.data.filter(
                         (ticket) => ticket.ticket_for === userName &&
                             (ticket.is_reviewed === false || ticket.is_reviewed === null)
@@ -39,7 +39,7 @@ export default function Myticket() {
                     setAllTicket(userTickets);
 
                     //If HelpDeskUser has assigned ticket.
-                } else if (user.emp_tier === 'tier1' || user.emp_tier === 'tier2' || user.emp_tier === 'tier3') {
+                } else if (user.emp_tier === 'helpdesk') {
                     const userTickets = res.data.filter(
                         (ticket) =>
                             ticket.assigned_to === userName &&
@@ -85,13 +85,9 @@ export default function Myticket() {
                 style = { ...baseStyle, backgroundColor: '#ffcb5aff', color: '#404040ff' };
                 label = 'Assigned';
                 break;
-            case 'escalate2':
+            case 'escalate':
                 style = { ...baseStyle, backgroundColor: '#ff7d7dff', color: '#404040ff' };
-                label = 'Escalated to Tier II';
-                break;
-            case 'escalate3':
-                style = { ...baseStyle, backgroundColor: '#ff7d7dff', color: '#404040ff' };
-                label = 'Escalated to Tier III';
+                label = 'Escalated';
                 break;
             case 'resolved':
                 style = { ...baseStyle, backgroundColor: '#91c6ffff', color: '#404040ff' };
@@ -177,9 +173,9 @@ export default function Myticket() {
         const params = new URLSearchParams({ id: ticket.ticket_id })
         const user = JSON.parse(localStorage.getItem('user'));
 
-        if (user.emp_tier === 'tier1' || user.emp_tier === 'tier2' || user.emp_tier === 'tier3') {
+        if (user.emp_tier === 'helpdesk') {
             navigate(`/view-hd-ticket?${params.toString()}`)
-        } else if (user.emp_tier === 'none') {
+        } else if (user.emp_tier === 'user') {
             navigate(`/view-ticket?${params.toString()}`)
         }
     }
@@ -231,8 +227,7 @@ export default function Myticket() {
                             <option value="open">Open</option>
                             <option value="assigned">Assigned</option>
                             <option value="in-progress">In Progress</option>
-                            <option value="escalate2">Escalated to Tier II</option>
-                            <option value="escalate3">Escalated to Tier III</option>
+                            <option value="escalated">Escalated</option>
                             <option value="resolved">Resolved</option>
                             <option value="re-opened">Re-opened</option>
                             <option value="closed">Closed</option>

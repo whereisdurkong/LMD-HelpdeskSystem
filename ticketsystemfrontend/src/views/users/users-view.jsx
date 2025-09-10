@@ -259,10 +259,8 @@ export default function UsersView() {
                                                         ref={tierRef}
                                                     >
                                                         <option value="">Select Tier</option>
-                                                        <option value="tier1">Tier 1</option>
-                                                        <option value="tier2">Tier 2</option>
-                                                        <option value="tier3">Tier 3</option>
-                                                        <option value="none">None</option>
+                                                        <option value="helpdesk">Help desk</option>
+                                                        <option value="user">User</option>
                                                     </Form.Select>
                                                 </InputGroup>
                                             </Col>

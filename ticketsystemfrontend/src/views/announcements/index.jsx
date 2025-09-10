@@ -50,9 +50,9 @@ export default function Announcements() {
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
 
-        if (['tier1', 'tier2', 'tier3'].includes(empInfo.emp_tier)) {
+        if (empInfo.emp_tier === 'helpdesk') {
             setAccess(true)
-        } else if (empInfo.emp_tier === 'none') {
+        } else if (empInfo.emp_tier === 'user') {
             setAccess(false)
         }
     })

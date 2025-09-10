@@ -48,9 +48,9 @@ export default function NavRight() {
   useEffect(() => {
     if (!userData || !userData.emp_tier) return;
 
-    if (['tier1', 'tier2', 'tier3'].includes(userData.emp_tier)) {
+    if (userData.emp_tier === 'helpdesk') {
       setToFilter('assigned_to');
-    } else if (userData.emp_tier === 'none') {
+    } else if (userData.emp_tier === 'user') {
       setToFilter('ticket_for');
     }
   }, [userData]);
@@ -76,13 +76,13 @@ export default function NavRight() {
 
 
 
-      if (user.emp_tier === 'tier1' || user.emp_tier === 'tier2' || user.emp_tier === 'tier3') {
+      if (user.emp_tier === 'helpdesk') {
         const notifiedTickets = assignedTickets.filter(
           (ticket) => ticket.is_notifiedhd === true); //ticket that has is_notified === true
 
         setNotifContent(notifiedTickets.map(ticket => ticket.ticket_id)); // <-- set as array
         setNotificationCount(notifiedTickets.length);
-      } else if (user.emp_tier === 'none') {
+      } else if (user.emp_tier === 'user') {
         const notifiedTickets = assignedTickets.filter(
           (ticket) => ticket.is_notified === true); //ticket that has is_notified === true
 
@@ -127,15 +127,14 @@ export default function NavRight() {
     const params = new URLSearchParams({ id: context })
     const user = JSON.parse(localStorage.getItem('user'));
 
-    if (userData.emp_tier === 'tier1' || userData.emp_tier === 'tier2' || userData.emp_tier === 'tier3') {
-      console.log('was pressed');
+    if (userData.emp_tier === 'helpdesk') {
 
       await axios.post(`${config.baseApi}/ticket/update-notified-false`, {
         ticket_id: context,
         user_id: user.user_id
       }).then(window.location.replace(`/ticketsystem/view-hd-ticket?${params.toString()}`))
 
-    } else if (userData.emp_tier === 'none') {
+    } else if (userData.emp_tier === 'user') {
       await axios.post(`${config.baseApi}/ticket/update-notified-false`, {
         ticket_id: context,
         user_id: user.user_id

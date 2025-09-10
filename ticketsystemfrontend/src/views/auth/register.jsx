@@ -385,11 +385,9 @@ export default function SignUp1() {
                             onChange={(e) => setTier(e.target.value)}
                             ref={tierRef}
                           >
-                            <option value="">Select Tier</option>
-                            <option value="tier1">Tier 1</option>
-                            <option value="tier2">Tier 2</option>
-                            <option value="tier3">Tier 3</option>
-                            <option value="none">None</option>
+                            <option value="">Select Position</option>
+                            <option value="helpdesk">Help Desk</option>
+                            <option value="user">User</option>
                           </Form.Select>
                         </InputGroup>
                       </Col>

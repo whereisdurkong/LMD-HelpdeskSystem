@@ -21,12 +21,8 @@ export default function Openticket() {
             setUserName(Fullname);
 
             const tier = user.emp_tier
-            if (tier === 'tier1') {
+            if (tier === 'helpdesk') {
                 setTiergroup('open');
-            } else if (tier === 'tier2') {
-                setTiergroup('escalate2');
-            } else if (tier === 'tier3') {
-                setTiergroup('escalate3');
             }
 
         }
@@ -213,8 +209,7 @@ export default function Openticket() {
                             <option value="open">Open</option>
                             <option value="assigned">Assigned</option>
                             <option value="in-progress">In Progress</option>
-                            <option value="escalate2">Escalated to Tier II</option>
-                            <option value="escalate3">Escalated to Tier III</option>
+                            <option value="escalate">Escalated</option>
                             <option value="resolved">Resolved</option>
                             <option value="re-opened">Re-opened</option>
                             <option value="closed">Closed</option>

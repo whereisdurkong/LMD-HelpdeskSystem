@@ -37,9 +37,9 @@ export default function NetworkArchive() {
     useEffect(() => {
         const userInfo = JSON.parse(localStorage.getItem("user"));
 
-        if (['tier1', 'tier2', 'tier3'].includes(userInfo.emp_tier)) {
+        if (userInfo.emp_tier === 'helpdesk') {
             setAccess(true)
-        } else if (userInfo.emp_tier === 'none') {
+        } else if (userInfo.emp_tier === 'user') {
             setAccess(false)
         }
     })

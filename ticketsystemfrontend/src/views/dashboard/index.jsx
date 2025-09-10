@@ -11,7 +11,7 @@ export default function Dashboard() {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         console.log(empInfo)
 
-        if (['tier1', 'tier2', 'tier3'].includes(empInfo.emp_tier)) {
+        if (empInfo.emp_tier === 'helpdesk') {
             navigate('/dashboard-hd');
         } else {
             navigate('/dashboard-user');

@@ -10,7 +10,7 @@ export default function CreateTicket() {
   useEffect(() => {
     const empInfo = JSON.parse(localStorage.getItem('user'));
 
-    if (['tier1', 'tier2', 'tier3'].includes(empInfo.emp_tier)) {
+    if (empInfo.emp_tier === 'helpdesk') {
       navigate('/create-ticket-hd')
     } else {
       navigate('/create-ticket-user')

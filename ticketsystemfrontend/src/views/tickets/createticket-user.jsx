@@ -308,10 +308,10 @@ export default function CreateTicketUser() {
                                                 isInvalid={!!validationErrors.ticket_urgencyLevel}
                                             >
                                                 <option value="">Select</option>
-                                                <option value="Low">Low</option>
-                                                <option value="Medium">Medium</option>
-                                                <option value="High">High</option>
-                                                <option value="Critical">Critical</option>
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                                <option value="critical">Critical</option>
                                             </Form.Select>
                                             <Form.Control.Feedback type="invalid">{validationErrors.ticket_urgencyLevel}</Form.Control.Feedback>
                                         </Form.Group>

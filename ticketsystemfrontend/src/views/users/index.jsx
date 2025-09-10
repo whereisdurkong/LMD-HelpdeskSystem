@@ -9,7 +9,7 @@ export default function Users() {
     useEffect(() => {
         axios.get(`${config.baseApi}/authentication/get-all-users`)
             .then((res) => {
-                const justUsers = res.data.filter(user => user.emp_tier === 'none');
+                const justUsers = res.data.filter(user => user.emp_tier === 'user');
                 setAllUsers(justUsers);
             })
             .catch((err) => {

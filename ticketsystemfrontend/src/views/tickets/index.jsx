@@ -18,9 +18,9 @@ export default function Tickets() {
 
     useEffect(() => {
         const userInfo = JSON.parse(localStorage.getItem('user'));
-        if (['tier1', 'tier2', 'tier3'].includes(userInfo.emp_tier)) {
+        if (userInfo.emp_tier === 'helpdesk') {
             sethdAccess(true);
-        } if (userInfo.emp_tier === 'none' && userInfo.emp_role === 'admin') {
+        } if (userInfo.emp_tier === 'user' && userInfo.emp_role === 'admin') {
             setadminAccess(true)
         }
     }, [])

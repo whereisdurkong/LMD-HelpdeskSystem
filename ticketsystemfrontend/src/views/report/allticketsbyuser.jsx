@@ -22,7 +22,7 @@ export default function AllTicketsByUser({ filterType }) {
         const fetchUsers = async () => {
             try {
                 const getalluser = await axios.get(`${config.baseApi}/authentication/get-all-users`);
-                const tiers = ["tier1", "tier2", "tier3"];
+                const tiers = 'helpdesk';
                 setAllUser(getalluser.data.filter(hd => tiers.includes(hd.emp_tier)));
             } catch (err) {
                 console.log("Unable to fetch users: ", err);

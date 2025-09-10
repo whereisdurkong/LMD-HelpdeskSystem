@@ -152,7 +152,7 @@ export default function ViewTicket() {
         axios.get(`${config.baseApi}/authentication/get-all-users`)
             .then((res) => {
 
-                const allHD = res.data.filter(hd => hd.emp_tier === 'tier1' || hd.emp_tier === 'tier2' || hd.emp_tier === 'tier3');
+                const allHD = res.data.filter(hd => hd.emp_tier === 'helpdesk');
                 setAllHDUser(allHD);
                 console.log('ALL HD USERS:', allHD)
             })
@@ -228,19 +228,9 @@ export default function ViewTicket() {
             } catch (err) {
                 console.error('Error fetching data:', err);
             }
-
-            if (formData.assigned_group === 'tier1') {
-                setTier('Tier 1')
-            } else if (formData.assigned_group === 'tier2') {
-                setTier('Tier 2')
-            } else if (formData.assigned_group === 'tier3') {
-                setTier('Tier 3')
-            } else {
-                setTier('Unassigned');
-            }
         };
         fetchData();
-    }, [ticket_id, formData.assigned_group]);
+    }, [ticket_id]);
 
 
     // Check if ticket status is closed
@@ -676,15 +666,6 @@ export default function ViewTicket() {
                                     />
                                 </InputGroup>
                             </Col>
-                            <Col md={6} className="mb-2">
-                                <Form.Label>Assigned Group</Form.Label>
-                                <InputGroup>
-                                    <InputGroup.Text>
-                                        <FeatherIcon icon="users" />
-                                    </InputGroup.Text>
-                                    <Form.Control name="assigned_group" value={tier ?? '-'} disabled />
-                                </InputGroup>
-                            </Col>
                         </Row>
                         {/* XXX */}
 
@@ -779,8 +760,7 @@ export default function ViewTicket() {
 
                                     <option value="assigned" hidden>Assigned</option>
                                     <option value="in-progress" hidden>In Progress</option>
-                                    <option value="escalate2" hidden>Escalate Tier II</option>
-                                    <option value="escalate3" hidden>Escalate Tier III</option>
+                                    <option value="escalate" hidden>Escalated</option>
                                     <option value="resolved" hidden>Resolve</option>
                                 </Form.Select>
                             </Form.Group>

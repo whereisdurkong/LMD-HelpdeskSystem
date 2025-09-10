@@ -81,9 +81,6 @@ const Tickets = db.define('ticket_master', {
     assigned_to: {
         type: DataTypes.STRING,
     },
-    assigned_group: {
-        type: DataTypes.STRING,
-    },
     assigned_collaborators: {
         type: DataTypes.STRING,
     },
@@ -205,11 +202,11 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
             let email = [];
 
             //If HD created a ticket do not send an email
-            if (['tier1', 'tier2', 'tier3'].includes(empInfo.emp_tier)) {
+            if (empInfo.emp_tier === 'helpdesk') {
                 console.log('HD created a ticket, no email sent');
-            } else if (empInfo.emp_tier === 'none') {
+            } else if (empInfo.emp_tier === 'user') {
                 console.log('User created a ticket');
-                const allHdEmails = await knex('users_master').select('*').whereIn('emp_tier', ['tier1', 'tier2', 'tier3']);
+                const allHdEmails = await knex('users_master').select('*').whereIn('emp_tier', 'helpdesk');
 
                 const hdEmail = allHdEmails.map(email => email.emp_email);
                 email = hdEmail;
@@ -367,13 +364,11 @@ router.post('/notified-true', async (req, res) => {
         const { ticket_id, user_id } = req.body;
         const empInfo = await knex('users_master').where('user_id', user_id).first();
 
-        if (empInfo.emp_tier === 'tier1' ||
-            empInfo.emp_tier === 'tier2' ||
-            empInfo.emp_tier === 'tier3') {
+        if (empInfo.emp_tier === 'helpdesk') {
             await knex('ticket_master').where({ ticket_id: ticket_id }).update({
                 is_notified: true
             })
-        } else if (empInfo.emp_tier === 'none') {
+        } else if (empInfo.emp_tier === 'user') {
             await knex('ticket_master').where({ ticket_id: ticket_id }).update({
                 is_notifiedhd: true
             })
@@ -394,14 +389,12 @@ router.post('/update-notified-false', async (req, res) => {
         const { ticket_id, user_id } = req.body;
         const empInfo = await knex('users_master').where('user_id', user_id).first();
 
-        if (empInfo.emp_tier === 'tier1' ||
-            empInfo.emp_tier === 'tier2' ||
-            empInfo.emp_tier === 'tier3') {
+        if (empInfo.emp_tier === 'helpdesk') {
             await knex('ticket_master').where({ ticket_id: ticket_id }).update({
                 is_notifiedhd: false
 
             })
-        } else if (empInfo.emp_tier === 'none') {
+        } else if (empInfo.emp_tier === 'user') {
             await knex('ticket_master').where({ ticket_id: ticket_id }).update({
                 is_notified: false
             })
@@ -437,7 +430,6 @@ router.post('/update-ticket-assigned', async (req, res) => {
         const currentTimestamp = new Date()
         const {
             assigned_to,
-            assigned_group,
             updated_by,
             ticket_id,
             ticket_status
@@ -458,7 +450,6 @@ router.post('/update-ticket-assigned', async (req, res) => {
         console.log('1111111111111111HHHHHHHHHHHHHHHAAAAAAAAAAAAAAATTTTTDDDOOOOGGG')
         await knex('ticket_master').where('ticket_id', ticket_id).update({
             assigned_to: assigned_to,
-            assigned_group: assigned_group,
             ticket_status,
             updated_by: updateByInfo.user_name,
             updated_at: currentTimestamp
@@ -549,13 +540,13 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
         if (ticket_status === 'open') {
             await knex('ticket_master').where('ticket_id', ticket_id).update({
                 assigned_to: '',
-                assigned_group: ''
+
             });
         } else if (assigned_to && assigned_to.trim() !== '') {
             // If status is not open and assigned_to exists, update normally
             await knex('ticket_master').where('ticket_id', ticket_id).update({
                 assigned_to,
-                assigned_group: '',
+
                 updated_by: updateByInfo.user_name,
                 updated_at: currentTimestamp
             });
@@ -775,7 +766,6 @@ router.post('/update-accept-ticket', async (req, res, next) => {
             console.log('CLOSED TICKET');
             const closed = await knex('ticket_master').where('ticket_id', ticket_id).update({
                 assigned_to: empInfo.user_name,
-                assigned_group: empInfo.emp_tier,
                 updated_at: currentTimestamp,
                 responded_at: currentTimestamp,
                 ticket_status: 're-opened',
@@ -795,7 +785,6 @@ router.post('/update-accept-ticket', async (req, res, next) => {
         } else {
             const notclosed = await knex('ticket_master').where('ticket_id', ticket_id).update({
                 assigned_to: empInfo.user_name,
-                assigned_group: empInfo.emp_tier,
                 updated_at: currentTimestamp,
                 responded_at: currentTimestamp,
                 ticket_status: 'assigned'

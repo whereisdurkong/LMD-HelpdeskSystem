@@ -207,8 +207,8 @@ export default function ViewHDTicket() {
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
 
-        //Tier1
-        if (empInfo.emp_tier === 'tier1') {
+        if (empInfo.emp_tier === 'helpdesk') {
+            //and ticket is open
             if (formData.ticket_status === 'open') {
                 if (isEditable === true) {
                     setShowAcceptButton(false)
@@ -216,79 +216,7 @@ export default function ViewHDTicket() {
                     setShowAcceptButton(true)
                 }
             }
-            if (formData.ticket_status === 're-opened') {
-                setIsEditable(true);
-            }
-            if (formData.assigned_group === 'tier2' || formData.assigned_group === 'tier3') {
-                setIsEditable(false);
-            } else if (formData.ticket_status === 'in-progress' || formData.ticket_status === 'assigned') {
-                if (formData.assigned_to !== empInfo.user_name) {
-                    setIsEditable(false)
-                    setShowAcceptButton(true)
-                } else {
-                    setIsEditable(true)
-                }
-            }
-
-            if (formData.ticket_status === 'escalate2' || formData.ticket_status === 'escalate3' ||
-                formData.ticket_status === 'resolved' || formData.ticket_status === 'closed') {
-                setIsEditable(false);
-                if (isEditable === true) {
-                    setShowAcceptButton(false)
-                } else {
-                    setShowAcceptButton(true)
-
-                }
-            }
-
-        }
-        //Tier 2
-        if (empInfo.emp_tier === 'tier2') {
-            if (formData.ticket_status === 'escalate2' || formData.ticket_status === 'open') {
-                if (isEditable === true) {
-                    setShowAcceptButton(false)
-                } else {
-                    setShowAcceptButton(true)
-                }
-            }
-            if (formData.ticket_status === 're-opened') {
-                setIsEditable(true);
-            }
-            if (formData.assigned_group === 'escalate3') {
-                setIsEditable(false);
-            } else if (formData.ticket_status === 'in-progress' || formData.ticket_status === 'assigned') {
-                if (formData.assigned_to !== empInfo.user_name) {
-                    setIsEditable(false)
-                    setShowAcceptButton(true)
-                } else {
-                    setIsEditable(true)
-                }
-            }
-
-            if (formData.ticket_status === 'escalate3' ||
-                formData.ticket_status === 'resolved' || formData.ticket_status === 'closed') {
-                setIsEditable(false);
-                if (isEditable === true) {
-                    setShowAcceptButton(false)
-                } else {
-                    setShowAcceptButton(true)
-                }
-            }
-
-            if (formData.assigned_group === 'tier3' && (formData.ticket_status === 'in-progress' || formData.ticket_status === 'assigned')) {
-                setIsEditable(false)
-                setShowAcceptButton(false)
-            }
-        }
-        //Tier 3
-        if (empInfo.emp_tier === 'tier3') {
-            if (formData.ticket_status === 'escalate3' || formData.ticket_status === 'open') {
-                if (isEditable === true) {
-                    setShowAcceptButton(false)
-                } else {
-                    setShowAcceptButton(true)
-                }
-            }
+            //and ticket is re-opend
             if (formData.ticket_status === 're-opened') {
                 setIsEditable(true);
             }
@@ -299,12 +227,20 @@ export default function ViewHDTicket() {
                 } else {
                     setIsEditable(true)
                 }
-
             }
 
-            if (formData.ticket_status === 'escalate2' || formData.ticket_status === 'escalate3' ||
-                formData.ticket_status === 'resolved' || formData.ticket_status === 'closed') {
+            if (formData.ticket_status === 'resolved' || formData.ticket_status === 'closed') {
                 setIsEditable(false);
+                if (isEditable === true) {
+                    setShowAcceptButton(false)
+                } else {
+                    setShowAcceptButton(true)
+                }
+            }
+
+            if (formData.ticket_status === 'escalate') {
+                setIsEditable(false);
+                setAssignedToState(true)
                 if (isEditable === true) {
                     setShowAcceptButton(false)
                 } else {
@@ -313,7 +249,8 @@ export default function ViewHDTicket() {
             }
         }
 
-    }, [formData.ticket_status, formData.assigned_group])
+
+    }, [formData.ticket_status])
 
     //Note checker availability
     useEffect(() => {
@@ -402,14 +339,8 @@ export default function ViewHDTicket() {
             };
             fetchHDUser();
         }
-        if (formData.assigned_group === 'tier1') {
-            setTier('Tier 1')
-            console.log(tier)
-        } else if (formData.assigned_group === 'tier2') {
-            setTier('Tier 2')
-        } else if (formData.assigned_group === 'tier3') {
-            setTier('Tier 3')
-        }
+        /////WILL BE REMOVED
+
 
         if (ticketForData.emp_location === 'corp') {
             setLocation('Corporate Markati');
@@ -420,7 +351,7 @@ export default function ViewHDTicket() {
 
 
 
-    }, [formData.ticket_for, formData.assigned_to, formData.assigned_group, formData.ticket_status, ticketForData.emp_location]);
+    }, [formData.ticket_for, formData.assigned_to, formData.ticket_status, ticketForData.emp_location]);
 
     useEffect(() => {
         if (formData.assigned_collaborators) {
@@ -458,10 +389,10 @@ export default function ViewHDTicket() {
     useEffect(() => {
         axios.get(`${config.baseApi}/authentication/get-all-users`)
             .then((res) => {
-                const justUsers = res.data.filter(user => user.emp_tier === 'none');
+                const justUsers = res.data.filter(user => user.emp_tier === 'user');
                 setAllUser(justUsers);
 
-                const allHD = res.data.filter(hd => hd.emp_tier === 'tier1' || hd.emp_tier === 'tier2' || hd.emp_tier === 'tier3');
+                const allHD = res.data.filter(hd => hd.emp_tier === 'helpdesk');
                 setAllHDUser(allHD);
             })
             .catch((err) => {
@@ -614,10 +545,15 @@ export default function ViewHDTicket() {
         try {
 
             if (formData.ticket_status === 'in-progress') {
-                if (!formData.ticket_type || !formData.ticket_status || !formData.ticket_category || !formData.ticket_SubCategory) {
+                if (!formData.ticket_type || !formData.ticket_status || !formData.ticket_category || !formData.ticket_SubCategory || !formData.ticket_urgencyLevel) {
                     setError('Unable to save empty fields! Please try again!');
                     return;
                 }
+            }
+
+            if (formData.ticket_status === 'escalate' && (formData.assigned_to === originalData.assigned_to)) {
+                setError('Change the assigned to if you will escalate the ticket! ')
+                return
             }
 
 
@@ -691,7 +627,6 @@ export default function ViewHDTicket() {
                     console.log('OPEN AND EMPTY');
                     await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
                         assigned_to: '',
-                        assigned_group: '',
                         ticket_status: 'open',
                         updated_by: empInfo.user_id,
                         ticket_id: formData.ticket_id
@@ -701,7 +636,6 @@ export default function ViewHDTicket() {
                     console.log('OPEN WITH ASSIGN (saving as assigned)', formData.assigned_to);
                     await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
                         assigned_to: hdUser.user_name,
-                        assigned_group: hdUser.emp_tier,
                         ticket_status: 'assigned',
                         updated_by: empInfo.user_id,
                         ticket_id: formData.ticket_id
@@ -714,7 +648,6 @@ export default function ViewHDTicket() {
                 console.log('CHANGED TO OPEN → clearing assigned_to');
                 await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
                     assigned_to: '',
-                    assigned_group: '',
                     ticket_status: 'open',
                     updated_by: empInfo.user_id,
                     ticket_id: formData.ticket_id
@@ -1230,15 +1163,6 @@ export default function ViewHDTicket() {
                                 </Col>
                             )}
 
-                            <Col md={6} className="mb-2">
-                                <Form.Label>Assigned Group</Form.Label>
-                                <InputGroup>
-                                    <InputGroup.Text>
-                                        <FeatherIcon icon="users" />
-                                    </InputGroup.Text>
-                                    <Form.Control name="assigned_group" value={tier ?? '-'} disabled />
-                                </InputGroup>
-                            </Col>
                         </Row>
 
                         {/* TICKET INFO */}
@@ -1289,8 +1213,7 @@ export default function ViewHDTicket() {
                                     <option value="open" >Open</option>
                                     <option value="assigned" hidden>Assigned</option>
                                     <option value="in-progress">In Progress</option>
-                                    <option value="escalate2">Escalate Tier II</option>
-                                    <option value="escalate3">Escalate Tier III</option>
+                                    <option value="escalate">Escalate</option>
                                     <option value="resolved">Resolve</option>
                                     <option value="closed" hidden>Close</option>
                                     <option value="re-opened" hidden>Re Open</option>

@@ -28,7 +28,8 @@ const ASoftware = lazy(() => import('views/knowledgebase/softwarearchive'));
 const Network = lazy(() => import('views/knowledgebase/network'));
 const ANetwork = lazy(() => import('views/knowledgebase/networkarchive'));
 
-const Reports = lazy(() => import('views/report/reports'));
+const Reports1 = lazy(() => import('views/report/reports'));
+const Reports = lazy(() => import('views/report/test'));
 
 const Tickets = lazy(() => import('views/tickets'))
 
@@ -53,6 +54,8 @@ const AllTicketByTAT = lazy(() => import('views/report/allticketbytat'));
 const AllData = lazy(() => import('views/report/alldata'));
 
 const SubCatDepartment = lazy(() => import('views/report/subcat_department'));
+const SubCatDepartmentTable = lazy(() => import('views/report/subcat_departmentTable'));
+
 
 const UserDashboard = lazy(() => import('views/dashboard/userdashboard'));
 const HDDashboard = lazy(() => import('views/dashboard/hddashboard'));
@@ -117,6 +120,10 @@ const MainRoutes = {
     {
       path: '/1',
       element: withSpinner(<SubCatDepartment />)
+    },
+    {
+      path: '/2',
+      element: withSpinner(<SubCatDepartmentTable />)
     },
     {
       path: '/dashboard',
@@ -213,6 +220,10 @@ const MainRoutes = {
     {
       path: '/reports',
       element: withSpinner(<Reports />)
+    },
+    {
+      path: '/reports1',
+      element: withSpinner(<Reports1 />)
     },
     {
       path: '/all-tickets',

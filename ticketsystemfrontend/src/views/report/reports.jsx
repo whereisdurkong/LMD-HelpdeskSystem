@@ -10,6 +10,8 @@ import AllTicketsByStatus from "./allticketsbystatus";
 import GetAllByCategory from "./getallbycategory";
 import AllTicketByTAT from "./allticketbytat";
 
+import SubCatDepartment from "./subcat_department";
+import SubCatDepartmentTable from "./subcat_departmentTable";
 import "./bento-layout-new.css";
 
 export default function Report() {
@@ -222,6 +224,13 @@ export default function Report() {
                 </div>
 
                 {/* Other Cards */}
+                <div className="bento-item bento-users" onClick={() => openModal("Ticket Summary ", <SubCatDepartmentTable filterType={filterType} />)}>
+                    <h3 className="bento-chart-title">Tickets Summary</h3>
+                    <div className="bento-chart-wrapper">
+                        <SubCatDepartment filterType={filterType} />
+                    </div>
+                </div>
+
                 <div className="bento-item bento-users" onClick={() => openModal("Tickets by User", <AllTicketsByUser filterType={filterType} />)}>
                     <h3 className="bento-chart-title">Tickets by User</h3>
                     <div className="bento-chart-wrapper">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from 'axios';
 import config from 'config';
-import { Card, Container, Form, Col, Row, Alert } from "react-bootstrap";
+import { Card, Container, Form, Col, Row, Alert, Pagination } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 export default function Openticket() {
@@ -10,7 +10,12 @@ export default function Openticket() {
     const [tierGroup, setTiergroup] = useState('')
 
     const [filterStatus, setFilterStatus] = useState('All');
+    const [filterLocation, setFilterLocation] = useState('All');
+    const [empLocation, setEmpLocation] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const ticketsPerPage = 10;
 
     const navigate = useNavigate();
 
@@ -20,11 +25,16 @@ export default function Openticket() {
             const Fullname = user.user_name;
             setUserName(Fullname);
 
-            const tier = user.emp_tier
+            const tier = user.emp_tier;
             if (tier === 'helpdesk') {
                 setTiergroup('open');
             }
 
+            // set empLocation and also filterLocation to user location
+            if (user.emp_location) {
+                setEmpLocation(user.emp_location);
+                setFilterLocation(user.emp_location);   // auto-apply filter
+            }
         }
     }, []);
 
@@ -42,6 +52,8 @@ export default function Openticket() {
 
 
     }, [tierGroup]);
+
+
     //-------------------STATUS DESIGN----------------------//
     const renderStatusBadge = (status) => {
         const baseStyle = {
@@ -152,10 +164,18 @@ export default function Openticket() {
             ticket.Description?.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
-        const matchesStatus = filterStatus === 'All' || ticket.ticket_status?.toLowerCase() === filterStatus.toLowerCase();
+        const matchesLocation =
+            filterLocation === 'All' ||
+            ticket.assigned_location?.toLowerCase() === filterLocation.toLowerCase();
 
-        return matchesSearch && matchesStatus;
+        return matchesSearch && matchesLocation;
     });
+
+    // Pagination calculations
+    const indexOfLastTicket = currentPage * ticketsPerPage;
+    const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
+    const currentTickets = filteredTickets.slice(indexOfFirstTicket, indexOfLastTicket);
+    const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage);
 
     const HandleView = (ticket) => {
         const params = new URLSearchParams({ id: ticket.ticket_id })
@@ -181,7 +201,7 @@ export default function Openticket() {
                             type="text"
                             placeholder="Search by Subject, ID, Category, etc."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             style={{
                                 border: '2px solid #e9ecef',
                                 borderRadius: '12px',
@@ -192,11 +212,15 @@ export default function Openticket() {
                         />
                     </Form.Group>
                 </Col>
-                <Col xs={12} md={4} lg={3}>
-                    <Form.Group controlId="status-filter" style={{ width: '100%' }}>
+
+
+
+                {/* Assigned Location Filter */}
+                <Col xs={6} md={3} lg={3}>
+                    <Form.Group controlId="location-filter" style={{ width: '100%' }}>
                         <Form.Select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
+                            value={filterLocation}
+                            onChange={(e) => { setFilterLocation(e.target.value); setCurrentPage(1); }}
                             style={{
                                 border: '2px solid #e9ecef',
                                 borderRadius: '12px',
@@ -205,18 +229,14 @@ export default function Openticket() {
                                 background: '#f8f9fa',
                             }}
                         >
-                            <option value="All">All Status</option>
-                            <option value="open">Open</option>
-                            <option value="assigned">Assigned</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="escalate">Escalated</option>
-                            <option value="resolved">Resolved</option>
-                            <option value="re-opened">Re-opened</option>
-                            <option value="closed">Closed</option>
+                            <option value="All">LMD & CORP</option>
+                            <option value="lmd">LMD</option>
+                            <option value="corp">Corp</option>
                         </Form.Select>
                     </Form.Group>
                 </Col>
             </Row>
+
 
             {/* Desktop Table */}
             <div className="d-none d-md-block">
@@ -233,14 +253,14 @@ export default function Openticket() {
                         </tr>
                     </thead>
                     <tbody style={{ fontSize: '15px', color: '#333' }}>
-                        {filteredTickets.length === 0 ? (
+                        {currentTickets.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="text-center py-4">
                                     No matching tickets found.
                                 </td>
                             </tr>
                         ) : (
-                            filteredTickets.map((ticket, index) => (
+                            currentTickets.map((ticket, index) => (
                                 <tr
                                     key={index}
                                     onClick={() => HandleView(ticket)}
@@ -293,6 +313,29 @@ export default function Openticket() {
                     ))
                 )}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                    <Pagination>
+                        <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+                        <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
+
+                        {[...Array(totalPages)].map((_, index) => (
+                            <Pagination.Item
+                                key={index + 1}
+                                active={index + 1 === currentPage}
+                                onClick={() => setCurrentPage(index + 1)}
+                            >
+                                {index + 1}
+                            </Pagination.Item>
+                        ))}
+
+                        <Pagination.Next onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
+                        <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+                    </Pagination>
+                </div>
+            )}
         </Container>
 
     )

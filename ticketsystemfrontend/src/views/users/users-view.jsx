@@ -7,7 +7,8 @@ import {
     InputGroup,
     Form,
     Container,
-    Alert
+    Alert,
+    Modal
 } from 'react-bootstrap';
 import axios from 'axios';
 import config from 'config';
@@ -29,6 +30,7 @@ export default function UsersView() {
     const [location, setLocation] = useState('');
     const [department, setDepartment] = useState('');
     const [position, setPosition] = useState('');
+    const [createdAt, setCreatedAt] = useState('');
 
     const firstNameRef = useRef();
     const lastNameRef = useRef();
@@ -45,6 +47,8 @@ export default function UsersView() {
     const [successful, setSuccessful] = useState('');
 
     const [loading, setLoading] = useState(false);
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const departmentOptions = {
         lmd: ['MISD', 'HR', 'IOSD', 'SMED', 'Mill', 'IMD', 'PCES', 'MOG', 'Accounting', 'Expolartion', 'Assay'],
@@ -71,6 +75,8 @@ export default function UsersView() {
     }, [error, successful]);
 
     useEffect(() => {
+        const current_user = JSON.parse(localStorage.getItem('user'));
+        console.log(current_user.user_name)
         const fetchUserInfo = async () => {
             try {
                 const response = await axios.get(`${config.baseApi}/authentication/get-by-id`, {
@@ -90,6 +96,7 @@ export default function UsersView() {
                 setLocation(data.emp_location || '');
                 setDepartment(data.emp_department || '');
                 setPosition(data.emp_position || '');
+                setCreatedAt(data.created_at || '');
             } catch (error) {
                 console.error("Error fetching user info:", error);
             }
@@ -100,6 +107,8 @@ export default function UsersView() {
 
     const UpdateForm = async (e) => {
         e.preventDefault();
+
+        const current_user = JSON.parse(localStorage.getItem('user'));
 
         const updatedUser = {
             user_id: user_id, // make sure this is coming from URL or state
@@ -113,6 +122,7 @@ export default function UsersView() {
             emp_location: location,
             emp_department: department,
             emp_position: position,
+            updated_by: current_user.user_name
         };
 
         try {
@@ -130,6 +140,21 @@ export default function UsersView() {
             setError('Failed to update user. Please try again.');
         }
     };
+
+    const DeleteUser = async () => {
+        const current_user = JSON.parse(localStorage.getItem('user'));
+        try {
+            setLoading(true)
+            await axios.post(`${config.baseApi}/authentication/delete-user`, {
+                user_id: user_id,
+                deleted_by: current_user.user_name
+            });
+            setSuccessful('User deleted successfully!');
+            window.location.replace('/ticketsystem/users');
+        } catch (err) {
+            console.error("Error deleting user:", err);
+        }
+    }
 
 
     return (
@@ -159,9 +184,15 @@ export default function UsersView() {
                         <Col xs={12} sm={11} md={10} lg={8} xl={7}>
                             <Card className="shadow-lg border-0" style={{ borderRadius: '1rem' }}>
                                 <Card.Body className="p-4">
-                                    <div className="text-center mb-4">
-                                        <h4 className="fw-bold">User Details</h4>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }} >
+                                        <div className="text-center">
+                                            <h4 className="fw-bold">User Details</h4>
+                                        </div>
+                                        <div style={{ cursor: 'pointer', color: '#dc3545', alignItems: 'center' }} onClick={() => setShowDeleteModal(true)}>
+                                            <FeatherIcon icon="trash-2" />
+                                        </div>
                                     </div>
+
 
                                     {error && (
                                         <div
@@ -349,6 +380,18 @@ export default function UsersView() {
                                                 ref={positionRef}
                                             />
                                         </InputGroup>
+                                        <Form.Label>Created At</Form.Label>
+                                        <InputGroup className="mb-3">
+                                            <InputGroup.Text>
+                                                <FeatherIcon icon="clock" />
+                                            </InputGroup.Text>
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Created At"
+                                                value={new Date(createdAt).toLocaleString()}
+                                                disabled
+                                            />
+                                        </InputGroup>
 
                                         <Button type="submit" className="btn btn-block btn-primary mt-4 w-100 mb-3">
                                             Update
@@ -361,6 +404,25 @@ export default function UsersView() {
                 </Container>
 
             </AnimatedContent>
+
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Delete</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Are you sure you want to delete this user? This action cannot be undone.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant='secondary' onClick={() => setShowDeleteModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant='danger' onClick={DeleteUser}>
+                        Delete
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+
 
             {loading && (
                 <div

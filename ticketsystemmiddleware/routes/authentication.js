@@ -149,7 +149,7 @@ router.post('/register', async function (req, res, next) {
   } = req.body
 
   try {
-    await knex('users_master').insert({
+    const [user] = await knex('users_master').insert({
       emp_FirstName: emp_firstname,
       emp_LastName: emp_lastname,
       user_name: user_name,
@@ -164,7 +164,17 @@ router.post('/register', async function (req, res, next) {
       created_by: current_user,
       created_at: currentTimestamp,
       is_active: 1
+    }).returning('user_id');
+
+    const user_id = user.user_id || user;
+
+    await knex('users_logs').insert({
+      user_id: user_id,
+      changes_made: `${user_name} was added by ${current_user}`,
+      created_at: currentTimestamp,
+      created_by: current_user
     })
+
     console.log(`User was registered ${user_name} by ${current_user}`);
     res.status(200).json({ message: "User registered successfully" });
   } catch (err) {
@@ -187,7 +197,8 @@ router.post('/update-user', async (req, res, next) => {
     emp_role,
     emp_location,
     emp_department,
-    emp_position
+    emp_position,
+    updated_by
   } = req.body;
 
   try {
@@ -202,7 +213,15 @@ router.post('/update-user', async (req, res, next) => {
       emp_location: emp_location,
       emp_department: emp_department,
       emp_position: emp_position,
-      updated_at: currentTimestamp
+      updated_at: currentTimestamp,
+      updated_by: updated_by
+    })
+
+    await knex('users_logs').insert({
+      user_id: user_id,
+      changes_made: `User details were updated for ${user_name} by ${updated_by}`,
+      created_at: currentTimestamp,
+      created_by: updated_by
     })
 
     console.log(`User was updated ${user_name} with ID ${user_id} `);
@@ -252,6 +271,31 @@ router.get('/get-by-id', async (req, res, next) => {
     console.log('Triggered /get-by-id')
   } catch (err) {
     console.log('GET BY USERNAME CONOSOLE: ', err)
+  }
+})
+
+router.post('/delete-user', async (req, res, next) => {
+  try {
+    const {
+      user_id,
+      deleted_by
+    } = req.body;
+
+    const currentTimestamp = new Date();
+    const userInfo = await knex('users_master').where({ user_id: user_id }).first();
+
+    await knex('users_logs').insert({
+      user_id: user_id,
+      changes_made: `${userInfo.user_name} was deleted by ${deleted_by}`,
+      created_at: currentTimestamp,
+      created_by: deleted_by
+    })
+
+    await knex('users_master').where({ user_id: user_id }).del();
+    res.status(200).json({ message: "User updated successfully" });
+    console.log(`User with ID ${user_id} was deleted`);
+  } catch (err) {
+    console.log('DELETE USER CONOSOLE: ', err)
   }
 })
 

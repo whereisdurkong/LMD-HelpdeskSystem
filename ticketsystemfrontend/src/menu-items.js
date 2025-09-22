@@ -105,7 +105,7 @@ const menuItems = {
   ]
 };
 
-if (empTier === 'none' && empRole === 'user') {
+if (empTier === 'user' && empRole === 'user') {
   const tools = menuItems.items.find(item => item.id === 'tools');
 
   if (tools) {
@@ -120,7 +120,7 @@ if (empTier === 'none' && empRole === 'user') {
   }
 }
 
-if (empTier === 'none' && empRole === 'admin') {
+if (empTier === 'user' && empRole === 'admin') {
   const tools = menuItems.items.find(item => item.id === 'tools');
   if (tools) {
     tools.children = tools.children.filter(

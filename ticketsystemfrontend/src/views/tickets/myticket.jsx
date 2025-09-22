@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from 'axios';
 import config from 'config';
-import { Card, Container, Form, Col, Row, Alert } from "react-bootstrap";
-
+import { Card, Container, Form, Col, Row, Pagination } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 export default function Myticket() {
@@ -11,6 +10,9 @@ export default function Myticket() {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ticketsPerPage = 10;
+
     const navigate = useNavigate();
 
     //User Information from local storage
@@ -30,24 +32,19 @@ export default function Myticket() {
 
         axios.get(`${config.baseApi}/ticket/get-all-ticket`)
             .then((res) => {
-                //All of the ticket the user created.
                 if (user.emp_tier === 'user') {
                     const userTickets = res.data.filter(
                         (ticket) => ticket.ticket_for === userName &&
                             (ticket.is_reviewed === false || ticket.is_reviewed === null)
                     );
                     setAllTicket(userTickets);
-
-                    //If HelpDeskUser has assigned ticket.
                 } else if (user.emp_tier === 'helpdesk') {
                     const userTickets = res.data.filter(
                         (ticket) =>
                             ticket.assigned_to === userName &&
                             (ticket.is_reviewed === false || ticket.is_reviewed === null)
                     );
-
                     setAllTicket(userTickets);
-                    console.log(userTickets);
                 }
             })
             .catch((err) => console.error("Error fetching tickets:", err));
@@ -66,13 +63,12 @@ export default function Myticket() {
             textTransform: 'uppercase',
             textAlign: 'center',
             minWidth: '60px',
-
         };
 
         let style = {};
         let label = status;
 
-        switch (status.toLowerCase()) {
+        switch (status?.toLowerCase()) {
             case 'open':
                 style = { ...baseStyle, backgroundColor: '#dcffdeff', color: '#404040ff' };
                 label = 'Open';
@@ -127,7 +123,7 @@ export default function Myticket() {
         let style = {};
         let label = urgency;
 
-        switch (urgency.toLowerCase()) {
+        switch (urgency?.toLowerCase()) {
             case 'low':
                 style = { ...baseStyle, backgroundColor: '#003006ff', color: '#ffffffff' };
                 label = 'Low';
@@ -168,6 +164,12 @@ export default function Myticket() {
         return matchesSearch && matchesStatus;
     });
 
+    // Pagination calculations
+    const indexOfLastTicket = currentPage * ticketsPerPage;
+    const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
+    const currentTickets = filteredTickets.slice(indexOfFirstTicket, indexOfLastTicket);
+    const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage);
+
     // OnClick View Ticket Function
     const HandleView = (ticket) => {
         const params = new URLSearchParams({ id: ticket.ticket_id })
@@ -181,14 +183,12 @@ export default function Myticket() {
     }
 
     return (
-
         <Container
             style={{
                 padding: '24px',
                 background: '#fff',
                 borderRadius: '12px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-
             }}
         >
             {/* Search and Filter */}
@@ -199,7 +199,7 @@ export default function Myticket() {
                             type="text"
                             placeholder="Search by Subject, ID, Category, etc."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             style={{
                                 border: '2px solid #e9ecef',
                                 borderRadius: '12px',
@@ -214,7 +214,7 @@ export default function Myticket() {
                     <Form.Group controlId="status-filter" style={{ width: '100%' }}>
                         <Form.Select
                             value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
+                            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
                             style={{
                                 border: '2px solid #e9ecef',
                                 borderRadius: '12px',
@@ -251,14 +251,14 @@ export default function Myticket() {
                         </tr>
                     </thead>
                     <tbody style={{ fontSize: '15px', color: '#333' }}>
-                        {filteredTickets.length === 0 ? (
+                        {currentTickets.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="text-center py-4">
                                     No matching tickets found.
                                 </td>
                             </tr>
                         ) : (
-                            filteredTickets.map((ticket, index) => (
+                            currentTickets.map((ticket, index) => (
                                 <tr
                                     key={index}
                                     onClick={() => HandleView(ticket)}
@@ -283,10 +283,10 @@ export default function Myticket() {
 
             {/* Mobile Cards */}
             <div className="d-md-none">
-                {filteredTickets.length === 0 ? (
+                {currentTickets.length === 0 ? (
                     <Card body className="text-center">No matching tickets found.</Card>
                 ) : (
-                    filteredTickets.map((ticket, index) => (
+                    currentTickets.map((ticket, index) => (
                         <Card
                             key={index}
                             className="mb-3"
@@ -311,7 +311,29 @@ export default function Myticket() {
                     ))
                 )}
             </div>
-        </Container>
 
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                    <Pagination>
+                        <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+                        <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
+
+                        {[...Array(totalPages)].map((_, index) => (
+                            <Pagination.Item
+                                key={index + 1}
+                                active={index + 1 === currentPage}
+                                onClick={() => setCurrentPage(index + 1)}
+                            >
+                                {index + 1}
+                            </Pagination.Item>
+                        ))}
+
+                        <Pagination.Next onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
+                        <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+                    </Pagination>
+                </div>
+            )}
+        </Container>
     )
 }

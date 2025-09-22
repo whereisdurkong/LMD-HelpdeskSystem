@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, Container, Form, Col, Row, Alert } from "react-bootstrap";
+import { Card, Container, Form, Col, Row, Alert, Pagination } from "react-bootstrap";
 import axios from 'axios';
 import config from 'config';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,13 @@ export default function Alltickets() {
     const [filterStatus, setFilterStatus] = useState('All');
     const [forAdminTickets, setForAdminTickets] = useState([]);
 
+    const [filterLocation, setFilterLocation] = useState('All');
+    const [empLocation, setEmpLocation] = useState('');
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const ticketsPerPage = 10;
+
+
     const navigate = useNavigate();
 
     //Fetch user information from local storage
@@ -22,10 +29,16 @@ export default function Alltickets() {
 
     //Fetch all tickets
     useEffect(() => {
+        const user = JSON.parse(localStorage.getItem('user'));
         axios.get(`${config.baseApi}/ticket/get-all-ticket`)
             .then((res) => {
                 setAllTicket(res.data);
             });
+
+        if (user.emp_location) {
+            setEmpLocation(user.emp_location);
+            setFilterLocation(user.emp_location);   // auto-apply filter
+        }
     }, []);
 
     //Fetch all users
@@ -70,8 +83,20 @@ export default function Alltickets() {
 
         const matchesStatus = filterStatus === 'All' || ticket.ticket_status?.toLowerCase() === filterStatus.toLowerCase();
 
-        return matchesSearch && matchesStatus;
+        const matchesLocation =
+            filterLocation === 'All' ||
+            ticket.assigned_location?.toLowerCase() === filterLocation.toLowerCase();
+
+        return matchesSearch && matchesStatus && matchesLocation;
     });
+
+
+    // Pagination calculations
+    const indexOfLastTicket = currentPage * ticketsPerPage;
+    const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
+    const currentTickets = filteredTickets.slice(indexOfFirstTicket, indexOfLastTicket);
+    const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage);
+
 
     //Design for Status
     const renderStatusBadge = (status) => {
@@ -172,7 +197,7 @@ export default function Alltickets() {
         >
             {/* Search and Filter */}
             <Row className="align-items-center g-3 mb-4" >
-                <Col xs={12} md={8} lg={9}>
+                <Col xs={12} md={6} lg={6}>
                     <Form.Group controlId="search" style={{ width: '100%' }}>
                         <Form.Control
                             type="text"
@@ -189,11 +214,11 @@ export default function Alltickets() {
                         />
                     </Form.Group>
                 </Col>
-                <Col xs={12} md={4} lg={3}>
+                <Col xs={6} md={3} lg={3}>
                     <Form.Group controlId="status-filter" style={{ width: '100%' }}>
                         <Form.Select
                             value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
+                            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
                             style={{
                                 border: '2px solid #e9ecef',
                                 borderRadius: '12px',
@@ -210,6 +235,25 @@ export default function Alltickets() {
                             <option value="resolved">Resolved</option>
                             <option value="re-opened">Re-opened</option>
                             <option value="closed">Closed</option>
+                        </Form.Select>
+                    </Form.Group>
+                </Col>
+                <Col xs={6} md={3} lg={3}>
+                    <Form.Group controlId="location-filter" style={{ width: '100%' }}>
+                        <Form.Select
+                            value={filterLocation}
+                            onChange={(e) => { setFilterLocation(e.target.value); setCurrentPage(1); }}
+                            style={{
+                                border: '2px solid #e9ecef',
+                                borderRadius: '12px',
+                                padding: '12px 16px',
+                                fontSize: '15px',
+                                background: '#f8f9fa',
+                            }}
+                        >
+                            <option value="All">LMD & CORP</option>
+                            <option value="lmd">LMD</option>
+                            <option value="corp">Corp</option>
                         </Form.Select>
                     </Form.Group>
                 </Col>
@@ -230,14 +274,14 @@ export default function Alltickets() {
                         </tr>
                     </thead>
                     <tbody style={{ fontSize: '15px', color: '#333' }}>
-                        {filteredTickets.length === 0 ? (
+                        {currentTickets.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="text-center py-4">
                                     No matching tickets found.
                                 </td>
                             </tr>
                         ) : (
-                            filteredTickets.map((ticket, index) => (
+                            currentTickets.map((ticket, index) => (
                                 <tr
                                     key={index}
                                     onClick={() => HandleView(ticket)}
@@ -291,6 +335,29 @@ export default function Alltickets() {
                     ))
                 )}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                    <Pagination>
+                        <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+                        <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
+
+                        {[...Array(totalPages)].map((_, index) => (
+                            <Pagination.Item
+                                key={index + 1}
+                                active={index + 1 === currentPage}
+                                onClick={() => setCurrentPage(index + 1)}
+                            >
+                                {index + 1}
+                            </Pagination.Item>
+                        ))}
+
+                        <Pagination.Next onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
+                        <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+                    </Pagination>
+                </div>
+            )}
         </Container>
 
     )

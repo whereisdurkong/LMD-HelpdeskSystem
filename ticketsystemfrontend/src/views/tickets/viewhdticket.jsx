@@ -417,6 +417,7 @@ export default function ViewHDTicket() {
         //tikcetfor
         try {
             setLoading(true);
+            setSuccessful('Notified the user')
             axios.post(`${config.baseApi}/ticket/send-notification-review`, {
                 ticket_for_id: ticketForData.user_id,
                 ticket_id: ticket_id,
@@ -429,7 +430,10 @@ export default function ViewHDTicket() {
                 ticket_id: ticket_id
             })
 
-            window.location.reload();
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
         } catch (err) {
             console.error('Error notifying review:', err);
         }

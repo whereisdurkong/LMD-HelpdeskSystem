@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function UserDashboard() {
     const [announcements, setAnnouncements] = useState("");
+    const [ancState, setAncState] = useState(false)
     const [exitAnc, setExitAnc] = useState(true);
 
     const navigate = useNavigate()
@@ -30,8 +31,10 @@ export default function UserDashboard() {
                         const dateB = new Date(b.updated_at || b.created_at);
                         return dateB - dateA;
                     })[0];
-
+                    setAncState(true)
                     setAnnouncements(newestAnc);
+                } else {
+                    setAncState(false)
                 }
             } catch (err) {
                 console.error("Error fetching announcements:", err);
@@ -105,7 +108,8 @@ export default function UserDashboard() {
             </div>
 
             {/* Fixed bottom-right card */}
-            {exitAnc && (
+
+            {exitAnc && ancState && (
                 <Card
                     className="popup-card"
                     style={{

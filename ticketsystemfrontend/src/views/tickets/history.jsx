@@ -13,6 +13,9 @@ export default function History() {
     const [ticketsfor, setTicketsFor] = useState([]);
     const [toFilter, setToFilter] = useState([]);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const ticketsPerPage = 10;
+
 
     const navigate = useNavigate();
     //Current user Data
@@ -106,6 +109,12 @@ export default function History() {
 
         return matchesSearch && matchesStatus;
     });
+
+    // Pagination calculations
+    const indexOfLastTicket = currentPage * ticketsPerPage;
+    const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
+    const currentTickets = filteredTickets.slice(indexOfFirstTicket, indexOfLastTicket);
+    const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage)
 
     const renderStatusBadge = (status) => {
         const baseStyle = {
@@ -209,7 +218,7 @@ export default function History() {
                             type="text"
                             placeholder="Search by Subject, ID, Category, etc."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             style={{
                                 border: '2px solid #e9ecef',
                                 borderRadius: '12px',
@@ -224,7 +233,7 @@ export default function History() {
                     <Form.Group controlId="status-filter" style={{ width: '100%' }}>
                         <Form.Select
                             value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
+                            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
                             style={{
                                 border: '2px solid #e9ecef',
                                 borderRadius: '12px',
@@ -260,14 +269,14 @@ export default function History() {
                         </tr>
                     </thead>
                     <tbody style={{ fontSize: '15px', color: '#333' }}>
-                        {filteredTickets.length === 0 ? (
+                        {currentTickets.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="text-center py-4">
                                     No matching tickets found.
                                 </td>
                             </tr>
                         ) : (
-                            filteredTickets.map((ticket, index) => (
+                            currentTickets.map((ticket, index) => (
                                 <tr
                                     key={index}
                                     onClick={() => HandleView(ticket)}
@@ -320,6 +329,29 @@ export default function History() {
                     ))
                 )}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                    <Pagination>
+                        <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+                        <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
+
+                        {[...Array(totalPages)].map((_, index) => (
+                            <Pagination.Item
+                                key={index + 1}
+                                active={index + 1 === currentPage}
+                                onClick={() => setCurrentPage(index + 1)}
+                            >
+                                {index + 1}
+                            </Pagination.Item>
+                        ))}
+
+                        <Pagination.Next onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
+                        <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+                    </Pagination>
+                </div>
+            )}
         </Container>
 
     )

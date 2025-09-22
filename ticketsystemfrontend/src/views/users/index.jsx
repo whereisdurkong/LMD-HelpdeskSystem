@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Table, Container, Button } from 'react-bootstrap';
+import { Container, Button } from 'react-bootstrap';
+import Tab from 'react-bootstrap/Tab';
+import Tabs from 'react-bootstrap/Tabs';
 import axios from 'axios';
 import config from 'config';
+
+import UserLMD from './users-lmd'
+import UserCORP from './users-corp'
 
 export default function Users() {
     const [allUsers, setAllUsers] = useState([]);
@@ -44,57 +49,51 @@ export default function Users() {
             }}
         >
 
-            <Container style={{ padding: '20px' }}>
+
+
+            <div
+                style={{
+                    maxWidth: "1500px", // match your table width
+                    margin: "0 auto",
+                }}
+            >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }} >
-                    <h3 style={{ fontWeight: 600, marginBottom: '5px' }}>Users</h3>
+                    <div><h3>Users</h3></div>
                     <Button onClick={HandleRegister}>+ Register</Button>
                 </div>
-
-                <div style={{
-                    background: '#fff',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-                    padding: '20px',
-                    overflowX: 'auto'
-                }}>
-                    <Table hover borderless responsive className="mb-0">
-                        <thead style={{ borderBottom: '2px solid #eee', fontSize: '14px', textTransform: 'uppercase', color: '#555' }}>
-                            <tr>
-                                <th>User ID</th>
-                                <th>Role</th>
-                                <th>Full Name</th>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Local Phone</th>
-                                <th>Department</th>
-                                <th>Position</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody style={{ fontSize: '15px', color: '#333' }}>
-                            {allUsers.length === 0 ? (
-                                <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                    <td colSpan={8} style={{ textAlign: 'center' }}>No Open Ticket for now.</td>
-                                </tr>
-                            ) : (
-                                allUsers.map((user, index) => (
-                                    <tr key={index} onClick={() => HandleView(user)} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                        <td>{user.user_id}</td>
-                                        <td>{user.emp_role}</td>
-                                        <td>{getFullName(user)}</td>
-                                        <td>{user.user_name}</td>
-                                        <td>{user.emp_email}</td>
-                                        <td>{user.emp_phone}</td>
-                                        <td>{user.emp_department}</td>
-                                        <td>{user.emp_position}</td>
-                                        <td style={{ cursor: 'pointer', color: '#003006ff' }}>View</td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </Table>
-                </div>
-            </Container>
-        </Container >
+                <Tabs
+                    defaultActiveKey="lmd"
+                    transition={false}
+                    id="justify-tab-example"
+                    justify
+                    style={{
+                        borderBottom: "2px solid #ddd",
+                    }}
+                >
+                    {/* LMD */}
+                    <Tab
+                        eventKey="lmd"
+                        title={
+                            <span style={{ color: "#5d3600ff", fontWeight: "bold" }}>
+                                LMD
+                            </span>
+                        }
+                    >
+                        <UserLMD />
+                    </Tab>
+                    {/* LMD */}
+                    <Tab
+                        eventKey="corp"
+                        title={
+                            <span style={{ color: "#5d3600ff", fontWeight: "bold" }}>
+                                CORP
+                            </span>
+                        }
+                    >
+                        <UserCORP />
+                    </Tab>
+                </Tabs>
+            </div>
+        </Container>
     );
 }

@@ -1,60 +1,107 @@
 import { useEffect, useState } from "react";
+import { Card, Container, Form, Col, Row, Alert, Pagination } from "react-bootstrap";
 import axios from 'axios';
 import config from 'config';
-import { Card, Container, Form, Col, Row, Alert, Pagination } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 
-export default function Openticket() {
+export default function ArchivedTickets() {
+    const [userData, setUserData] = useState(null);
     const [allticket, setAllTicket] = useState([]);
-    const [userName, setUserName] = useState(null);
-    const [tierGroup, setTiergroup] = useState('')
-
+    const [allUsers, setAllUsers] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
+    const [forAdminTickets, setForAdminTickets] = useState([]);
+
     const [filterLocation, setFilterLocation] = useState('All');
     const [empLocation, setEmpLocation] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
 
     const [currentPage, setCurrentPage] = useState(1);
     const ticketsPerPage = 10;
 
+
     const navigate = useNavigate();
 
+    //Fetch user information from local storage
+    useEffect(() => {
+        const empInfo = JSON.parse(localStorage.getItem("user"));
+        setUserData(empInfo);
+    }, []);
+
+    //Fetch all tickets
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
-        if (user) {
-            const Fullname = user.user_name;
-            setUserName(Fullname);
+        axios.get(`${config.baseApi}/ticket/get-all-ticket`)
+            .then((res) => {
 
-            const tier = user.emp_tier;
-            if (tier === 'helpdesk') {
-                setTiergroup('open');
-            }
+                const archived = res.data.filter(ticket => ticket.is_active === false)
+                console.log(archived)
+                setAllTicket(archived);
+            });
 
-            // set empLocation and also filterLocation to user location
-            if (user.emp_location) {
-                setEmpLocation(user.emp_location);
-                setFilterLocation(user.emp_location);   // auto-apply filter
-            }
+        if (user.emp_location) {
+            setEmpLocation(user.emp_location);
+            setFilterLocation(user.emp_location);   // auto-apply filter
         }
     }, []);
 
+    //Fetch all users
     useEffect(() => {
-
-
-        axios.get(`${config.baseApi}/ticket/get-all-ticket`)
+        axios.get(`${config.baseApi}/authentication/get-all-users`)
             .then((res) => {
-                const userTickets = res.data.filter(
-                    (ticket) => (ticket.ticket_status === tierGroup || ticket.ticket_status === 'open') && ticket.is_active === true
-                );
-                setAllTicket(userTickets);
-            })
-            .catch((err) => console.error("Error fetching tickets:", err));
+                setAllUsers(res.data);
+            });
+    }, []);
+
+    //Assigned to display tickets per role
+    useEffect(() => {
+        if (!userData || allticket.length === 0 || allUsers.length === 0) return;
+
+        const departmentUsers = allUsers.filter(user => user.emp_department === userData.emp_department);
+        const usernamesInDept = departmentUsers.map(user => user.user_name);
+
+        const filtered = allticket.filter(ticket => usernamesInDept.includes(ticket.ticket_for));
+
+        if (userData.emp_role === 'admin' && userData.emp_tier === 'user') {
+            setForAdminTickets(filtered);
+        } else if (userData.emp_role === 'user' && userData.emp_tier === 'helpdesk') {
+            setForAdminTickets(allticket)
+        } else if (userData.emp_role === 'admin' && userData.emp_tier === 'helpdesk') {
+            setForAdminTickets(allticket)
+        } else if (userData.emp_role === 'user' && userData.emp_tier === 'user') {
+            console.log('change account to view archived tickets')
+        }
+        console.log(filtered)
+    }, [userData, allticket, allUsers]);
+
+    //Filter ticket function
+    const filteredTickets = forAdminTickets.filter((ticket) => {
+        const matchesSearch = (
+            ticket.ticket_subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            ticket.ticket_id?.toString().includes(searchTerm) ||
+            ticket.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            ticket.sub_category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            ticket.asset_tag?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            ticket.Description?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        const matchesStatus = filterStatus === 'All' || ticket.ticket_status?.toLowerCase() === filterStatus.toLowerCase();
+
+        const matchesLocation =
+            filterLocation === 'All' ||
+            ticket.assigned_location?.toLowerCase() === filterLocation.toLowerCase();
+
+        return matchesSearch && matchesStatus && matchesLocation;
+    });
 
 
-    }, [tierGroup]);
+    // Pagination calculations
+    const indexOfLastTicket = currentPage * ticketsPerPage;
+    const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
+    const currentTickets = filteredTickets.slice(indexOfFirstTicket, indexOfLastTicket);
+    const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage);
 
 
-    //-------------------STATUS DESIGN----------------------//
+    //Design for Status
     const renderStatusBadge = (status) => {
         const baseStyle = {
             display: 'inline-block',
@@ -67,51 +114,34 @@ export default function Openticket() {
             textTransform: 'uppercase',
             textAlign: 'center',
             minWidth: '60px',
-
         };
 
         let style = {};
         let label = status;
 
-        switch (status.toLowerCase()) {
+        switch (status?.toLowerCase()) {
             case 'open':
-                style = { ...baseStyle, backgroundColor: '#dcffdeff', color: '#404040ff' };
-                label = 'Open';
-                break;
+                style = { ...baseStyle, backgroundColor: '#dcffdeff', color: '#404040ff' }; label = 'Open'; break;
             case 'in-progress':
-                style = { ...baseStyle, backgroundColor: '#033f00ff', color: '#ffffffff' };
-                label = 'In Progress';
-                break;
+                style = { ...baseStyle, backgroundColor: '#033f00ff', color: '#ffffffff' }; label = 'In Progress'; break;
             case 'assigned':
-                style = { ...baseStyle, backgroundColor: '#ffcb5aff', color: '#404040ff' };
-                label = 'Assigned';
-                break;
-            case 'escalated':
-                style = { ...baseStyle, backgroundColor: '#ff7d7dff', color: '#404040ff' };
-                label = 'Escalated';
-                break;
+                style = { ...baseStyle, backgroundColor: '#ffcb5aff', color: '#404040ff' }; label = 'Assigned'; break;
+            case 'escalate':
+                style = { ...baseStyle, backgroundColor: '#ff7d7dff', color: '#404040ff' }; label = 'Escalated'; break;
             case 'resolved':
-                style = { ...baseStyle, backgroundColor: '#91c6ffff', color: '#404040ff' };
-                label = 'Resolved';
-                break;
+                style = { ...baseStyle, backgroundColor: '#91c6ffff', color: '#404040ff' }; label = 'Resolved'; break;
             case 're-opened':
-                style = { ...baseStyle, backgroundColor: '#28a745', color: '#ffffffff' };
-                label = 'Re Opened';
-                break;
+                style = { ...baseStyle, backgroundColor: '#28a745', color: '#ffffffff' }; label = 'Re Opened'; break;
             case 'closed':
-                style = { ...baseStyle, backgroundColor: '#767676ff', color: '#000000ff' };
-                label = 'Closed';
-                break;
+                style = { ...baseStyle, backgroundColor: '#767676ff', color: '#000000ff' }; label = 'Closed'; break;
             default:
-                style = { ...baseStyle, backgroundColor: '#6c757d' };
-                break;
+                style = { ...baseStyle, backgroundColor: '#6c757d' }; break;
         }
 
         return <span style={style}>{label}</span>;
     };
 
-
-    //--------------URGENCY DESGIN--------------------//
+    //Design for Urgency Levels
     const renderUrgencyBadge = (urgency) => {
         const baseStyle = {
             display: 'inline-block',
@@ -129,58 +159,33 @@ export default function Openticket() {
         let style = {};
         let label = urgency;
 
-        switch (urgency.toLowerCase()) {
+        switch (urgency?.toLowerCase()) {
             case 'low':
-                style = { ...baseStyle, backgroundColor: '#003006ff', color: '#ffffffff' };
-                label = 'Low';
-                break;
+                style = { ...baseStyle, backgroundColor: '#003006ff', color: '#ffffffff' }; label = 'Low'; break;
             case 'medium':
-                style = { ...baseStyle, backgroundColor: '#9e8600ff', color: '#ffffffff' };
-                label = 'Medium';
-                break;
+                style = { ...baseStyle, backgroundColor: '#9e8600ff', color: '#ffffffff' }; label = 'Medium'; break;
             case 'high':
-                style = { ...baseStyle, backgroundColor: '#720000ff', color: '#ffffffff' };
-                label = 'High';
-                break;
+                style = { ...baseStyle, backgroundColor: '#720000ff', color: '#ffffffff' }; label = 'High'; break;
             case 'critical':
-                style = { ...baseStyle, backgroundColor: '#fd0000ff', color: '#fefefeff' };
-                label = 'Critical';
-                break;
+                style = { ...baseStyle, backgroundColor: '#fd0000ff', color: '#fefefeff' }; label = 'Critical'; break;
             default:
-                style = { ...baseStyle, backgroundColor: '#6c757d' };
-                break;
+                style = { ...baseStyle, backgroundColor: '#6c757d' }; label = 'NONE'; break;
         }
 
         return <span style={style}>{label}</span>;
     };
 
-    const filteredTickets = allticket.filter((ticket) => {
-        const matchesSearch = (
-            ticket.ticket_subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            ticket.ticket_id?.toString().includes(searchTerm) ||
-            ticket.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            ticket.sub_category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            ticket.asset_tag?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            ticket.Description?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-
-        const matchesLocation =
-            filterLocation === 'All' ||
-            ticket.assigned_location?.toLowerCase() === filterLocation.toLowerCase();
-
-        return matchesSearch && matchesLocation;
-    });
-
-    // Pagination calculations
-    const indexOfLastTicket = currentPage * ticketsPerPage;
-    const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
-    const currentTickets = filteredTickets.slice(indexOfFirstTicket, indexOfLastTicket);
-    const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage);
-
+    //onClick view ticket 
     const HandleView = (ticket) => {
-        const params = new URLSearchParams({ id: ticket.ticket_id })
-        navigate(`/view-hd-ticket?${params.toString()}`)
-    }
+        const params = new URLSearchParams({ id: ticket.ticket_id });
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (user.emp_tier === 'helpdesk') {
+            navigate(`/view-hd-ticket?${params.toString()}`);
+        } else if (user.emp_tier === 'none') {
+            navigate(`/view-ticket?${params.toString()}`);
+        }
+    };
 
     return (
 
@@ -194,14 +199,14 @@ export default function Openticket() {
             }}
         >
             {/* Search and Filter */}
-            <Row className="align-items-center g-3 mb-4">
-                <Col xs={12} md={8} lg={9}>
+            <Row className="align-items-center g-3 mb-4" >
+                <Col xs={12} md={6} lg={6}>
                     <Form.Group controlId="search" style={{ width: '100%' }}>
                         <Form.Control
                             type="text"
                             placeholder="Search by Subject, ID, Category, etc."
                             value={searchTerm}
-                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             style={{
                                 border: '2px solid #e9ecef',
                                 borderRadius: '12px',
@@ -212,10 +217,30 @@ export default function Openticket() {
                         />
                     </Form.Group>
                 </Col>
-
-
-
-                {/* Assigned Location Filter */}
+                <Col xs={6} md={3} lg={3}>
+                    <Form.Group controlId="status-filter" style={{ width: '100%' }}>
+                        <Form.Select
+                            value={filterStatus}
+                            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                            style={{
+                                border: '2px solid #e9ecef',
+                                borderRadius: '12px',
+                                padding: '12px 16px',
+                                fontSize: '15px',
+                                background: '#f8f9fa',
+                            }}
+                        >
+                            <option value="All">All Status</option>
+                            <option value="open">Open</option>
+                            <option value="assigned">Assigned</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="escalate">Escalated</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="re-opened">Re-opened</option>
+                            <option value="closed">Closed</option>
+                        </Form.Select>
+                    </Form.Group>
+                </Col>
                 <Col xs={6} md={3} lg={3}>
                     <Form.Group controlId="location-filter" style={{ width: '100%' }}>
                         <Form.Select
@@ -237,10 +262,9 @@ export default function Openticket() {
                 </Col>
             </Row>
 
-
             {/* Desktop Table */}
-            <div className="d-none d-md-block">
-                <table className="table mb-0 table-hover align-middle">
+            <div className="d-none d-md-block" >
+                <table className="table mb-0 table-hover align-middle" >
                     <thead style={{ fontSize: '14px', textTransform: 'uppercase', color: '#555', background: '#f8f9fa' }}>
                         <tr>
                             <th>Ticket #</th>
@@ -269,9 +293,10 @@ export default function Openticket() {
                                 >
                                     <td>{ticket.ticket_id}</td>
                                     <td>{ticket.ticket_subject}</td>
-                                    <td>{ticket.ticket_type}</td>
+                                    <td>{ticket.ticket_type === null || ticket.ticket_type === "" ? "NONE" : ticket.ticket_type}</td>
+
                                     <td>{renderStatusBadge(ticket.ticket_status)}</td>
-                                    <td>{renderUrgencyBadge(ticket.ticket_urgencyLevel)}</td>
+                                    <td>{renderUrgencyBadge(ticket.ticket_urgencyLevel) || ''}</td>
                                     <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                         {ticket.Description}
                                     </td>

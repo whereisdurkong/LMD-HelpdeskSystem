@@ -43,7 +43,7 @@ const ViewTicket = lazy(() => import('views/tickets/viewticket'));
 const ViewHDTicket = lazy(() => import('views/tickets/viewhdticket'));
 const Myticket = lazy(() => import('views/tickets/myticket'));
 const History = lazy(() => import('views/tickets/history'));
-
+const Archived = lazy(() => import('views/tickets/archivedtickets'));
 
 const AllTicketsByUser = lazy(() => import('views/report/allticketsbyuser'));
 const AllTicketsBySite = lazy(() => import('views/report/allticketbysite'));
@@ -52,6 +52,7 @@ const AllTicketsByCategory = lazy(() => import('views/report/getallbycategory'))
 const AllTicketbyType = lazy(() => import('views/report/allticketbytype'));
 const AllTicketByTAT = lazy(() => import('views/report/allticketbytat'));
 const AllData = lazy(() => import('views/report/alldata'));
+
 
 const SubCatDepartment = lazy(() => import('views/report/subcat_department'));
 const SubCatDepartmentTable = lazy(() => import('views/report/subcat_departmentTable'));
@@ -164,6 +165,10 @@ const MainRoutes = {
     {
       path: '/create-ticket',
       element: withSpinner(<CreateTicket />)
+    },
+    {
+      path: '/archived-tickets',
+      element: withSpinner(<Archived />)
     },
     {
       path: '/create-ticket-user',

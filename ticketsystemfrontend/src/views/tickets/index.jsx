@@ -10,6 +10,7 @@ import Openticket from './openticket';
 import Alltickets from './alltickets';
 import Myticket from './myticket';
 import History from './history';
+import ArchivedTickets from './archivedtickets';
 
 export default function Tickets() {
 
@@ -99,6 +100,19 @@ export default function Tickets() {
                     >
                         <History />
                     </Tab>
+
+                    {hdaccess && (
+                        <Tab
+                            eventKey="archived"
+                            title={
+                                <span style={{ color: "#5d3600ff", fontWeight: "bold" }}>
+                                    Archived
+                                </span>
+                            }
+                        >
+                            <ArchivedTickets />
+                        </Tab>
+                    )}
                 </Tabs>
             </div>
         </Container>

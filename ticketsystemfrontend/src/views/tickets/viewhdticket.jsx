@@ -48,6 +48,10 @@ export default function ViewHDTicket() {
     const [loading, setLoading] = useState(false);
 
     const [assignToState, setAssignedToState] = useState(false);
+    const [archiveState, setArchiveState] = useState(false)
+    const [unarchiveState, setUnArchiveState] = useState(false)
+    const [archiveTextState, setArchiveTextState] = useState(false)
+
 
     const subCategoryOptions = {
         incident: {
@@ -370,6 +374,7 @@ export default function ViewHDTicket() {
                     params: { id: ticket_id }
                 });
                 const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
+                console.log(ticket.updating_by)
                 setFormData(ticket);
                 setOriginalData(ticket);
 
@@ -378,6 +383,8 @@ export default function ViewHDTicket() {
                 } else {
                     setNotifyReview(false)
                 }
+
+
             } catch (err) {
                 console.error('Error fetching data:', err);
             }
@@ -385,6 +392,28 @@ export default function ViewHDTicket() {
 
         fetchData();
     }, [ticket_id]);
+
+    const [archBTN1, setArchBTN1] = useState(false);
+    const [archBTN2, setArchBTN2] = useState(false);
+
+
+    //Archive Checker
+    useEffect(() => {
+        if (formData.is_active === false) {
+            setArchiveTextState(true);
+            setIsEditable(false);
+            setNotifyReview(false);
+            setShowAcceptButton(false);
+            setHasChanges(false);
+            setArchBTN2(true)
+            setArchBTN1(false)
+        } else {
+            setArchiveTextState(false);
+            setArchBTN1(true)
+            setArchBTN2(false)
+        }
+
+    }, [formData])
 
     useEffect(() => {
         axios.get(`${config.baseApi}/authentication/get-all-users`)
@@ -446,27 +475,36 @@ export default function ViewHDTicket() {
 
         try {
             setLoading(true);
-            axios.post(`${config.baseApi}/ticket/update-accept-ticket`, {
-                user_id: empInfo.user_id,
-                ticket_id: ticket_id,
-                ticket_status: formData.ticket_status
+
+            const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
+                params: { id: ticket_id }
             });
-            //Notify User
-            await axios.post(`${config.baseApi}/ticket/notified-true`, {
-                ticket_id: ticket_id,
-                user_id: empInfo.user_id
-            })
+            const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
+            console.log(ticket.updating_by)
 
-            console.log(formData.ticket_status)
-            window.location.reload();
-            setIsEditable(true)
-            setShowAcceptButton(false)
+            if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
+                axios.post(`${config.baseApi}/ticket/update-accept-ticket`, {
+                    user_id: empInfo.user_id,
+                    ticket_id: ticket_id,
+                    ticket_status: formData.ticket_status
+                });
+                //Notify User
+                await axios.post(`${config.baseApi}/ticket/notified-true`, {
+                    ticket_id: ticket_id,
+                    user_id: empInfo.user_id
+                })
 
+                console.log(formData.ticket_status)
+                setIsEditable(true)
+                setShowAcceptButton(false)
+                window.location.reload();
+            } else if (ticket.is_locked === true || ticket.updating_by !== empInfo.user_name) {
+                setError(`${ticket.updating_by} is currently working on this ticket`);
+                return;
+            }
         } catch (err) {
             console.log(err)
         }
-
-
     }
 
     // const handleSubmitNote = async (e) => {
@@ -498,6 +536,8 @@ export default function ViewHDTicket() {
 
     // }
 
+
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => {
@@ -510,6 +550,98 @@ export default function ViewHDTicket() {
         });
     };
 
+
+
+    // Lock/unlock function
+    const empInfo = JSON.parse(localStorage.getItem('user'));
+    const [lockModal, setLockModal] = useState(false)
+    const [lockError, setLockError] = useState('')
+    useEffect(() => {
+        const { user_name } = empInfo || {};
+        const currentUser = user_name;
+        const currentTicketId = ticket_id;
+
+        const lockTicket = async () => {
+            try {
+                await axios.post(`${config.baseApi}/ticket/lock`, {
+                    ticket_id: currentTicketId,
+                    updating_by: currentUser,
+                });
+            } catch (err) {
+                setTimeout(() => {
+                    setLockModal(true);
+                }, 10000);
+
+                setLockError(err.response?.data?.message || "Ticket locked by another user");
+            }
+        };
+
+        lockTicket();
+
+        const handleUnload = () => {
+            if (!currentTicketId || !currentUser) return;
+
+            const payload = JSON.stringify({
+                ticket_id: currentTicketId,
+                updating_by: currentUser,
+            });
+
+            const blob = new Blob([payload], { type: "application/json" });
+
+            navigator.sendBeacon(`${config.baseApi}/ticket/unlock`, blob);
+        };
+
+        window.addEventListener("beforeunload", handleUnload);
+
+
+        return () => {
+            window.removeEventListener("beforeunload", handleUnload);
+            // Normal React navigation unlock
+            if (currentTicketId && currentUser) {
+                axios.post(`${config.baseApi}/ticket/unlock`, {
+                    ticket_id: currentTicketId,
+                    updating_by: currentUser,
+                }).catch(() => { });
+            }
+        };
+    }, [ticket_id, empInfo]);
+
+
+
+    // Refresh lock if form has changes
+    useEffect(() => {
+
+        const interval = setInterval(() => {
+            if (hasChanges) {
+                axios.post(`${config.baseApi}/ticket/lock`, {
+                    ticket_id,
+                    updating_by: empInfo.user_name,
+                });
+            }
+        }, 10000); // refresh lock every 10s
+
+        return () => clearInterval(interval);
+
+    }, [hasChanges, ticket_id, empInfo.user_name]);
+
+    useEffect(() => {
+        const fetch = async () => {
+            const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
+                params: { id: ticket_id }
+            });
+            const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
+
+            if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
+                setLockModal(false)
+            } else {
+                setLockModal(true)
+            }
+
+        }
+        fetch();
+
+
+    }, [])
 
     const handleChecker = async () => {
         if (formData.ticket_status === 'resolved') {
@@ -548,121 +680,136 @@ export default function ViewHDTicket() {
     const handleSave = async () => {
         try {
 
-            if (formData.ticket_status === 'in-progress') {
-                if (!formData.ticket_type || !formData.ticket_status || !formData.ticket_category || !formData.ticket_SubCategory || !formData.ticket_urgencyLevel) {
-                    setError('Unable to save empty fields! Please try again!');
-                    return;
-                }
-            }
-
-            if (formData.ticket_status === 'escalate' && (formData.assigned_to === originalData.assigned_to)) {
-                setError('Change the assigned to if you will escalate the ticket! ')
-                return
-            }
 
 
-            //Check changes
-            const empInfo = JSON.parse(localStorage.getItem('user'));
-            const changedFields = [];
-            const fieldsToCheck = ['ticket_subject', 'notes', 'assigned_collaborators', 'ticket_for', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
-            fieldsToCheck.forEach(field => {
-                const original = originalData[field];
-                const current = formData[field];
-                if ((original ?? '') !== (current ?? '')) {
-                    changedFields.push(` ${empInfo.user_name} Changed '${field}' from '${original}' to '${current}'`)
-                }
+            setLoading(true);
+            const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
+                params: { id: ticket_id }
             });
-            console.log('Changed Fields:', changedFields);
-            const changesMade = changedFields.length > 0 ? changedFields.join('; ') : '';
+            const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
+            console.log(ticket.updating_by)
+            //Check if someone is working on this ticket
+            if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
+                if (formData.ticket_status === 'in-progress') {
+                    if (!formData.ticket_type || !formData.ticket_status || !formData.ticket_category || !formData.ticket_SubCategory || !formData.ticket_urgencyLevel) {
+                        setError('Unable to save empty fields! Please try again!');
+                        return;
+                    }
+                }
 
-            const dataToSend = new FormData();
-            dataToSend.append('ticket_id', formData.ticket_id);
-            dataToSend.append('ticket_subject', formData.ticket_subject);
-            dataToSend.append('ticket_type', formData.ticket_type);
-            dataToSend.append('ticket_status', formData.ticket_status);
-            dataToSend.append('ticket_category', formData.ticket_category);
-            dataToSend.append('ticket_SubCategory', formData.ticket_SubCategory);
-            dataToSend.append('ticket_urgencyLevel', formData.ticket_urgencyLevel);
-            dataToSend.append('ticket_for', formData.ticket_for);
-            dataToSend.append('Description', formData.Description);
-            dataToSend.append('updated_by', empInfo.user_id)
-            dataToSend.append('changes_made', changesMade);
-            if (formData.assigned_collaborators) {
-                dataToSend.append('assigned_collaborators', formData.assigned_collaborators);
-            }
+                if (formData.ticket_status === 'escalate' && (formData.assigned_to === originalData.assigned_to)) {
+                    setError('Change the assigned to if you will escalate the ticket! ')
+                    return
+                }
 
-            const changedTicketFor = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
-                params: { user_name: formData.ticket_for }
-            })
-            const TicketforEmail = changedTicketFor.data
-            dataToSend.append('ticket_for_UserId', TicketforEmail.user_id);
-            dataToSend.append('assigned_to_UserId', hdUser.user_id);
-            dataToSend.append('assigned_to', formData.assigned_to);
+                //Check changes
+                const changedFields = [];
+                const fieldsToCheck = ['ticket_subject', 'notes', 'assigned_collaborators', 'ticket_for', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
+                fieldsToCheck.forEach(field => {
+                    const original = originalData[field];
+                    const current = formData[field];
+                    if ((original ?? '') !== (current ?? '')) {
+                        changedFields.push(` ${empInfo.user_name} Changed '${field}' from '${original}' to '${current}'`)
+                    }
+                });
+                console.log('Changed Fields:', changedFields);
+                const changesMade = changedFields.length > 0 ? changedFields.join('; ') : '';
 
-            if (formData.ticket_for) {
+                const dataToSend = new FormData();
+                dataToSend.append('ticket_id', formData.ticket_id);
+                dataToSend.append('ticket_subject', formData.ticket_subject);
+                dataToSend.append('ticket_type', formData.ticket_type);
+                dataToSend.append('ticket_status', formData.ticket_status);
+                dataToSend.append('ticket_category', formData.ticket_category);
+                dataToSend.append('ticket_SubCategory', formData.ticket_SubCategory);
+                dataToSend.append('ticket_urgencyLevel', formData.ticket_urgencyLevel);
+                dataToSend.append('ticket_for', formData.ticket_for);
+                dataToSend.append('Description', formData.Description);
+                dataToSend.append('updated_by', empInfo.user_id)
+                dataToSend.append('changes_made', changesMade);
+                if (formData.assigned_collaborators) {
+                    dataToSend.append('assigned_collaborators', formData.assigned_collaborators);
+                }
+
                 const changedTicketFor = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
                     params: { user_name: formData.ticket_for }
                 })
-                const newticketfor = changedTicketFor.data;
-                const newTF_location = newticketfor.emp_location;
-                dataToSend.append('assigned_location', newTF_location);
-            }
+                const TicketforEmail = changedTicketFor.data
+                dataToSend.append('ticket_for_UserId', TicketforEmail.user_id);
+                dataToSend.append('assigned_to_UserId', hdUser.user_id);
+                dataToSend.append('assigned_to', formData.assigned_to);
 
-            if (formData.attachmentFiles && formData.attachmentFiles.length > 0) {
-                formData.attachmentFiles.forEach(file => {
-                    dataToSend.append('attachments', file);
+                if (formData.ticket_for) {
+                    const changedTicketFor = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
+                        params: { user_name: formData.ticket_for }
+                    })
+                    const newticketfor = changedTicketFor.data;
+                    const newTF_location = newticketfor.emp_location;
+                    dataToSend.append('assigned_location', newTF_location);
+                }
+
+                if (formData.attachmentFiles && formData.attachmentFiles.length > 0) {
+                    formData.attachmentFiles.forEach(file => {
+                        dataToSend.append('attachments', file);
+                    });
+                } else {
+                    dataToSend.append('Attachments', formData.Attachments || '');
+                }
+                setLoading(true);
+                await axios.post(`${config.baseApi}/ticket/notified-true`, {
+                    ticket_id: ticket_id,
+                    user_id: empInfo.user_id
+                })
+
+                await axios.post(`${config.baseApi}/ticket/update-ticket`, dataToSend, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
                 });
-            } else {
-                dataToSend.append('Attachments', formData.Attachments || '');
-            }
-            setLoading(true);
-            await axios.post(`${config.baseApi}/ticket/notified-true`, {
-                ticket_id: ticket_id,
-                user_id: empInfo.user_id
-            })
 
-            await axios.post(`${config.baseApi}/ticket/update-ticket`, dataToSend, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+                if (formData.ticket_status === 'open') {
+                    if (!formData.assigned_to || formData.assigned_to.trim() === '') {
+                        // Case 1: Open and no assigned user
+                        console.log('OPEN AND EMPTY');
+                        await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
+                            assigned_to: '',
+                            ticket_status: 'open',
+                            updated_by: empInfo.user_id,
+                            ticket_id: formData.ticket_id
+                        });
+                    } else {
+                        // Case 2: Open but has assigned user → treat as assigned
+                        console.log('OPEN WITH ASSIGN (saving as assigned)', formData.assigned_to);
+                        await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
+                            assigned_to: hdUser.user_name,
+                            ticket_status: 'assigned',
+                            updated_by: empInfo.user_id,
+                            ticket_id: formData.ticket_id
+                        });
+                    }
+                }
 
-            if (formData.ticket_status === 'open') {
-                if (!formData.assigned_to || formData.assigned_to.trim() === '') {
-                    // Case 1: Open and no assigned user
-                    console.log('OPEN AND EMPTY');
+                // Case 3: If status changed to open from another status → reset assigned_to
+                if (originalData.ticket_status !== 'open' && formData.ticket_status === 'open') {
+                    console.log('CHANGED TO OPEN → clearing assigned_to');
                     await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
                         assigned_to: '',
                         ticket_status: 'open',
                         updated_by: empInfo.user_id,
                         ticket_id: formData.ticket_id
                     });
-                } else {
-                    // Case 2: Open but has assigned user → treat as assigned
-                    console.log('OPEN WITH ASSIGN (saving as assigned)', formData.assigned_to);
-                    await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
-                        assigned_to: hdUser.user_name,
-                        ticket_status: 'assigned',
-                        updated_by: empInfo.user_id,
-                        ticket_id: formData.ticket_id
-                    });
                 }
+
+
+                setSuccessful('Ticket updated successfully.');
+                setOriginalData(formData);
+                setHasChanges(false);
+                window.location.reload();
+
+            } else if (ticket.is_locked === true || ticket.updating_by !== empInfo.user_name) {
+                setError(`${ticket.updating_by} is currently working on this ticket`);
+                return;
             }
 
-            // Case 3: If status changed to open from another status → reset assigned_to
-            if (originalData.ticket_status !== 'open' && formData.ticket_status === 'open') {
-                console.log('CHANGED TO OPEN → clearing assigned_to');
-                await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
-                    assigned_to: '',
-                    ticket_status: 'open',
-                    updated_by: empInfo.user_id,
-                    ticket_id: formData.ticket_id
-                });
-            }
 
-
-            setSuccessful('Ticket updated successfully.');
-            setOriginalData(formData);
-            setHasChanges(false);
-            window.location.reload();
         } catch (err) {
             console.error("Error updating ticket:", err);
             setError('Failed to update ticket. Please try again later.');
@@ -745,6 +892,50 @@ export default function ViewHDTicket() {
         }
     }
 
+
+    const Archive = async () => {
+        const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
+            params: { id: ticket_id }
+        });
+        const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
+        if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
+
+            try {
+                setLoading(true)
+                await axios.post(`${config.baseApi}/ticket/archive-ticket`, {
+                    ticket_id: ticket_id,
+                    updated_by: empInfo.user_name
+                })
+                console.log('Ticket archived successfully');
+                setSuccessful('Ticket archived successfully');
+                window.location.reload();
+
+            } catch (err) {
+                console.log(err)
+            }
+        } else if (ticket.is_locked === true || ticket.updating_by !== empInfo.user_name) {
+            setError(`${ticket.updating_by} is currently working on this ticket`);
+            return;
+        }
+
+    }
+    const UnArchive = async () => {
+        console.log('Working');
+        try {
+            setLoading(true)
+            await axios.post(`${config.baseApi}/ticket/un-archive-ticket`, {
+                ticket_id: ticket_id,
+                updated_by: empInfo.user_name
+            })
+            console.log('Ticket un-archived successfully');
+            setSuccessful('Ticket un-archived successfully');
+            window.location.reload();
+
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
     return (
         <Container
             fluid
@@ -781,8 +972,40 @@ export default function ViewHDTicket() {
                     <Col lg={8}>
                         <Row className="mb-3">
                             <div className="d-flex justify-content-between align-items-center">
-                                <h3 className="fw-bold text-dark mb-0">Ticket Details</h3>
+                                <Row className="align-items-center">
+                                    <Col xs="auto">
+                                        <h3 className="fw-bold text-dark mb-0">Ticket Details</h3>
+                                    </Col>
+                                    {archiveTextState && (
+                                        <Col xs="auto">
+                                            <h4 className="fw-bold text-secondary mb-0">(archived)</h4>
+                                        </Col>
+                                    )}
+                                </Row>
+
                                 <div className="d-flex gap-2">
+                                    {archBTN1 && (
+                                        <Button
+                                            variant="primary"
+                                            size="sm"
+                                            style={{ width: '100px', minHeight: '40px' }}
+                                            onClick={() => setArchiveState(true)}
+                                            title="Archive Ticket"
+                                        >
+                                            <FeatherIcon icon="archive" />
+                                        </Button>
+                                    )}
+                                    {archBTN2 && (
+                                        <Button
+                                            variant="primary"
+                                            size="sm"
+                                            style={{ width: '100px', minHeight: '40px' }}
+                                            onClick={() => setUnArchiveState(true)}
+                                            title="Unarchive Ticket"
+                                        >
+                                            <FeatherIcon icon="airplay" />
+                                        </Button>
+                                    )}
                                     {notifyReview && (
                                         <Button
                                             variant="primary"
@@ -1484,6 +1707,74 @@ export default function ViewHDTicket() {
                         </Button>
                     </Modal.Footer>
                 </Modal>
+
+                <Modal show={lockModal} onHide={() => setLockModal(false)} centered>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Attention! </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Form.Group controlId="userResolution">
+                            <Form.Label>{lockError}</Form.Label>
+                        </Form.Group>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setLockModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={() => setLockModal(false)}
+                        >
+                            Ok
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+
+
+                <Modal show={archiveState} onHide={() => setArchiveState(false)} centered>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Archive</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Form.Group controlId="userResolution">
+                            <Form.Label>Are you sure you want to archive this ticket?</Form.Label>
+                        </Form.Group>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setArchiveState(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={() => Archive()}
+                        >
+                            Ok
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+
+                <Modal show={unarchiveState} onHide={() => setUnArchiveState(false)} centered>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Unarchive</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Form.Group controlId="userResolution">
+                            <Form.Label>Are you sure you want to unarchive this ticket?</Form.Label>
+                        </Form.Group>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setUnArchiveState(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={() => UnArchive()}
+                        >
+                            Ok
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+
             </Container>
 
             {loading && (

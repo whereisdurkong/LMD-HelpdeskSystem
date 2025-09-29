@@ -32,7 +32,9 @@ export default function Alltickets() {
         const user = JSON.parse(localStorage.getItem('user'));
         axios.get(`${config.baseApi}/ticket/get-all-ticket`)
             .then((res) => {
-                setAllTicket(res.data);
+                const activeTicket = res.data.filter((ticket) => ticket.is_active === true);
+                setAllTicket(activeTicket);
+
             });
 
         if (user.emp_location) {
@@ -65,9 +67,9 @@ export default function Alltickets() {
         } else if (userData.emp_role === 'admin' && userData.emp_tier === 'helpdesk') {
             setForAdminTickets(allticket)
         } else if (userData.emp_role === 'user' && userData.emp_tier === 'user') {
-            Alert('CHANGE ACCOUNT TO VIEW THIS PAGE!')
+            console.log('change account to view archived tickets')
         }
-        console.log(filtered)
+
     }, [userData, allticket, allUsers]);
 
     //Filter ticket function

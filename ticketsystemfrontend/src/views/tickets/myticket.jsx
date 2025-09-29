@@ -34,14 +34,14 @@ export default function Myticket() {
             .then((res) => {
                 if (user.emp_tier === 'user') {
                     const userTickets = res.data.filter(
-                        (ticket) => ticket.ticket_for === userName &&
+                        (ticket) => ticket.ticket_for === userName && ticket.is_active === true &&
                             (ticket.is_reviewed === false || ticket.is_reviewed === null)
                     );
                     setAllTicket(userTickets);
                 } else if (user.emp_tier === 'helpdesk') {
                     const userTickets = res.data.filter(
                         (ticket) =>
-                            ticket.assigned_to === userName &&
+                            ticket.assigned_to === userName && ticket.is_active === true &&
                             (ticket.is_reviewed === false || ticket.is_reviewed === null)
                     );
                     setAllTicket(userTickets);

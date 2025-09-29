@@ -104,7 +104,7 @@ export default function NavRight() {
 
     const interval = setInterval(() => {
       fetchNotifications(userData.user_name);
-    }, 10000); // every 10 seconds
+    }, 5000); // every 10 seconds
 
     // Call it once immediately
     fetchNotifications(userData.user_name);

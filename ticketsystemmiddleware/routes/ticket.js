@@ -120,6 +120,15 @@ const Tickets = db.define('ticket_master', {
     is_active: {
         type: DataTypes.STRING,
     },
+    is_locked: {
+        type: DataTypes.STRING,
+    },
+    locked_at: {
+        type: DataTypes.STRING,
+    },
+    updating_by: {
+        type: DataTypes.STRING,
+    },
     is_reviewed: {
         type: DataTypes.STRING,
     },
@@ -358,6 +367,115 @@ router.get('/get-all-ticket', async (req, res) => {
     }
 })
 
+router.post('/is_locked', async (req, res) => {
+    try {
+        const {
+            ticket_id,
+            is_locked,
+            updating_by
+        } = req.body;
+        const currentTimestamp = new Date();
+
+        await knex('ticket_master').where({ ticket_id: ticket_id }).update({
+            is_locked: is_locked,
+            updating_by: updating_by,
+            locked_at: currentTimestamp
+        });
+        console.log('Triggered /Update-is_locked');
+
+
+        res.json(200);
+
+    } catch (err) {
+        console.log('INTERNAL ERROR: UNABLE TO FETCH CHANGES on /is_active')
+    }
+
+});
+
+
+// Lock or refresh lock
+router.post("/lock", async (req, res) => {
+    const { ticket_id, updating_by } = req.body;
+
+    const ticket = await knex("ticket_master").where({ ticket_id: ticket_id }).first();
+
+
+
+    if (ticket.is_locked && ticket.updating_by && ticket.updating_by !== updating_by) {
+        return res.status(403).json({
+            success: false,
+            message: `${ticket.updating_by} is currently working on this ticket`,
+        });
+    }
+
+    await knex("ticket_master")
+        .where({ ticket_id: ticket_id })
+        .update({
+            is_locked: 1,
+            updating_by: updating_by,
+            locked_at: new Date(), // optional: track timestamp
+        });
+
+    res.json({ success: true, message: "Ticket locked/refreshed" });
+});
+
+// Unlock ticket
+router.post("/unlock", async (req, res) => {
+    try {
+        const { ticket_id, updating_by } = req.body || {};
+        if (!ticket_id || !updating_by) {
+            return res.status(400).json({ success: false, message: "Missing data" });
+        }
+
+        await knex("ticket_master")
+            .where({ ticket_id, updating_by })
+            .update({ is_locked: 0, updating_by: null, locked_at: null });
+
+        res.json({ success: true, message: "Ticket unlocked" });
+    } catch (err) {
+        console.error("Unlock error:", err);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+
+router.post('/archive-ticket', async (req, res) => {
+    try {
+        const {
+            ticket_id,
+            updated_by
+        } = req.body;
+        console.log('Triggered /archive-ticket', ticket_id, updated_by)
+        await knex('ticket_master').where({ ticket_id: ticket_id }).update({
+            is_active: false,
+            updated_by: updated_by
+        });
+
+        res.status(200).json({ message: 'Ticket archived successfully' });
+    } catch (err) {
+        console.log('INTERNAL ERROR: ', err)
+    }
+})
+
+router.post('/un-archive-ticket', async (req, res) => {
+    try {
+        const {
+            ticket_id,
+            updated_by
+        } = req.body;
+        console.log('Triggered /archive-ticket', ticket_id, updated_by)
+        await knex('ticket_master').where({ ticket_id: ticket_id }).update({
+            is_active: true,
+            updated_by: updated_by
+        });
+
+        res.status(200).json({ message: 'Ticket un-archived successfully' });
+    } catch (err) {
+        console.log('INTERNAL ERROR: ', err)
+    }
+})
+
+
 //Setting notify to true
 router.post('/notified-true', async (req, res) => {
     try {
@@ -438,15 +556,6 @@ router.post('/update-ticket-assigned', async (req, res) => {
         const updateByInfo = await knex('users_master').where('user_id', updated_by).first();
         console.log(req.body)
 
-        // await knex('ticket_master').where('ticket_id', ticket_id).update({
-        //     assigned_to: assigned_to,
-        //     ticket_status: 'assigned',
-        //     updated_by: updateByInfo.user_name,
-        //     updated_at: currentTimestamp
-        // })
-        const updateByInfo1 = await knex('ticket_master').where('ticket_id', ticket_id).first();
-
-
         console.log('1111111111111111HHHHHHHHHHHHHHHAAAAAAAAAAAAAAATTTTTDDDOOOOGGG')
         await knex('ticket_master').where('ticket_id', ticket_id).update({
             assigned_to: assigned_to,
@@ -454,11 +563,6 @@ router.post('/update-ticket-assigned', async (req, res) => {
             updated_by: updateByInfo.user_name,
             updated_at: currentTimestamp
         })
-
-
-
-
-
         await knex('ticket_logs').insert({
             ticket_id,
             ticket_status: 'assigned',
@@ -923,6 +1027,7 @@ router.post('/feedback', async (req, res) => {
     }
 })
 
+
 router.post('/send-notification-review', async (req, res) => {
 
     try {
@@ -977,5 +1082,7 @@ router.post('/send-notification-review', async (req, res) => {
     } catch (err) {
         console.log('INTERNAL ERROR: ', err);
     }
-})
+});
+
+
 module.exports = router;

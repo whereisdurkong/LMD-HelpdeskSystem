@@ -14,8 +14,9 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function AllTicketbyType({ filterType }) {
+export default function AllTicketbyType({ filterType, showChart = true }) {
     const [chartData, setChartData] = useState(null);
+    const [tickets, setTickets] = useState([]);
 
     const isInFilter = (date) => {
         const d = new Date(date);
@@ -25,7 +26,6 @@ export default function AllTicketbyType({ filterType }) {
         switch (filterType) {
             case "today":
                 return d.toDateString() === today.toDateString();
-
             case "thisWeek": {
                 const firstDay = new Date(today);
                 firstDay.setDate(today.getDate() - today.getDay());
@@ -33,7 +33,6 @@ export default function AllTicketbyType({ filterType }) {
                 lastDay.setDate(firstDay.getDate() + 6);
                 return d >= firstDay && d <= lastDay;
             }
-
             case "lastWeek": {
                 const firstDay = new Date(today);
                 firstDay.setDate(today.getDate() - today.getDay() - 7);
@@ -41,19 +40,12 @@ export default function AllTicketbyType({ filterType }) {
                 lastDay.setDate(firstDay.getDate() + 6);
                 return d >= firstDay && d <= lastDay;
             }
-
             case "thisMonth":
-                return (
-                    d.getFullYear() === today.getFullYear() &&
-                    d.getMonth() === today.getMonth()
-                );
-
+                return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
             case "perMonth":
                 return d.getFullYear() === today.getFullYear();
-
             case "perYear":
                 return true;
-
             case "all":
             default:
                 return true;
@@ -68,14 +60,14 @@ export default function AllTicketbyType({ filterType }) {
 
                 // Apply filter
                 ticketres = ticketres.filter(t => isInFilter(t.created_at));
+                setTickets(ticketres);
 
+                // ---- Chart data ----
                 if (filterType === "perMonth") {
                     const monthLabels = [
                         "January", "February", "March", "April", "May", "June",
                         "July", "August", "September", "October", "November", "December"
                     ];
-
-                    // Prepare counts for each month by ticket type
                     const incidentCounts = Array(12).fill(0);
                     const requestCounts = Array(12).fill(0);
                     const inquiryCounts = Array(12).fill(0);
@@ -114,7 +106,6 @@ export default function AllTicketbyType({ filterType }) {
                         ]
                     });
                 } else {
-                    // Default: single totals for all tickets
                     const incidentCount = ticketres.filter(i => i.ticket_type === 'incident').length;
                     const requestCount = ticketres.filter(r => r.ticket_type === 'request').length;
                     const inquiryCount = ticketres.filter(q => q.ticket_type === 'inquiry').length;
@@ -140,6 +131,7 @@ export default function AllTicketbyType({ filterType }) {
                         ]
                     });
                 }
+
             } catch (err) {
                 console.log('Unable to fetch data: ', err);
             }
@@ -148,23 +140,69 @@ export default function AllTicketbyType({ filterType }) {
         fetch();
     }, [filterType]);
 
-    return (
-        <div style={{ width: "100%" }}>
-            {chartData && (
-                <Bar
-                    data={chartData}
-                    options={{
-                        responsive: true,
+    const renderTable = (title, rows) => (
+        <div style={{ marginTop: "20px" }}>
+            <h4>{title}</h4>
+            <table border="1" cellPadding="5" style={{ borderCollapse: "collapse", width: '100%' }}>
+                <thead style={{ background: '#053b00ff', color: 'white' }}>
+                    <tr>
+                        <th>Ticket ID</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Type</th>
+                        <th>Assigned To</th>
+                        <th>For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((t, idx) => (
+                        <tr key={idx}>
+                            <td>{t.ticket_id}</td>
+                            <td>{t.ticket_subject}</td>
+                            <td>{t.ticket_status}</td>
+                            <td>{t.ticket_type}</td>
+                            <td>{t.assigned_to || "-"}</td>
+                            <td>{t.ticket_for || "-"}</td>
+                        </tr>
+                    ))}
+                    {rows.length === 0 && (
+                        <tr>
+                            <td colSpan="6" style={{ textAlign: "center" }}>No tickets found</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    );
 
-                        plugins: {
-                            legend: { display: true },
-                            title: { display: true, text: filterType === "perMonth" ? "Tickets by Type per Month" : "Tickets by Type" }
-                        },
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }}
-                />
+    return (
+        <div style={{ width: '100%', height: '100%' }}>
+            {showChart ? (
+                chartData && (
+                    <Bar
+                        data={chartData}
+                        options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: true },
+                                title: {
+                                    display: true,
+                                    text: filterType === "perMonth" ? "Tickets by Type per Month" : "Tickets by Type"
+                                }
+                            },
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }}
+                    />
+                )
+            ) : (
+                <>
+                    {renderTable("Incident Tickets", tickets.filter(t => t.ticket_type === "incident"))}
+                    {renderTable("Request Tickets", tickets.filter(t => t.ticket_type === "request"))}
+                    {renderTable("Inquiry Tickets", tickets.filter(t => t.ticket_type === "inquiry"))}
+                </>
             )}
         </div>
     );

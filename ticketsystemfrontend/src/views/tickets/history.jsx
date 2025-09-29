@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function History() {
     const [userData, setUserData] = useState([]);
-    const [allticket, setAllTicket] = useState([]);
+    const [allTickets, setAllTicket] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
     const [workedTickets, setWorkedTickets] = useState([]);
@@ -32,31 +32,27 @@ export default function History() {
             try {
                 // Fetch all tickets once
                 const ticketRes = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
-                const allTickets = ticketRes.data;
+                const activeticket = ticketRes.data.filter((ticket) => ticket.is_active === true);
+
+                // Update state
+                setAllTicket(activeticket);
 
                 // ------------------- User Data ------------------------//
-
-                // Closed tickets for the user
-                const userClosedTickets = allTickets.filter(ticket =>
-                    ticket.ticket_for === userData.user_name && ticket.is_reviewed === true
-
+                const userClosedTickets = activeticket.filter((ticket) =>
+                    ticket.ticket_for === userData.user_name &&
+                    ticket.is_reviewed === true &&
+                    ticket.is_active === true
                 );
                 setTicketsFor(userClosedTickets);
 
-                //------------------------Admin data ------------------------//
-
-                // Fetch notes
+                //------------------------ Admin data ------------------------//
                 const notesRes = await axios.get(`${config.baseApi}/authentication/get-all-notes`);
                 const notes = notesRes.data || [];
 
-                // Filter notes created by the user
                 const createdNotes = notes.filter(note => note.created_by === userData.user_name);
-                //Filter duplicated id's
                 const uniqueIds = [...new Set(createdNotes.map(note => note.ticket_id))];
 
-
-
-                const worked = allTickets.filter(ticket => {
+                const worked = activeticket.filter(ticket => {
                     const isUniqueId = uniqueIds.includes(ticket.ticket_id);
                     const isCollaborator = ticket.assigned_collaborators
                         ?.split(',')
@@ -75,8 +71,7 @@ export default function History() {
                     );
                 });
 
-
-
+                console.log(worked);
                 setWorkedTickets(worked);
 
                 // Final filtering
@@ -93,6 +88,7 @@ export default function History() {
 
         fetchData();
     }, [userData]);
+
 
 
     const filteredTickets = toFilter.filter((ticket) => {

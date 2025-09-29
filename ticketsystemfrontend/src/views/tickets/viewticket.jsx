@@ -304,6 +304,38 @@ export default function ViewTicket() {
 
     }, [formData, attachmentState, attachmentButtonState]);
 
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const getUpdated = async () => {
+                try {
+                    const response = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
+                        params: { id: ticket_id }
+                    });
+                    const ticketdata = response.data.data || response.data;
+
+                    if (ticketdata.is_locked === '1') {
+                        setError(`${ticketdata.updating_by} is currently working on this ticket`)
+                        setClose(false)
+                        setShowCloseReasonModal(false)
+                        setShowCloseReviewModal(false)
+                    }
+                    else if (ticketdata.is_locked === '0' || ticketdata.is_locked === null) {
+                        setClose(true)
+                    } else {
+                        console.log("is_locked is missing or not boolean:", ticketdata.is_locked);
+                    }
+
+                } catch (err) {
+                    console.error("Error fetching ticket:", err);
+                }
+            };
+
+            getUpdated();
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [ticket_id, currentUserData]);
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -334,10 +366,19 @@ export default function ViewTicket() {
     };
 
     const HandleCheckerFields = async (e) => {
-        if (formData.ticket_status === 'closed') {
+        const response = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
+            params: { id: ticket_id }
+        });
+        const ticketdata = response.data.data || response.data;
+
+
+        if (formData.ticket_status === 'closed' && ticketdata.is_locked === '1') {
+            setShowCloseReasonModal(false);
+        } else if (formData.ticket_status === 'closed') {
             setShowCloseReasonModal(true);
-        } else {
-            await handleSave();
+        }
+        else {
+            // await handleSave();
         }
     }
 
@@ -378,17 +419,6 @@ export default function ViewTicket() {
         }
     }
 
-    // 0910
-
-
-    const handleSubmit = () => {
-        console.log("Selected Number:", value);
-        console.log("Selected Label:", labels[value]);
-    };
-    // compute thumb position (percent)
-
-
-
     const handleReview = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         console.log('was triggered. ', `Review ${userfeedback} HelpDesk: ${hdUser.user_id} Reviewed by: ${empInfo.user_name}`)
@@ -423,79 +453,95 @@ export default function ViewTicket() {
     //Save updated fields
     const handleSave = async () => {
         try {
-            //check any changes to save logs
-            const changedFields = [];
-            const fieldsToCheck = ['ticket_subject', 'asset_number', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
-            fieldsToCheck.forEach(field => {
-                const original = originalData[field];
-                const current = formData[field];
-                if ((original ?? '') !== (current ?? '')) {
-                    changedFields.push(` ${currentUserData.user_name} Changed '${field}' from '${original}' to '${current}'`)
-                }
+            const empInfo = JSON.parse(localStorage.getItem('user'));
+            const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
+                params: { id: ticket_id }
             });
-            console.log('Changed Fields:', changedFields);
-            const changesMade = changedFields.length > 0 ? changedFields.join('; ') : '';
+            const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
 
-            console.log('CHANGES MADE:', changesMade)
+            //Check if someone is working on this ticket
+            if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
 
 
-            const dataToSend = new FormData();
-            dataToSend.append('ticket_id', formData.ticket_id);
-            dataToSend.append('ticket_subject', formData.ticket_subject);
-            dataToSend.append('ticket_type', formData.ticket_type);
-            dataToSend.append('ticket_status', formData.ticket_status);
-            dataToSend.append('ticket_category', formData.ticket_category);
-            dataToSend.append('ticket_SubCategory', formData.ticket_SubCategory);
-            dataToSend.append('ticket_urgencyLevel', formData.ticket_urgencyLevel);
-            dataToSend.append('Description', formData.Description);
-            dataToSend.append('changes_made', changesMade);
-            dataToSend.append('updated_by', currentUserData.user_id);
 
-            dataToSend.append('CloseReason', closureReason);
-            dataToSend.append('asset_number', formData.asset_number);
-            dataToSend.append('assigned_to_UserId', hdUser.user_id);// ISSUE WHEN SAVING AN OPEN TICKET AND NO HD USE WAS ASSIGNED  
-            console.log('HS USER ID:', hdUser.user_id)
-            console.log('UPDATED USER ID:', currentUserData.user_id)
 
-            if (formData.attachmentFiles && formData.attachmentFiles.length > 0) {
-                formData.attachmentFiles.forEach(file => {
-                    dataToSend.append('attachments', file);
+                //check any changes to save logs
+                const changedFields = [];
+                const fieldsToCheck = ['ticket_subject', 'asset_number', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
+                fieldsToCheck.forEach(field => {
+                    const original = originalData[field];
+                    const current = formData[field];
+                    if ((original ?? '') !== (current ?? '')) {
+                        changedFields.push(` ${currentUserData.user_name} Changed '${field}' from '${original}' to '${current}'`)
+                    }
                 });
-            } else {
-                dataToSend.append('Attachments', formData.Attachments || '');
-            }
-            console.log(dataToSend)
-            //save note if user re-opened the ticket
-            if (formData.ticket_status === 're-opened') {
-                await axios.post(`${config.baseApi}/ticket/note-post`, {
-                    notes: `${currentUserData.user_name} re opened the ticket.`,
-                    current_user: currentUserData.user_name,
-                    ticket_id: ticket_id
-                });
+                console.log('Changed Fields:', changedFields);
+                const changesMade = changedFields.length > 0 ? changedFields.join('; ') : '';
 
-            }
+                console.log('CHANGES MADE:', changesMade)
 
-            // Send notification to HD
-            setLoading(true)
-            await axios.post(`${config.baseApi}/ticket/notified-true`, {
-                ticket_id: ticket_id,
-                user_id: currentUserData.user_id
-            })
 
-            await axios.post(`${config.baseApi}/ticket/update-ticket`, dataToSend, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
+                const dataToSend = new FormData();
+                dataToSend.append('ticket_id', formData.ticket_id);
+                dataToSend.append('ticket_subject', formData.ticket_subject);
+                dataToSend.append('ticket_type', formData.ticket_type);
+                dataToSend.append('ticket_status', formData.ticket_status);
+                dataToSend.append('ticket_category', formData.ticket_category);
+                dataToSend.append('ticket_SubCategory', formData.ticket_SubCategory);
+                dataToSend.append('ticket_urgencyLevel', formData.ticket_urgencyLevel);
+                dataToSend.append('Description', formData.Description);
+                dataToSend.append('changes_made', changesMade);
+                dataToSend.append('updated_by', currentUserData.user_id);
+
+                dataToSend.append('CloseReason', closureReason);
+                dataToSend.append('asset_number', formData.asset_number);
+                dataToSend.append('assigned_to_UserId', hdUser.user_id);// ISSUE WHEN SAVING AN OPEN TICKET AND NO HD USE WAS ASSIGNED  
+                console.log('HS USER ID:', hdUser.user_id)
+                console.log('UPDATED USER ID:', currentUserData.user_id)
+
+                if (formData.attachmentFiles && formData.attachmentFiles.length > 0) {
+                    formData.attachmentFiles.forEach(file => {
+                        dataToSend.append('attachments', file);
+                    });
+                } else {
+                    dataToSend.append('Attachments', formData.Attachments || '');
                 }
-            });
+                console.log(dataToSend)
+                //save note if user re-opened the ticket
+                if (formData.ticket_status === 're-opened') {
+                    await axios.post(`${config.baseApi}/ticket/note-post`, {
+                        notes: `${currentUserData.user_name} re opened the ticket.`,
+                        current_user: currentUserData.user_name,
+                        ticket_id: ticket_id
+                    });
 
-            if (formData.ticket_status === 'closed') {
-                setSuccessful('Ticket updated successfully.');
-                setOriginalData(formData);
-                setHasChanges(false);
-            } else {
-                setSuccessful('Ticket updated successfully.');
-                setOriginalData(formData);
-                setHasChanges(false);
+                }
+
+                // Send notification to HD
+                setLoading(true)
+                await axios.post(`${config.baseApi}/ticket/notified-true`, {
+                    ticket_id: ticket_id,
+                    user_id: currentUserData.user_id
+                })
+
+                await axios.post(`${config.baseApi}/ticket/update-ticket`, dataToSend, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                if (formData.ticket_status === 'closed') {
+                    setSuccessful('Ticket updated successfully.');
+                    setOriginalData(formData);
+                    setHasChanges(false);
+                } else {
+                    setSuccessful('Ticket updated successfully.');
+                    setOriginalData(formData);
+                    setHasChanges(false);
+                }
+            } else if (ticket.is_locked === true || ticket.updating_by !== empInfo.user_name) {
+                setError(`${ticket.updating_by} is currently working on this ticket`);
+                return;
             }
 
 
@@ -596,6 +642,7 @@ export default function ViewTicket() {
                                             Save Changes
                                         </Button>
                                     )}
+
                                 </div>
                             </div>
                         </Row>
@@ -753,7 +800,7 @@ export default function ViewTicket() {
                             </Form.Group>
                             <Form.Group as={Col} md={6} className="mb-2">
                                 <Form.Label>Status</Form.Label>
-                                <Form.Select name="ticket_status" value={formData.ticket_status ?? ''} onChange={handleChange} required>
+                                <Form.Select name="ticket_status" value={formData.ticket_status ?? ''} onChange={handleChange} disabled={!close} required>
                                     <option value="open" hidden>Open</option>
                                     <option value="closed">Close</option>
                                     <option value="re-opened">Re open</option>
@@ -808,11 +855,11 @@ export default function ViewTicket() {
                             </Form.Group>
                             <Form.Group as={Col} md={6} className="mb-3">
                                 <Form.Label>Asset Tag</Form.Label>
-                                <Form.Control name="asset_number" value={formData.asset_number ?? ''} onChange={handleChange} />
+                                <Form.Control name="asset_number" value={formData.asset_number ?? ''} onChange={handleChange} disabled={!close} />
                             </Form.Group>
 
                             <Form.Group as={Col} md={12} className="mb-2">
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: 'pointer' }}>
                                     <Form.Label>Attachments</Form.Label>
                                     {attachmentState && (
                                         <Form.Text onClick={() => setAttachmentButtonState(true)} style={{ color: '#DEA22B' }}>+ Add document</Form.Text>

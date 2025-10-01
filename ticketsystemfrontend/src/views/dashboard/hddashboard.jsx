@@ -40,6 +40,10 @@ export default function HDDashboard() {
 
     const [chartdata, setChartData] = useState(null);
 
+    useEffect(() => {
+
+    }, [])
+
     const openModal = (title, content) => {
         setModalTitle(title);
         setModalContent(content);
@@ -56,7 +60,7 @@ export default function HDDashboard() {
         return { diffMs, text: `${diffDays}d ${diffHours}h ${diffMinutes}m` };
     };
 
-    // ✅ Table component used inside modal
+
     const TicketsTable = ({ tickets }) => {
         return (
             <div style={{ overflowX: "auto" }}>
@@ -99,7 +103,9 @@ export default function HDDashboard() {
     // Fetch tickets once
     useEffect(() => {
         const fetch = async () => {
+            const empInfotemp = JSON.parse(localStorage.getItem("empInfo"));
             try {
+
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 const data = res.data || [];
                 setAllTickets(data);

@@ -14,7 +14,7 @@ import { Bar } from "react-chartjs-2";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function GetAllByCategory({ filterType, showChart = true }) {
+export default function GetAllByCategory({ filterType, showChart = true, location, onDataReady }) {
     const [chartData, setChartData] = useState(null);
     const [hardwareTickets, setHardwareTickets] = useState([]);
     const [networkTickets, setNetworkTickets] = useState([]);
@@ -66,6 +66,18 @@ export default function GetAllByCategory({ filterType, showChart = true }) {
                 // Filter tickets by date range
                 tickets = tickets.filter(t => isInFilter(t.created_at));
 
+                if (location && location.toLowerCase() !== "all") {
+                    tickets = tickets.filter(
+                        t => t.assigned_location?.toLowerCase() === location.toLowerCase()
+                    );
+                }
+
+                if (location === "lmd") {
+                    tickets = tickets.filter(t => t.assigned_location === "lmd");
+                } else if (location === "corp") {
+                    tickets = tickets.filter(t => t.assigned_location === "corp");
+                }
+
                 // Separate into categories
                 const hardware = tickets.filter(t => t.ticket_category?.toLowerCase() === "hardware");
                 const network = tickets.filter(t => t.ticket_category?.toLowerCase() === "network");
@@ -103,6 +115,18 @@ export default function GetAllByCategory({ filterType, showChart = true }) {
                                 { label: "Software", data: softwareCounts, backgroundColor: "rgba(75,192,192,0.6)" }
                             ]
                         });
+                        // Send summary to parent
+                        if (onDataReady) {
+                            const summary = monthLabels.map((m, i) => ({
+                                month: m,
+                                category: "All",
+                                hardware: hardwareCounts[i],
+                                network: networkCounts[i],
+                                software: softwareCounts[i],
+                                total: hardwareCounts[i] + networkCounts[i] + softwareCounts[i]
+                            }));
+                            onDataReady(summary);
+                        }
                     } else {
                         setChartData({
                             labels: ["Hardware", "Network", "Software"],
@@ -118,6 +142,15 @@ export default function GetAllByCategory({ filterType, showChart = true }) {
                                 }
                             ]
                         });
+
+                        if (onDataReady) {
+                            const summary = [
+                                { category: "Hardware", count: hardware.length },
+                                { category: "Network", count: network.length },
+                                { category: "Software", count: software.length }
+                            ];
+                            onDataReady(summary);
+                        }
                     }
                 }
             } catch (err) {
@@ -125,7 +158,7 @@ export default function GetAllByCategory({ filterType, showChart = true }) {
             }
         };
         fetch();
-    }, [filterType, showChart]);
+    }, [filterType, showChart, location]);
 
     const renderTable = (title, rows) => (
         <div style={{ marginTop: "20px" }}>

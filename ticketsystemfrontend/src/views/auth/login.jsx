@@ -4,7 +4,7 @@ import axios from 'axios';
 import config from 'config';
 import Spinner from 'react-bootstrap/Spinner';
 // react-bootstrap
-import { Card, Row, Col, Button, Form, InputGroup, Alert } from 'react-bootstrap';
+import { Card, Row, Col, Button, Form, InputGroup, Alert, Stack } from 'react-bootstrap';
 
 // third party
 import FeatherIcon from 'feather-icons-react';
@@ -21,15 +21,12 @@ export default function SignIn1() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-
   const [loading, setLoading] = useState(false);
 
-  // Modal effect to clear login error after 3 seconds
   useEffect(() => {
     if (loginError) {
       const timer = setTimeout(() => {
         setLoginError('');
-
       }, 3000);
       return () => clearTimeout(timer);
     }
@@ -40,21 +37,19 @@ export default function SignIn1() {
       const timer = setTimeout(() => {
         setLoading(false);
       }, 2000);
-      return () => clearTimeout(timer)
+      return () => clearTimeout(timer);
     }
-  }, [loading])
+  }, [loading]);
 
   // Function to handle authentication
   const Auth = async (e) => {
     e.preventDefault();
-    console.log('USER: ', username, password);
-
     if (!password.trim()) {
       setLoginError('Password is required!');
       return;
     }
     if (!username.trim()) {
-      setLoginError('Password is required!');
+      setLoginError('Username is required!');
       return;
     }
 
@@ -65,7 +60,7 @@ export default function SignIn1() {
           user_name: username,
           pass_word: password,
         },
-      })
+      });
       if (!response.data.error) {
         localStorage.setItem('user', JSON.stringify(response.data));
         localStorage.setItem('status', JSON.stringify([{ id: 0, value: 'Login' }]));
@@ -75,32 +70,26 @@ export default function SignIn1() {
       if (err.response) {
         if (err.response.status === 401) {
           setLoginError('Incorrect password! Try again...');
-          console.log(`User ${username} entered incorrect password` + err.response.data.message);
-        }
-        else if (err.response.status === 404) {
+        } else if (err.response.status === 404) {
           setLoginError('Invalid username or password. Please try again.');
-          console.log(`Username and password is invalid, ${username} ${password}` + err.response.data.message);
         } else {
           setLoginError('Invalid username or password. Please try again.');
-          console.log(`Username and password is invalid, ${username} ${password}` + err.response.data.message);
         }
       } else {
         setLoginError('Unable to connect to server. Please check your internet or try again later.');
-        console.log('No response received:', err.message);
       }
-
-
     }
   };
 
   return (
-
     <div
       className="auth-wrapper"
       style={{
         position: 'relative',
         minHeight: '100vh',
         overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
       }}
     >
       {/* PARTICLES BACKGROUND */}
@@ -119,25 +108,29 @@ export default function SignIn1() {
           yGap={36}
         />
       </div>
-      <FadeContent blur={false} duration={200} easing="ease-out" initialOpacity={0}>
+
+      <FadeContent blur={false} duration={200} easing="ease-out" initialOpacity={0} style={{ flex: 1 }}>
         {/* MAIN LOGIN CONTENT */}
         <div
           className="auth-content text-center"
           style={{
+            flex: 1,
             position: 'relative',
             zIndex: 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '100vh',
+            padding: '11rem 0',
+
           }}
         >
           <Card className="borderless" style={{ boxShadow: '0px 2px 8px 2px rgba(0, 20, 9, 1), 0 6px 20px 0 rgba(28, 28, 28, 0.86)' }}>
-            <Row className="align-items-center text-center" >
-              <Col >
-                <Card.Body className="card-body" >
+            <Row className="align-items-center text-center">
+              <Col>
+                <Card.Body className="card-body">
                   <img src={lmdblack} alt="" className="img-fluid mb-4" />
                   <h4 className="mb-3 f-w-400"><b>Log in</b></h4>
+
                   {loading && (
                     <div
                       style={{
@@ -146,7 +139,7 @@ export default function SignIn1() {
                         left: 0,
                         width: "100vw",
                         height: "100vh",
-                        backgroundColor: "rgba(0,0,0,0.5)", // black transparent bg
+                        backgroundColor: "rgba(0,0,0,0.5)",
                         display: "flex",
                         justifyContent: "center",
                         alignItems: "center",
@@ -156,7 +149,7 @@ export default function SignIn1() {
                       <Spinner animation="border" variant="light" />
                     </div>
                   )}
-                  {/* ALERT BAR */}
+
                   {loginError && (
                     <div
                       className="position-fixed top-0 start-50 translate-middle-x mt-3"
@@ -193,7 +186,6 @@ export default function SignIn1() {
                       />
                     </InputGroup>
                     <RoundedSlideButton type="submit">Signin</RoundedSlideButton>
-
                   </Form>
                 </Card.Body>
               </Col>
@@ -201,7 +193,44 @@ export default function SignIn1() {
           </Card>
         </div>
       </FadeContent>
+
+      {/* FOOTER */}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        gap={2}
+        className="text-center"
+        style={{
+          justifyContent: 'center',
+          alignItems: 'center',
+
+          color: '#aaa',
+          zIndex: 2,
+        }}
+      >
+        <small>
+          by{' '}
+          <a
+            href="https://github.com/VenturaAdrian/LMD-HelpdeskSystem"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontWeight: 500, color: 'inherit', textDecoration: 'none' }}
+          >
+            adriankurtventura
+          </a>
+        </small>
+
+        <small>
+          © {new Date().getFullYear()}{' '}
+          <a
+            href="https://lepantomining.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontWeight: 500, color: 'inherit', textDecoration: 'none' }}
+          >
+            lepantomining.com
+          </a>
+        </small>
+      </Stack>
     </div>
   );
-
 }

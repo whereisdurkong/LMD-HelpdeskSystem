@@ -14,7 +14,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function AllTicketbyType({ filterType, showChart = true }) {
+export default function AllTicketbyType({ filterType, showChart = true, location, onDataReady }) {
     const [chartData, setChartData] = useState(null);
     const [tickets, setTickets] = useState([]);
 
@@ -58,11 +58,15 @@ export default function AllTicketbyType({ filterType, showChart = true }) {
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 let ticketres = res.data || [];
 
-                // Apply filter
+                if (location === "lmd") {
+                    ticketres = ticketres.filter(t => t.assigned_location === "lmd");
+                } else if (location === "corp") {
+                    ticketres = ticketres.filter(t => t.assigned_location === "corp");
+                }
+
                 ticketres = ticketres.filter(t => isInFilter(t.created_at));
                 setTickets(ticketres);
 
-                // ---- Chart data ----
                 if (filterType === "perMonth") {
                     const monthLabels = [
                         "January", "February", "March", "April", "May", "June",
@@ -79,36 +83,55 @@ export default function AllTicketbyType({ filterType, showChart = true }) {
                         if (ticket.ticket_type === 'inquiry') inquiryCounts[monthIndex]++;
                     });
 
+                    // ✅ Prepare summary
+                    const summary = monthLabels.map((m, i) => ({
+                        month: m,
+                        incident: incidentCounts[i],
+                        request: requestCounts[i],
+                        inquiry: inquiryCounts[i],
+                    }));
+
+                    // send summary to parent
+                    onDataReady?.(summary);
+
                     setChartData({
                         labels: monthLabels,
                         datasets: [
-                            {
-                                label: 'Incident',
-                                data: incidentCounts,
-                                backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                                borderColor: 'rgba(255, 99, 132, 1)',
-                                borderWidth: 1
-                            },
-                            {
-                                label: 'Request',
-                                data: requestCounts,
-                                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                                borderColor: 'rgba(54, 162, 235, 1)',
-                                borderWidth: 1
-                            },
-                            {
-                                label: 'Inquiry',
-                                data: inquiryCounts,
-                                backgroundColor: 'rgba(255, 206, 86, 0.5)',
-                                borderColor: 'rgba(255, 206, 86, 1)',
-                                borderWidth: 1
-                            }
+                            { label: 'Incident', data: incidentCounts, backgroundColor: 'rgba(255, 99, 132, 0.5)' },
+                            { label: 'Request', data: requestCounts, backgroundColor: 'rgba(54, 162, 235, 0.5)' },
+                            { label: 'Inquiry', data: inquiryCounts, backgroundColor: 'rgba(255, 206, 86, 0.5)' }
                         ]
                     });
                 } else {
                     const incidentCount = ticketres.filter(i => i.ticket_type === 'incident').length;
                     const requestCount = ticketres.filter(r => r.ticket_type === 'request').length;
                     const inquiryCount = ticketres.filter(q => q.ticket_type === 'inquiry').length;
+
+
+
+                    if (onDataReady) {
+                        if (filterType === "perMonth") {
+                            const monthLabels = [
+                                "January", "February", "March", "April", "May", "June",
+                                "July", "August", "September", "October", "November", "December"
+                            ];
+                            const summary = monthLabels.map((m, i) => ({
+                                month: m,
+                                incident: incidentCount[i],
+                                request: requestCount[i],
+                                inquiry: inquiryCount[i],
+                                total: incidentCount[i] + requestCount[i] + inquiryCount[i]
+                            }));
+                            onDataReady(summary);
+                        } else {
+                            const summary = [
+                                { Type: "Incident", Total: incidentCount },
+                                { Type: "Request", Total: requestCount },
+                                { Type: "Inquiry", Total: inquiryCount }
+                            ];
+                            onDataReady(summary);
+                        }
+                    }
 
                     setChartData({
                         labels: ['Incident', 'Request', 'Inquiry'],
@@ -120,13 +143,7 @@ export default function AllTicketbyType({ filterType, showChart = true }) {
                                     'rgba(255, 99, 132, 0.5)',
                                     'rgba(54, 162, 235, 0.5)',
                                     'rgba(255, 206, 86, 0.5)'
-                                ],
-                                borderColor: [
-                                    'rgba(255, 99, 132, 1)',
-                                    'rgba(54, 162, 235, 1)',
-                                    'rgba(255, 206, 86, 1)'
-                                ],
-                                borderWidth: 1
+                                ]
                             }
                         ]
                     });
@@ -138,8 +155,7 @@ export default function AllTicketbyType({ filterType, showChart = true }) {
         };
 
         fetch();
-    }, [filterType]);
-
+    }, [filterType, location]);
     const renderTable = (title, rows) => (
         <div style={{ marginTop: "20px" }}>
             <h4>{title}</h4>

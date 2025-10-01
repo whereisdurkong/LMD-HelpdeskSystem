@@ -1,86 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { Table, Form } from "react-bootstrap";
+import { Table, Form, Button } from "react-bootstrap";
 import axios from "axios";
 import config from "config";
+import * as XLSX from "xlsx";
 
-const subCategoryOptions = {
-    incident: {
-        hardware: [
-            "Desktop",
-            "Laptop",
-            "Monitor",
-            "Printer",
-            "Scanner",
-            "Printer/Scanner Combo",
-            "Peripherals (Keyboard, Mouse, Webcam, External Drive)",
-            "Docking Station",
-            "Projector",
-            "Fax Machine",
-            "Telephone",
-            "Server Hardware",
-            "UPS (Uninterruptible Power Supply)",
-            "Cabling & Ports",
-            "Others",
-        ],
-        network: [
-            "Internet Connectivity",
-            "Wi-Fi",
-            "LAN (Local Area Network)",
-            "WAN (Wide Area Network)",
-            "Server Access",
-            "Network Printer/Scanner",
-            "VPN Connection",
-            "Firewall",
-            "Router/Switch Configuration",
-            "MPLS",
-            "ISP",
-            "Network Security (Intrusion Detection/Prevention)",
-            "Bandwidth Issues",
-            "Others",
-        ],
-        software: [
-            "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
-            "Oracle (PROD/BIPUB)",
-            "Email (Setup, Creation, Error, Backup)",
-            "System Updates & Patches",
-            "Active Directory (User Creation, Login, Password)",
-            "Zoom / Video Conferencing Tools",
-            "FoxPro (Accounting System)",
-            "GEMCOM",
-            "SURPAC",
-            "FTP (Access Creation, Change Password)",
-            "PDF (Conversion, Reduce Size, Editing)",
-            "Antivirus / Security Software",
-            "Operating System (Windows, macOS, Linux)",
-            "Custom In-house Applications",
-            "Backup & Restore Tools",
-            "Cloud Services (OneDrive, Google Drive, Dropbox)",
-            "Others",
-        ],
-    },
-};
-
-const TicketSummaryTable = ({ filterType }) => {
+const TicketSummaryTable = ({ filterType, location, onDataReady }) => {
     const [filter, setFilter] = useState("ALL");
     const [departments, setDepartments] = useState([]);
     const [deptSubcatCount, setDeptSubcatCount] = useState({});
+    const [allSubcategories, setAllSubcategories] = useState([]);
+    const [tickets, setTickets] = useState([]);
 
     useEffect(() => {
         const fetch = async () => {
             try {
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
-                let tickets = res.data || [];
+                let fetchedTickets = res.data || [];
 
-                // 🔹 Apply filterType here
+                // 🔹 Location filter
+                if (location === "lmd") {
+                    fetchedTickets = fetchedTickets.filter(t => t.assigned_location === "lmd");
+                } else if (location === "corp") {
+                    fetchedTickets = fetchedTickets.filter(t => t.assigned_location === "corp");
+                }
+
+                // 🔹 Date filter
                 const now = new Date();
                 if (filterType === "today") {
-                    tickets = tickets.filter(t =>
-                        new Date(t.created_at).toDateString() === now.toDateString()
+                    fetchedTickets = fetchedTickets.filter(
+                        t => new Date(t.created_at).toDateString() === now.toDateString()
                     );
                 } else if (filterType === "thisWeek") {
                     const start = new Date(now);
                     start.setDate(now.getDate() - now.getDay());
-                    tickets = tickets.filter(t => {
+                    fetchedTickets = fetchedTickets.filter(t => {
                         const d = new Date(t.created_at);
                         return d >= start && d <= now;
                     });
@@ -89,12 +42,12 @@ const TicketSummaryTable = ({ filterType }) => {
                     start.setDate(now.getDate() - now.getDay() - 7);
                     const end = new Date(start);
                     end.setDate(start.getDate() + 6);
-                    tickets = tickets.filter(t => {
+                    fetchedTickets = fetchedTickets.filter(t => {
                         const d = new Date(t.created_at);
                         return d >= start && d <= end;
                     });
                 } else if (filterType === "thisMonth") {
-                    tickets = tickets.filter(t => {
+                    fetchedTickets = fetchedTickets.filter(t => {
                         const d = new Date(t.created_at);
                         return (
                             d.getMonth() === now.getMonth() &&
@@ -102,14 +55,16 @@ const TicketSummaryTable = ({ filterType }) => {
                         );
                     });
                 } else if (filterType === "perYear") {
-                    tickets = tickets.filter(t => {
+                    fetchedTickets = fetchedTickets.filter(t => {
                         const d = new Date(t.created_at);
                         return d.getFullYear() === now.getFullYear();
                     });
                 }
 
-                // (rest of your aggregation logic stays the same)
-                const uniqueUsernames = [...new Set(tickets.map(ticket => ticket.ticket_for))];
+                setTickets(fetchedTickets);
+
+                // 🔹 Map users to departments
+                const uniqueUsernames = [...new Set(fetchedTickets.map(ticket => ticket.ticket_for))];
                 const userRequests = uniqueUsernames.map(username =>
                     axios.get(`${config.baseApi}/authentication/get-by-username`, {
                         params: { user_name: username },
@@ -123,11 +78,17 @@ const TicketSummaryTable = ({ filterType }) => {
                     userDeptMap[user.user_name] = user.emp_department;
                 });
 
+                // 🔹 Count tickets per dept + subcategory
                 const deptSubcatCountTemp = {};
-                tickets.forEach(ticket => {
+                const dynamicSubcategories = new Set();
+
+                fetchedTickets.forEach(ticket => {
                     const dept = userDeptMap[ticket.ticket_for];
                     const subcat = ticket.ticket_SubCategory;
+
                     if (dept && subcat) {
+                        dynamicSubcategories.add(subcat);
+
                         if (!deptSubcatCountTemp[dept]) {
                             deptSubcatCountTemp[dept] = {};
                         }
@@ -138,33 +99,72 @@ const TicketSummaryTable = ({ filterType }) => {
 
                 setDeptSubcatCount(deptSubcatCountTemp);
                 setDepartments(Object.keys(deptSubcatCountTemp));
+                setAllSubcategories([...dynamicSubcategories]);
+
+
             } catch (err) {
                 console.log("Unable to fetch Data: ", err);
             }
         };
+
         fetch();
-    }, [filterType]); // 🔹 re-run when filterType changes
+    }, [filterType, location]);
 
-    useEffect(() => {
-        departments.map(dept => {
-            const deptTotal = filteredSubcategories.reduce(
-                (sum, subcat) => sum + (deptSubcatCount[dept]?.[subcat] || 0),
-                0
-            );
-        })
-
-    }, [departments])
-
-    // Flatten all subcategories
-    const allSubcategories = Object.values(subCategoryOptions.incident).flat();
-
-    // Apply category filter
+    // 🔹 Apply filter
     let filteredSubcategories = [];
     if (filter === "ALL") {
         filteredSubcategories = allSubcategories;
     } else {
-        filteredSubcategories = subCategoryOptions.incident[filter] || [];
+        filteredSubcategories = allSubcategories.filter(subcat =>
+            tickets.some(
+                t =>
+                    t.ticket_SubCategory === subcat &&
+                    t.ticket_category?.toLowerCase() === filter.toLowerCase()
+            )
+        );
     }
+
+    // 🔹 Export to Excel
+    const handleExportExcel = () => {
+        const header = ["Subcategory", ...departments, "Total"];
+
+        const rows = filteredSubcategories.map(subcat => {
+            let rowTotal = 0;
+            const counts = departments.map(dept => {
+                const count = deptSubcatCount[dept]?.[subcat] || 0;
+                rowTotal += count;
+                return count;
+            });
+            return [subcat, ...counts, rowTotal];
+        });
+
+        // Totals row
+        const totalRow = [
+            "Total",
+            ...departments.map(dept =>
+                filteredSubcategories.reduce(
+                    (sum, subcat) => sum + (deptSubcatCount[dept]?.[subcat] || 0),
+                    0
+                )
+            ),
+            filteredSubcategories.reduce((grandTotal, subcat) => {
+                return (
+                    grandTotal +
+                    departments.reduce(
+                        (sum, dept) => sum + (deptSubcatCount[dept]?.[subcat] || 0),
+                        0
+                    )
+                );
+            }, 0),
+        ];
+
+        const data = [header, totalRow, ...rows];
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Ticket Summary");
+        XLSX.writeFile(wb, "TicketSummary.xlsx");
+    };
 
     return (
         <div>
@@ -178,6 +178,10 @@ const TicketSummaryTable = ({ filterType }) => {
                     <option value="software">Software</option>
                 </Form.Select>
             </Form.Group>
+
+            <Button onClick={handleExportExcel} className="mb-3">
+                Export to Excel
+            </Button>
 
             <Table striped bordered hover>
                 <thead>
@@ -226,10 +230,7 @@ const TicketSummaryTable = ({ filterType }) => {
                             </tr>
                         );
                     })}
-
-
                 </tbody>
-
             </Table>
         </div>
     );

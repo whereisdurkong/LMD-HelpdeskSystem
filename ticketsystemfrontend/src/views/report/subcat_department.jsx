@@ -1,9 +1,10 @@
+// SubCatDepartment.jsx
 import React, { useEffect, useState } from "react";
 import { Table } from "react-bootstrap";
 import axios from "axios";
 import config from "config";
 
-const SubCatDepartment = ({ filterType }) => {
+const SubCatDepartment = ({ filterType, location, onDataReady }) => {
     const [departments, setDepartments] = useState([]);
     const [deptCount, setDeptCount] = useState({});
     const [grandTotal, setGrandTotal] = useState(0);
@@ -14,12 +15,13 @@ const SubCatDepartment = ({ filterType }) => {
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 let tickets = res.data || [];
 
-                // 🔹 Apply filterType
+                // 🔹 filters (location + date)
+                if (location === "lmd") tickets = tickets.filter(t => t.assigned_location === "lmd");
+                else if (location === "corp") tickets = tickets.filter(t => t.assigned_location === "corp");
+
                 const now = new Date();
                 if (filterType === "today") {
-                    tickets = tickets.filter(t =>
-                        new Date(t.created_at).toDateString() === now.toDateString()
-                    );
+                    tickets = tickets.filter(t => new Date(t.created_at).toDateString() === now.toDateString());
                 } else if (filterType === "thisWeek") {
                     const start = new Date(now);
                     start.setDate(now.getDate() - now.getDay());
@@ -39,19 +41,13 @@ const SubCatDepartment = ({ filterType }) => {
                 } else if (filterType === "thisMonth") {
                     tickets = tickets.filter(t => {
                         const d = new Date(t.created_at);
-                        return (
-                            d.getMonth() === now.getMonth() &&
-                            d.getFullYear() === now.getFullYear()
-                        );
+                        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
                     });
                 } else if (filterType === "perYear") {
-                    tickets = tickets.filter(t => {
-                        const d = new Date(t.created_at);
-                        return d.getFullYear() === now.getFullYear();
-                    });
+                    tickets = tickets.filter(t => new Date(t.created_at).getFullYear() === now.getFullYear());
                 }
 
-                // 🔹 Map tickets to departments
+                // 🔹 map users → departments
                 const uniqueUsernames = [...new Set(tickets.map(ticket => ticket.ticket_for))];
                 const userRequests = uniqueUsernames.map(username =>
                     axios.get(`${config.baseApi}/authentication/get-by-username`, {
@@ -66,12 +62,14 @@ const SubCatDepartment = ({ filterType }) => {
                     userDeptMap[user.user_name] = user.emp_department;
                 });
 
+                // 🔹 count tickets per dept
                 const deptCountTemp = {};
                 let total = 0;
 
                 tickets.forEach(ticket => {
                     const dept = userDeptMap[ticket.ticket_for];
-                    if (dept) {
+                    const subcat = ticket.ticket_SubCategory;
+                    if (dept && subcat) {
                         deptCountTemp[dept] = (deptCountTemp[dept] || 0) + 1;
                         total++;
                     }
@@ -81,12 +79,69 @@ const SubCatDepartment = ({ filterType }) => {
                 setDepartments(Object.keys(deptCountTemp));
                 setGrandTotal(total);
 
+                // 🔹 send data to parent (Report page)
+                if (onDataReady) {
+                    if (filterType === "perMonth") {
+                        const monthLabels = [
+                            "January", "February", "March", "April", "May", "June",
+                            "July", "August", "September", "October", "November", "December"
+                        ];
+
+                        // 🔹 group tickets by month → dept
+                        const monthSummary = {};
+
+                        tickets.forEach(ticket => {
+                            const d = new Date(ticket.created_at);
+                            const month = d.getMonth(); // 0–11
+                            const dept = userDeptMap[ticket.ticket_for];
+                            if (!dept) return;
+
+                            if (!monthSummary[month]) {
+                                monthSummary[month] = { deptCount: {}, grandTotal: 0 };
+                            }
+
+                            monthSummary[month].deptCount[dept] =
+                                (monthSummary[month].deptCount[dept] || 0) + 1;
+                            monthSummary[month].grandTotal++;
+                        });
+
+                        // 🔹 collect all departments across the year (so table/Excel has consistent columns)
+                        const allDepartments = new Set();
+                        Object.values(monthSummary).forEach(m =>
+                            Object.keys(m.deptCount).forEach(d => allDepartments.add(d))
+                        );
+
+                        // 🔹 build full 12-month summary (fill missing with 0)
+                        const summary = monthLabels.map((label, idx) => {
+                            const monthData = monthSummary[idx] || { deptCount: {}, grandTotal: 0 };
+
+                            return {
+                                month: label,
+                                departments: [...allDepartments],
+                                deptCount: monthData.deptCount,
+                                grandTotal: monthData.grandTotal,
+                            };
+                        });
+
+                        onDataReady(summary);
+                    } else {
+                        onDataReady({
+                            departments: Object.keys(deptCountTemp),
+                            deptCount: deptCountTemp,
+                            grandTotal: total,
+                        });
+                    }
+
+
+                }
+
+
             } catch (err) {
                 console.log("Unable to fetch Data: ", err);
             }
         };
         fetch();
-    }, [filterType]);
+    }, [filterType, location]);
 
     return (
         <div>

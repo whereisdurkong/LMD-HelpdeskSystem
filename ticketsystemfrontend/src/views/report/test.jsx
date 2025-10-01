@@ -2,7 +2,8 @@ import { Container, Row, Col, Form, Modal, Button } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import config from "config";
-
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import SubCatDepartment from "./subcat_department";
 import SubCatDepartmentTable from "./subcat_departmentTable";
 import "./bento-layout-new.css";
@@ -18,6 +19,8 @@ import {
 import GetAllByCategory from "./getallbycategory";
 import LocationTicketsChart from "./allticketbysite";
 import AllTicketbyType from "./allticketbytype";
+import AllTicketsByUser from "./allticketsbyuser";
+import FeatherIcon from "feather-icons-react";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -26,6 +29,8 @@ export default function Report() {
     const [stats, setStats] = useState([]);
     const [allTickets, setAllTickets] = useState([]);
     const [filteredTickets, setFilteredTickets] = useState([]);
+
+    const [location, setLocation] = useState('')
 
     // Modal states
     const [showModal, setShowModal] = useState(false);
@@ -37,7 +42,10 @@ export default function Report() {
     const [closed, setClosed] = useState('');
 
     const [chartdata, setChartData] = useState(null);
-
+    const [subcatSummary, setSubcatSummary] = useState(null);
+    const [ticketTypeSummary, setTicketTypeSummary] = useState(null);
+    const [ticketCategorySummary, setTicketCategorySummary] = useState(null);
+    const [tikcetUsersSummary, setTicketUsersSummary] = useState(null);
     const openModal = (title, content) => {
         setModalTitle(title);
         setModalContent(content);
@@ -54,7 +62,6 @@ export default function Report() {
         return { diffMs, text: `${diffDays}d ${diffHours}h ${diffMinutes}m` };
     };
 
-    // ✅ Table component used inside modal
     const TicketsTable = ({ tickets }) => {
         return (
             <div style={{ overflowX: "auto" }}>
@@ -94,13 +101,18 @@ export default function Report() {
         );
     };
 
+    const [locationFilteredTickets, setLocationFilteredTickets] = useState([]);
+
     // Fetch tickets once
     useEffect(() => {
+
         const fetch = async () => {
             try {
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 const data = res.data || [];
                 setAllTickets(data);
+
+
             } catch (err) {
                 console.log("Unable to fetch Data: ", err);
             }
@@ -108,9 +120,25 @@ export default function Report() {
         fetch();
     }, []);
 
+    useEffect(() => {
+        let filetered = [...allTickets];
+        if (location === 'lmd') {
+            filetered = allTickets.filter(t => t.assigned_location === 'lmd');
+        } else if (location === 'corp') {
+            filetered = allTickets.filter(t => t.assigned_location === 'corp');
+        } else {
+            filetered = allTickets;
+        }
+        setLocationFilteredTickets(filetered);
+    }, [location, allTickets])
+
     // Apply filter + sorting whenever filterType or allTickets changes
     useEffect(() => {
-        if (!allTickets.length) return;
+        if (!locationFilteredTickets.length) {
+            setFilteredTickets([])
+            return;
+        }
+
 
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -122,7 +150,7 @@ export default function Report() {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const startOfYear = new Date(now.getFullYear(), 0, 1);
 
-        let filtered = [...allTickets];
+        let filtered = [...locationFilteredTickets];
 
         switch (filterType) {
             case "today":
@@ -153,7 +181,7 @@ export default function Report() {
         // Sort by created_at (newest first)
         filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-        // ✅ save filtered tickets for modal usage
+        // save filtered tickets for modal usage
         setFilteredTickets(filtered);
 
         // Counters
@@ -232,7 +260,7 @@ export default function Report() {
                 }
             ]
         });
-    }, [filterType, allTickets]);
+    }, [filterType, locationFilteredTickets]);
 
     const totalRow = stats.reduce(
         (totals, row) => {
@@ -244,6 +272,187 @@ export default function Report() {
         },
         { total: 0, resolved: 0, closed: 0, open: 0 }
     );
+    const handleDownloadExcel = () => {
+        const workbook = XLSX.utils.book_new();
+
+        if (!ticketTypeSummary && !subcatSummary && !filteredTickets.length) {
+            alert("No data available to download");
+            return;
+        }
+
+        // ---- Tickets by Type ----
+        if (ticketTypeSummary) {
+            let ws1;
+            const summaryArray = Array.isArray(ticketTypeSummary)
+                ? ticketTypeSummary
+                : [ticketTypeSummary];
+
+            if (summaryArray[0]?.month) {
+                const header = ["Month", "Incident", "Request", "Inquiry", "Total"];
+                const rows = summaryArray.map(r => [
+                    r.month,
+                    r.incident,
+                    r.request,
+                    r.inquiry,
+                    r.total
+                ]);
+                ws1 = XLSX.utils.aoa_to_sheet([header, ...rows]);
+            } else {
+                ws1 = XLSX.utils.json_to_sheet(summaryArray);
+            }
+
+            // ✅ Append Incident, Request, Inquiry tables below Tickets by Type
+            let currentRow = XLSX.utils.decode_range(ws1['!ref']).e.r + 3; // start 3 rows below
+
+            const addTable = (title, tickets) => {
+                // Title row
+                const titleCell = [[title]];
+                XLSX.utils.sheet_add_aoa(ws1, titleCell, { origin: { r: currentRow, c: 0 } });
+                currentRow++;
+
+                // Header row
+                const headers = [["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"]];
+                XLSX.utils.sheet_add_aoa(ws1, headers, { origin: { r: currentRow, c: 0 } });
+                currentRow++;
+
+                // Data rows
+                const rows = tickets.map(t => [
+                    t.ticket_id,
+                    t.ticket_subject,
+                    t.ticket_status,
+                    t.ticket_type,
+                    t.assigned_to || "-",
+                    t.ticket_for || "-",
+                    new Date(t.created_at).toLocaleString()
+                ]);
+
+                XLSX.utils.sheet_add_aoa(ws1, rows, { origin: { r: currentRow, c: 0 } });
+                currentRow += rows.length + 2; // leave 2 spaces after each table
+            };
+
+            addTable("Incident Tickets", filteredTickets.filter(t => t.ticket_type === "incident"));
+            addTable("Request Tickets", filteredTickets.filter(t => t.ticket_type === "request"));
+            addTable("Inquiry Tickets", filteredTickets.filter(t => t.ticket_type === "inquiry"));
+
+            XLSX.utils.book_append_sheet(workbook, ws1, "Tickets By Type");
+        }
+
+        // ---- Subcategory Summary ----
+        if (subcatSummary) {
+            let ws2;
+            const summaryArray = Array.isArray(subcatSummary)
+                ? subcatSummary
+                : [subcatSummary];
+
+            if (summaryArray[0]?.month) {
+                const departments = summaryArray[0].departments || [];
+                const header = ["Month", ...departments, "Total"];
+                const rows = summaryArray.map(r => {
+                    const deptCounts = departments.map(
+                        dept => r.deptCount?.[dept] ?? 0
+                    );
+                    return [r.month, ...deptCounts, r.grandTotal ?? 0];
+                });
+                ws2 = XLSX.utils.aoa_to_sheet([header, ...rows]);
+            } else {
+                const departments = subcatSummary.departments || [];
+                const header = ["Department", "Tickets"];
+                const rows = departments.map(dept => [
+                    dept,
+                    subcatSummary.deptCount?.[dept] ?? 0
+                ]);
+                rows.push(["Total", subcatSummary.grandTotal ?? 0]);
+                ws2 = XLSX.utils.aoa_to_sheet([header, ...rows]);
+            }
+            XLSX.utils.book_append_sheet(workbook, ws2, "SubCat Summary");
+        }
+
+        // ---- Tickets by Category ----
+        if (ticketCategorySummary) {
+            let ws3;
+            const summaryArray = Array.isArray(ticketCategorySummary)
+                ? ticketCategorySummary
+                : [ticketCategorySummary];
+
+            if (summaryArray[0]?.month) {
+                const keys = Object.keys(summaryArray[0]).filter(k => k !== "month");
+                const header = ["Month", ...keys];
+                const rows = summaryArray.map(r => [r.month, ...keys.map(k => r[k] ?? 0)]);
+                ws3 = XLSX.utils.aoa_to_sheet([header, ...rows]);
+            } else {
+                ws3 = XLSX.utils.json_to_sheet(summaryArray);
+            }
+            let currentRow = XLSX.utils.decode_range(ws3['!ref']).e.r + 3; // start 3 rows below
+            const addTable = (title, tickets) => {
+                // Title row
+                const titleCell = [[title]];
+                XLSX.utils.sheet_add_aoa(ws3, titleCell, { origin: { r: currentRow, c: 0 } });
+                currentRow++;
+
+                // Header row
+                const headers = [["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"]];
+                XLSX.utils.sheet_add_aoa(ws3, headers, { origin: { r: currentRow, c: 0 } });
+                currentRow++;
+
+                // Data rows
+                const rows = tickets.map(t => [
+                    t.ticket_id,
+                    t.ticket_subject,
+                    t.ticket_status,
+                    t.ticket_type,
+                    t.assigned_to || "-",
+                    t.ticket_for || "-",
+                    new Date(t.created_at).toLocaleString()
+                ]);
+
+                XLSX.utils.sheet_add_aoa(ws3, rows, { origin: { r: currentRow, c: 0 } });
+                currentRow += rows.length + 2; // leave 2 spaces after each table
+            };
+
+            addTable("Incident Tickets", filteredTickets.filter(t => t.ticket_category === "hardware"));
+            addTable("Request Tickets", filteredTickets.filter(t => t.ticket_category === "network"));
+            addTable("Inquiry Tickets", filteredTickets.filter(t => t.ticket_category === "software"));
+
+
+
+
+            XLSX.utils.book_append_sheet(workbook, ws3, "Tickets By Category");
+        }
+
+        // ---- Tickets by User ----
+        if (tikcetUsersSummary) {
+            let ws4;
+            const summaryArray = Array.isArray(tikcetUsersSummary)
+                ? tikcetUsersSummary
+                : [tikcetUsersSummary];
+
+            if (filterType === "perMonth") {
+                const keys = Object.keys(summaryArray[0]).filter(k => k !== "month");
+                const header = ["Month", ...keys];
+                const rows = summaryArray.map(r => [r.month, ...keys.map(k => r[k] ?? 0)]);
+                ws4 = XLSX.utils.aoa_to_sheet([header, ...rows]);
+            } else {
+                const keys = Object.keys(summaryArray[0]);
+                const header = keys;
+                const rows = summaryArray.map(r => keys.map(k => r[k] ?? 0));
+                ws4 = XLSX.utils.aoa_to_sheet([header, ...rows]);
+            }
+
+            const addTable = () => {
+
+            }
+
+            XLSX.utils.book_append_sheet(workbook, ws4, "Tickets By User");
+        }
+
+        // ---- Save Excel file ----
+        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+        saveAs(blob, "Reports.xlsx");
+    };
+
+
+
 
     return (
         <Container fluid className="pt-100 px-3 px-md-5"
@@ -254,15 +463,30 @@ export default function Report() {
                 paddingBottom: "20px",
             }}>
             <Row className="align-items-center g-3 mb-4">
-                <Col xs={12} md={8} lg={9}>
+                {/* Left side - Title */}
+                <Col xs="auto">
                     <h2 className="mb-0"><b>Reports</b></h2>
                 </Col>
-                <Col xs={12} md={4} lg={3}>
-                    <Form.Group controlId="status-filter" style={{ width: '100%' }}>
+
+                {/* Filters */}
+                <Col className="d-flex justify-content-end gap-2">
+                    <Form.Group controlId="status-filter-1">
+                        <Form.Select
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            style={{ maxWidth: "200px" }}
+                        >
+                            <option value="all">LMD & CORP</option>
+                            <option value="lmd">LMD</option>
+                            <option value="corp">CORP</option>
+                        </Form.Select>
+                    </Form.Group>
+
+                    <Form.Group controlId="status-filter-2">
                         <Form.Select
                             value={filterType}
                             onChange={(e) => setFilterType(e.target.value)}
-                            style={{ maxWidth: "550px" }}
+                            style={{ maxWidth: "250px" }}
                         >
                             <option value="all">All</option>
                             <option value="today">Today</option>
@@ -273,8 +497,16 @@ export default function Report() {
                             <option value="perYear">Per Year</option>
                         </Form.Select>
                     </Form.Group>
+
+                    {/* Button aligned with filters */}
+                    <Button variant="success" onClick={handleDownloadExcel}>
+                        Excel <FeatherIcon icon="download" />
+                    </Button>
                 </Col>
             </Row>
+
+
+
 
             {/* ✅ Clickable Open / Not Reviewed / Closed cards */}
             <Row style={{ paddingBottom: '20px' }}>
@@ -373,10 +605,10 @@ export default function Report() {
                 </Col>
                 <Col>
                     <div className="bento-item bento-users"
-                        onClick={() => openModal("Ticket Summary", <SubCatDepartmentTable filterType={filterType} />)}>
+                        onClick={() => openModal("Ticket Summary", <SubCatDepartmentTable filterType={filterType} location={location} onDataReady={setSubcatSummary} />)}>
                         <h3>Summary</h3>
                         <div className="bento-chart-wrapper">
-                            <SubCatDepartment filterType={filterType} />
+                            <SubCatDepartment filterType={filterType} location={location} onDataReady={setSubcatSummary} />
                         </div>
                     </div>
                 </Col>
@@ -390,11 +622,8 @@ export default function Report() {
                         onClick={() =>
                             openModal(
                                 "Tickets by Type",
-                                <AllTicketbyType filterType={filterType} showChart={false} />
-                            )
-                        }
-                    >
-                        <AllTicketbyType filterType={filterType} showChart={true} />
+                                <AllTicketbyType filterType={filterType} showChart={false} location={location} />)}>
+                        <AllTicketbyType filterType={filterType} showChart={true} location={location} onDataReady={setTicketTypeSummary} />
                     </div>
                 </Col>
 
@@ -404,11 +633,9 @@ export default function Report() {
                         onClick={() =>
                             openModal(
                                 "All Tickets by Category",
-                                <GetAllByCategory filterType={filterType} showChart={false} />
-                            )
-                        }
-                    >
-                        <GetAllByCategory filterType={filterType} showChart={true} />
+                                <GetAllByCategory filterType={filterType} showChart={false} location={location} onDataReady={setTicketCategorySummary} />
+                            )}>
+                        <GetAllByCategory filterType={filterType} showChart={true} location={location} onDataReady={setTicketCategorySummary} />
                     </div>
                 </Col>
 
@@ -417,12 +644,12 @@ export default function Report() {
                         className="bento-item bento-users"
                         onClick={() =>
                             openModal(
-                                "Tickets by Location",
-                                <LocationTicketsChart filterType={filterType} showChart={false} />
+                                "Tickets per Help Desk",
+                                <AllTicketsByUser filterType={filterType} showChart={false} location={location} onDataReady={setTicketUsersSummary} />
                             )
                         }
                     >
-                        <LocationTicketsChart filterType={filterType} showChart={true} />
+                        <AllTicketsByUser filterType={filterType} showChart={true} location={location} onDataReady={setTicketUsersSummary} />
                     </div>
                 </Col>
             </Row>

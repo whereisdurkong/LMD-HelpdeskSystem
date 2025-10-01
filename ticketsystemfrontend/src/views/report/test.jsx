@@ -45,7 +45,7 @@ export default function Report() {
     const [subcatSummary, setSubcatSummary] = useState(null);
     const [ticketTypeSummary, setTicketTypeSummary] = useState(null);
     const [ticketCategorySummary, setTicketCategorySummary] = useState(null);
-    const [tikcetUsersSummary, setTicketUsersSummary] = useState(null);
+    const [ticketUsersSummary, setTicketUsersSummary] = useState(null);
     const openModal = (title, content) => {
         setModalTitle(title);
         setModalContent(content);
@@ -413,37 +413,32 @@ export default function Report() {
             addTable("Request Tickets", filteredTickets.filter(t => t.ticket_category === "network"));
             addTable("Inquiry Tickets", filteredTickets.filter(t => t.ticket_category === "software"));
 
-
-
-
             XLSX.utils.book_append_sheet(workbook, ws3, "Tickets By Category");
         }
 
-        // ---- Tickets by User ----
-        if (tikcetUsersSummary) {
+        // ---- Tickets by Helpdesk Users ----
+        if (ticketUsersSummary) {
             let ws4;
-            const summaryArray = Array.isArray(tikcetUsersSummary)
-                ? tikcetUsersSummary
-                : [tikcetUsersSummary];
+            const summaryArray = Array.isArray(ticketUsersSummary)
+                ? ticketUsersSummary
+                : [ticketUsersSummary];
 
-            if (filterType === "perMonth") {
+            if (summaryArray[0]?.month) {
+                // Per month view
                 const keys = Object.keys(summaryArray[0]).filter(k => k !== "month");
                 const header = ["Month", ...keys];
                 const rows = summaryArray.map(r => [r.month, ...keys.map(k => r[k] ?? 0)]);
                 ws4 = XLSX.utils.aoa_to_sheet([header, ...rows]);
             } else {
-                const keys = Object.keys(summaryArray[0]);
-                const header = keys;
-                const rows = summaryArray.map(r => keys.map(k => r[k] ?? 0));
-                ws4 = XLSX.utils.aoa_to_sheet([header, ...rows]);
-            }
-
-            const addTable = () => {
-
+                // Simple user → total tickets
+                ws4 = XLSX.utils.json_to_sheet(summaryArray);
             }
 
             XLSX.utils.book_append_sheet(workbook, ws4, "Tickets By User");
         }
+
+
+
 
         // ---- Save Excel file ----
         const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });

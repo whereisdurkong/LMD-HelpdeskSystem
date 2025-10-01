@@ -148,30 +148,24 @@ export default function AllTicketsByUser({ filterType, showChart = true, onDataR
                             "July", "August", "September", "October", "November", "December"
                         ];
 
-                        // Collect unique users
-                        const users = Object.keys(userTickets);
+                        const users = Object.keys(ticketsPerUser);
 
-                        // Build summary rows: one row per month
                         summary = monthLabels.map((label, i) => {
                             const row = { month: label };
-
                             users.forEach(user => {
-                                const tickets = userTickets[user] || [];
+                                const tickets = ticketsPerUser[user] || [];
                                 row[user] = tickets.filter(t => new Date(t.created_at).getMonth() === i).length;
                             });
-
-                            // Add total per month
                             row.total = users.reduce((sum, u) => sum + (row[u] || 0), 0);
-
                             return row;
                         });
                     } else {
-                        // Default simple summary: users + totals
-                        summary = Object.entries(userTickets).map(([username, tickets]) => ({
+                        summary = Object.entries(ticketsPerUser).map(([username, tickets]) => ({
                             user: username,
                             total: tickets.length
                         }));
                     }
+
 
                     onDataReady(summary);
                 }

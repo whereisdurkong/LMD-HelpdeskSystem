@@ -99,6 +99,7 @@ export default function Network() {
 
         } catch (err) {
             console.log('Unable to archive knowledgebase: ', err);
+            setLoading(false)
             setError("Failed to archive kb.");
         }
 
@@ -107,8 +108,10 @@ export default function Network() {
     const handleUpdate = async () => {
 
         if (newTitle === '') {
+            setLoading(false)
             setError("Please fill in title.");
         } else if (newContent.replace(/<(.|\n)*?>/g, '').trim() === '') {
+            setLoading(false)
             setError("Please fill in description.");
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -135,8 +138,10 @@ export default function Network() {
 
     const handleSave = async () => {
         console.log("Saving Network:", newTitle, newContent);
+        setLoading(false)
         if (newTitle === '') {
             setError("Please fill in title.");
+            setLoading(false)
         } else if (newContent.replace(/<(.|\n)*?>/g, '').trim() === '') {
             setError("Please fill in description.");
         } else {

@@ -100,6 +100,7 @@ export default function Hardware() {
 
         } catch (err) {
             console.log('Unable to archive knowledgebase: ', err);
+            setLoading(false)
             setError("Failed to archive kb.");
         }
 
@@ -108,8 +109,10 @@ export default function Hardware() {
     const handleUpdate = async () => {
 
         if (newTitle === '') {
+            setLoading(false)
             setError("Please fill in title.");
         } else if (newContent.replace(/<(.|\n)*?>/g, '').trim() === '') {
+            setLoading(false)
             setError("Please fill in description.");
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -136,8 +139,10 @@ export default function Hardware() {
 
     const handleSave = async () => {
         if (newTitle === '') {
+            setLoading(false)
             setError("Please fill in title.");
         } else if (newContent.replace(/<(.|\n)*?>/g, '').trim() === '') {
+            setLoading(false)
             setError("Please fill in description.");
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));

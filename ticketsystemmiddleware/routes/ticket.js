@@ -949,6 +949,9 @@ router.post('/update-accept-ticket', async (req, res, next) => {
     }
 
 })
+
+
+
 //Adding a note to a ticket
 router.post('/note-post', async (req, res, next) => {
     const currentTimestamp = new Date()
@@ -998,12 +1001,15 @@ router.get('/get-all-feedback/:ticket_id', async (req, res) => {
 router.get('/get-all-feedback', async (req, res) => {
     try {
         const getAll = await knex('review_master').select('*');
-        res.json(getAll);
-        console.log('Triggered /get-all-feedback');
+        res.status(200).json(getAll);
+        console.log('Triggered /get-all-feedback', getAll);
     } catch (err) {
-        console.log('INTERNAL ERROR: ', err);
+        console.error('INTERNAL ERROR: ', err);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
-})
+});
+
+
 //Adding a feedback to a ticket
 router.post('/feedback', async (req, res) => {
     const currentTimestamp = new Date();
@@ -1024,6 +1030,46 @@ router.post('/feedback', async (req, res) => {
         res.json(200);
     } catch (err) {
         console.log('INTERNAL ERROR: ', err)
+    }
+});
+router.post('/feedback-delete-by-id', async (req, res) => {
+    try {
+        console.log('/feedback-by-id was triggered');
+        const currentTimestamp = new Date();
+        const { ticket_id, review, user_id, created_by, score } = req.body;
+        //Delete the existing 
+        await knex('review_master').where({ ticket_id: ticket_id }).del()
+        //add a new review 
+        await knex('review_master').insert({
+            review,
+            user_id,
+            created_at: currentTimestamp,
+            created_by,
+            ticket_id,
+            score
+        });
+        //update ticket-master
+        await knex('ticket_master').where({ ticket_id: ticket_id }).update({
+            is_reviewed: true
+        });
+        console.log(`${created_by} placed a new feedback successfully`);
+        res.status(200).json({ message: "Feedback saved successfully" });
+
+    } catch (err) {
+        console.log('INTERNAL ERROR: ', err)
+    }
+})
+
+
+router.post('/feedback-by-id', async (req, res) => {
+    try {
+        console.log('/feedback-by-id was triggered');
+        const { review_id } = req.body;
+
+        await knex('review_master').where({ review_id: review_id }).first()
+
+    } catch (err) {
+        consoleor.log('INTERNAL ERROR: ', err)
     }
 })
 

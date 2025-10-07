@@ -85,9 +85,7 @@ export default function CreateTicketHD() {
             ],
             software: [
                 "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
-                "Oracle (PROD/BIPUB)",
                 "Email (Setup, Creation, Error, Backup)",
-                "System Updates & Patches",
                 "Active Directory (User Creation, Login, Password)",
                 "Zoom / Video Conferencing Tools",
                 "FoxPro (Accounting System)",
@@ -97,11 +95,20 @@ export default function CreateTicketHD() {
                 "PDF (Conversion, Reduce Size, Editing)",
                 "Antivirus / Security Software",
                 "Operating System (Windows, macOS, Linux)",
-                "Custom In-house Applications",
-                "Backup & Restore Tools",
                 "Cloud Services (OneDrive, Google Drive, Dropbox)",
                 "Others",
             ],
+            system: [
+                "Oracle (PROD/BIPUB)",
+                "System Updates & Patches",
+                "Backup & Restore Tools",
+                "CCTV Incident Report System",
+                "Safety Accident Report System",
+                "Compliance Registry System",
+                "Information Management System (Comrel)",
+                "Lepanto IT Help Desk System",
+                "Others"
+            ]
         },
         request: {
             hardware: [
@@ -128,11 +135,19 @@ export default function CreateTicketHD() {
                 "Cloud Storage Request",
                 "Others",
             ],
+            system: [
+                "New Account",
+                "Delete Account",
+                "Edit Account",
+                "Request Access",
+                "Others"
+            ]
         },
         inquiry: {
             hardware: ["Warranty Inquiry", "Specs Inquiry", "Others"],
             network: ["Network Policy Inquiry", "Coverage Inquiry", "Others"],
             software: ["Software Policy Inquiry", "Version Inquiry", "Others"],
+            system: ["System Policy Inquiry", "Assistance", "Others"]
         },
     };
 
@@ -149,7 +164,6 @@ export default function CreateTicketHD() {
 
             if (
                 selectedType === 'incident' &&
-                selectedCategory === 'hardware' &&
                 formData.Description.trim() === ''
             ) {
                 updatedFormData.Description =
@@ -238,6 +252,7 @@ export default function CreateTicketHD() {
             setValidationErrors({});
             window.location.reload();
         } catch (error) {
+            setLoading(false)
             setError('Error submitting your ticket. Please try again');
             console.error('Error submitting ticket:', error);
         }
@@ -324,10 +339,10 @@ export default function CreateTicketHD() {
                                                 isInvalid={!!validationErrors.ticket_urgencyLevel}
                                             >
                                                 <option value="">Select</option>
-                                                <option value="Low">Low</option>
-                                                <option value="Medium">Medium</option>
-                                                <option value="High">High</option>
-                                                <option value="Critical">Critical</option>
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                                <option value="critical">Critical</option>
                                             </Form.Select>
                                             <Form.Control.Feedback type="invalid">{validationErrors.ticket_urgencyLevel}</Form.Control.Feedback>
                                         </Form.Group>
@@ -348,6 +363,7 @@ export default function CreateTicketHD() {
                                                 <option value="hardware">Hardware</option>
                                                 <option value="network">Network</option>
                                                 <option value="software">Software</option>
+                                                <option value="software">System</option>
                                             </Form.Select>
                                             <Form.Control.Feedback type="invalid">{validationErrors.ticket_category}</Form.Control.Feedback>
                                         </Form.Group>

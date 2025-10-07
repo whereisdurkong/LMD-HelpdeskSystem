@@ -91,6 +91,7 @@ export default function SoftwareArchive() {
 
         } catch (err) {
             console.log('Unable to archive knowledgebase: ', err);
+            setLoading(false)
             setError("Failed to archive kb.");
         }
 
@@ -113,6 +114,7 @@ export default function SoftwareArchive() {
                 window.location.reload(); // Reload to reflect changes
             } catch (err) {
                 console.error("Error deleting Software troubleshooting step:", err);
+                setLoading(false)
                 setError("Failed to delete Software troubleshooting step.");
             }
         }
@@ -121,8 +123,10 @@ export default function SoftwareArchive() {
     const handleUpdate = async () => {
 
         if (newTitle === '') {
+            setLoading(false)
             setError("Please fill in title.");
         } else if (newContent.replace(/<(.|\n)*?>/g, '').trim() === '') {
+            setLoading(false)
             setError("Please fill in description.");
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -150,8 +154,10 @@ export default function SoftwareArchive() {
     const handleSave = async () => {
         console.log("Saving Software:", newTitle, newContent);
         if (newTitle === '') {
+            setLoading(false)
             setError("Please fill in title.");
         } else if (newContent.replace(/<(.|\n)*?>/g, '').trim() === '') {
+            setLoading(false)
             setError("Please fill in description.");
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));

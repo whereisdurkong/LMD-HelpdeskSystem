@@ -98,6 +98,7 @@ export default function Announcements() {
         const empInfo = JSON.parse(localStorage.getItem("user"));
 
         if (!announcementTitleText.trim() || !announcementText.trim()) {
+            setLoading(false)
             setError("Unable to save empty fields, please try again.");
             return;
         }
@@ -115,6 +116,7 @@ export default function Announcements() {
             window.location.reload();
         } catch (error) {
             console.error("Error saving announcement:", error);
+            setLoading(false)
             setError("Failed to create announcement.");
         }
     };
@@ -151,6 +153,7 @@ export default function Announcements() {
             window.location.reload();
         } catch (err) {
             console.log('Unable to update announcement:', err);
+            setLoading(false)
             setError("Failed to update announcement.");
         }
     };
@@ -174,6 +177,7 @@ export default function Announcements() {
             window.location.reload();
         } catch (error) {
             console.error("Error deleting announcement:", error);
+            setLoading(false)
             setError("Failed to delete announcement.");
         }
     }

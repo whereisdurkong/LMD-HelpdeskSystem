@@ -25,8 +25,10 @@ export default function UserDashboard() {
                 );
                 const allAnc = res.data || [];
 
-                if (allAnc.length > 0) {
-                    const newestAnc = [...allAnc].sort((a, b) => {
+                const activeAnc = allAnc.filter(anc => anc.is_active === true)
+
+                if (activeAnc.length > 0) {
+                    const newestAnc = [...activeAnc].sort((a, b) => {
                         const dateA = new Date(a.updated_at || a.created_at);
                         const dateB = new Date(b.updated_at || b.created_at);
                         return dateB - dateA;

@@ -210,6 +210,7 @@ export default function CreateTicketUser() {
             setValidationErrors({});
             window.location.reload();
         } catch (error) {
+            setLoading(false)
             setError('Error submitting your ticket. Please try again');
             console.error('Error submitting ticket:', error);
         }

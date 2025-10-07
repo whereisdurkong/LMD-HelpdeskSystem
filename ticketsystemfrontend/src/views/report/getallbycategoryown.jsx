@@ -15,7 +15,7 @@ import { Bar } from "react-chartjs-2";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function GetAllByCategory({ filterType, showChart = true, location, onDataReady }) {
+export default function GetAllByCategoryOwn({ filterType, showChart = true, location, onDataReady }) {
     const [chartData, setChartData] = useState(null);
     const [hardwareTickets, setHardwareTickets] = useState([]);
     const [networkTickets, setNetworkTickets] = useState([]);
@@ -65,23 +65,12 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
     useEffect(() => {
         const fetch = async () => {
             try {
+                const empInfo = JSON.parse(localStorage.getItem("user"));
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 let tickets = res.data || [];
 
                 // Filter tickets by date range
-                tickets = tickets.filter(t => isInFilter(t.created_at));
-
-                if (location && location.toLowerCase() !== "all") {
-                    tickets = tickets.filter(
-                        t => t.assigned_location?.toLowerCase() === location.toLowerCase()
-                    );
-                }
-
-                if (location === "lmd") {
-                    tickets = tickets.filter(t => t.assigned_location === "lmd");
-                } else if (location === "corp") {
-                    tickets = tickets.filter(t => t.assigned_location === "corp");
-                }
+                tickets = tickets.filter(t => isInFilter(t.created_at) && t.assigned_to === empInfo.user_name);
 
                 // Separate into categories
                 const hardware = tickets.filter(t => t.ticket_category?.toLowerCase() === "hardware");
@@ -122,7 +111,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                                 { label: "Hardware", data: hardwareCounts, backgroundColor: "rgba(255,99,132,0.6)" },
                                 { label: "Network", data: networkCounts, backgroundColor: "rgba(54,162,235,0.6)" },
                                 { label: "Software", data: softwareCounts, backgroundColor: "rgba(75,192,192,0.6)" },
-                                { label: "System", data: systemCounts, backgroundColor: "rgba(136, 141, 64, 0.6)" }
+                                { label: "System", data: systemCounts, backgroundColor: "rgba(75,192,192,0.6)" }
                             ]
                         });
                         // Send summary to parent

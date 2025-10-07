@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react';
 import Spinner from 'react-bootstrap/Spinner';
 import MainLayout from 'layouts/MainLayout';
 import { Navigate } from 'react-router-dom';
+import AllTicketSCAT from 'views/report/allticketSCAT';
+import AllDataOwn from 'views/report/alldataown';
 
 
 
@@ -116,7 +118,11 @@ const MainRoutes = {
     },
     {
       path: '/sample6',
-      element: withSpinner(<AllData />)
+      element: withSpinner(<AllTicketSCAT />)
+    },
+    {
+      path: '/sample7',
+      element: withSpinner(<AllDataOwn />)
     },
     {
       path: '/1',

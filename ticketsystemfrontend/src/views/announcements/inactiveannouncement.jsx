@@ -90,6 +90,7 @@ export default function InActiveAnnouncement() {
             window.location.reload();
         } catch (err) {
             console.log('Unable to update announcement:', err);
+            setLoading(false)
             setError("Failed to update announcement.");
         }
     };
@@ -113,6 +114,7 @@ export default function InActiveAnnouncement() {
             window.location.reload();
         } catch (error) {
             console.error("Error deleting announcement:", error);
+            setLoading(false)
             setError("Failed to delete announcement.");
         }
     }
@@ -154,70 +156,86 @@ export default function InActiveAnnouncement() {
 
 
             <div className="mt-4">
-                {currentAnnouncements.map((item) => (
-                    <Card key={item.announcements_id} className="mb-4 shadow-sm" style={{ borderRadius: '15px' }}>
-                        <Card.Body>
-                            <div className="d-flex align-items-center justify-content-between mb-2">
-                                <div className="d-flex align-items-center">
-                                    <img
-                                        src="src/assets/images/user/avatar-2.jpg"
-                                        alt="Profile"
-                                        style={{
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '50%',
-                                            objectFit: 'cover',
-                                            marginRight: '10px'
-                                        }}
-                                    />
-                                    <div>
-                                        <strong>
-                                            {fullname[item.created_by] || item.created_by || 'Unknown'}
-                                        </strong>
-                                        <br />
-                                        <small className="text-muted">
-                                            {new Date(item.created_at).toLocaleString()}
-                                        </small>
+                {currentAnnouncements.length === 0 ? (
+                    <div
+                        className="d-flex justify-content-center align-items-center"
+                        style={{ minHeight: '200px' }}
+                    >
+                        <Card.Text style={{
+                            fontSize: '1.2rem',
+                            fontWeight: '500',
+                            textAlign: 'center'
+                        }}>
+                            NO ARCHIVED ANNOUNCEMENTS
+                        </Card.Text>
+                    </div>
+                ) : (
+                    currentAnnouncements.map((item) => (
+                        <Card key={item.announcements_id} className="mb-4 shadow-sm" style={{ borderRadius: '15px' }}>
+                            <Card.Body>
+                                <div className="d-flex align-items-center justify-content-between mb-2">
+                                    <div className="d-flex align-items-center">
+                                        <img
+                                            src="src/assets/images/user/avatar-2.jpg"
+                                            alt="Profile"
+                                            style={{
+                                                width: '40px',
+                                                height: '40px',
+                                                borderRadius: '50%',
+                                                objectFit: 'cover',
+                                                marginRight: '10px'
+                                            }}
+                                        />
+                                        <div>
+                                            <strong>
+                                                {fullname[item.created_by] || item.created_by || 'Unknown'}
+                                            </strong>
+                                            <br />
+                                            <small className="text-muted">
+                                                {new Date(item.created_at).toLocaleString()}
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <div onClick={() => {
+                                        setAncId(item.announcements_id === ancId ? null : item.announcements_id);
+                                    }}>
+                                        <i className="bi bi-three-dots" style={{ cursor: 'pointer' }}></i>
+
+                                        {ancId === item.announcements_id && (
+                                            <div
+                                                className="position-absolute bg-white border rounded shadow-sm"
+                                                style={{ top: '20px', right: '0', zIndex: 1000, minWidth: '100px' }}
+                                            >
+                                                <div
+                                                    className="p-2 text-dark border-bottom"
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => handleEditClick(item)}
+                                                >
+                                                    Re activate
+                                                </div>
+                                                <div
+                                                    className="p-2 text-danger"
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => {
+                                                        handleDelete(item.announcements_id);
+                                                    }}
+                                                >
+                                                    Delete
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
-                                <div onClick={() => {
-                                    setAncId(item.announcements_id === ancId ? null : item.announcements_id);
-                                }}>
-                                    <i className="bi bi-three-dots" style={{ cursor: 'pointer' }}></i>
+                                <Card.Text style={{ fontSize: '1.1rem' }}>
+                                    {item.announcements}
+                                </Card.Text>
+                            </Card.Body>
+                        </Card>
+                    ))
+                )}
 
-                                    {ancId === item.announcements_id && (
-                                        <div
-                                            className="position-absolute bg-white border rounded shadow-sm"
-                                            style={{ top: '20px', right: '0', zIndex: 1000, minWidth: '100px' }}
-                                        >
-                                            <div
-                                                className="p-2 text-dark border-bottom"
-                                                style={{ cursor: 'pointer' }}
-                                                onClick={() => handleEditClick(item)}
-                                            >
-                                                Re activate
-                                            </div>
-                                            <div
-                                                className="p-2 text-danger"
-                                                style={{ cursor: 'pointer' }}
-                                                onClick={() => {
-                                                    handleDelete(item.announcements_id);
-                                                }}
-                                            >
-                                                Delete
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <Card.Text style={{ fontSize: '1.1rem' }}>
-                                {item.announcements}
-                            </Card.Text>
-                        </Card.Body>
-                    </Card>
-                ))}
 
 
                 {totalPages > 1 && (

@@ -1,6 +1,6 @@
 
 
-import { Container, Row, Col, Form, Modal, Button } from "react-bootstrap";
+import { Container, Row, Col, Form, Modal, Button, Pagination } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import config from "config";
@@ -19,7 +19,10 @@ import {
 } from 'chart.js';
 import GetAllByCategory from "views/report/getallbycategory";
 import LocationTicketsChart from "views/report/allticketbysite";
-import AllTicketbyType from "views/report/allticketbytype";
+import AllTicketbyTypeOwn from "views/report/allticketbytypeown";
+import AllTicketSCAT from "views/report/allticketSCAT";
+import GetAllByCategoryOwn from "views/report/getallbycategoryown";
+import AllDataOwn from "views/report/alldataown";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -28,7 +31,7 @@ export default function HDDashboard() {
     const [stats, setStats] = useState([]);
     const [allTickets, setAllTickets] = useState([]);
     const [filteredTickets, setFilteredTickets] = useState([]);
-
+    const [ownTicket, setOwnTicket] = useState([]);
     // Modal states
     const [showModal, setShowModal] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
@@ -40,10 +43,48 @@ export default function HDDashboard() {
 
     const [chartdata, setChartData] = useState(null);
 
+    const [location, setLocation] = useState('')
+    const [userInfo, setUserInfo] = useState('');
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 11; // adjust how many rows per page
+    const totalPages = Math.ceil(ownTicket.length / itemsPerPage);
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = ownTicket.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Fetch tickets once
     useEffect(() => {
+        const fetch = async () => {
+            const empInfo = JSON.parse(localStorage.getItem("user"));
+            setUserInfo(empInfo);
+            try {
+                const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
+                const data = res.data || [];
 
-    }, [])
+                let siteTickets = data;
+                if (empInfo.emp_location === 'lmd') {
+                    siteTickets = data.filter(t => t.assigned_location === "lmd" && t.is_active === true);
 
+                    setLocation('lmd')
+                } else if (empInfo.emp_location === 'corp') {
+                    siteTickets = data.filter(t => t.assigned_location === "corp" && t.is_active === true);
+                    setLocation('corp')
+                }
+                setAllTickets(data);
+
+                const own = data
+                    .filter(e => e.assigned_to === empInfo.user_name)
+                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                setOwnTicket(own)
+                console.log(own)
+            } catch (err) {
+                console.log("Unable to fetch Data: ", err);
+            }
+        };
+        fetch();
+    }, []);
     const openModal = (title, content) => {
         setModalTitle(title);
         setModalContent(content);
@@ -62,6 +103,15 @@ export default function HDDashboard() {
 
 
     const TicketsTable = ({ tickets }) => {
+        const [currentPage, setCurrentPage] = useState(1);
+        const itemsPerPage = 10;
+
+        const indexOfLastItem = currentPage * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        const currentTickets = tickets.slice(indexOfFirstItem, indexOfLastItem);
+
+        const totalPages = Math.ceil(tickets.length / itemsPerPage);
+
         return (
             <div style={{ overflowX: "auto" }}>
                 <table border="1" cellPadding="5" style={{ borderCollapse: "collapse", width: "100%" }}>
@@ -77,9 +127,13 @@ export default function HDDashboard() {
                         </tr>
                     </thead>
                     <tbody>
-                        {tickets.length > 0 ? (
-                            tickets.map(ticket => (
-                                <tr key={ticket.ticket_id}>
+                        {currentTickets.length > 0 ? (
+                            currentTickets.map(ticket => (
+                                <tr
+                                    key={ticket.ticket_id}
+                                    style={{ cursor: "pointer" }}
+                                    onClick={() => window.location.replace(`view-hd-ticket?id=${ticket.ticket_id}`)}
+                                >
                                     <td>{ticket.ticket_id}</td>
                                     <td>{ticket.ticket_subject}</td>
                                     <td>{ticket.ticket_status}</td>
@@ -96,25 +150,33 @@ export default function HDDashboard() {
                         )}
                     </tbody>
                 </table>
+
+                {/* Pagination controls */}
+                {totalPages > 1 && (
+                    <div className="d-flex justify-content-center mt-3">
+                        <Pagination className="tickets-pagination" style={{ "--bs-pagination-active-bg": "#053b00ff", "--bs-pagination-active-border-color": "#053b00ff", "--bs-pagination-color": "#053b00ff" }}>
+                            <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+                            <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
+
+                            {Array.from({ length: totalPages }, (_, i) => (
+                                <Pagination.Item
+                                    key={i + 1}
+                                    active={i + 1 === currentPage}
+                                    onClick={() => setCurrentPage(i + 1)}
+                                >
+                                    {i + 1}
+                                </Pagination.Item>
+                            ))}
+
+                            <Pagination.Next onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
+                            <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+                        </Pagination>
+                    </div>
+                )}
             </div>
         );
     };
 
-    // Fetch tickets once
-    useEffect(() => {
-        const fetch = async () => {
-            const empInfotemp = JSON.parse(localStorage.getItem("empInfo"));
-            try {
-
-                const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
-                const data = res.data || [];
-                setAllTickets(data);
-            } catch (err) {
-                console.log("Unable to fetch Data: ", err);
-            }
-        };
-        fetch();
-    }, []);
 
     // Apply filter + sorting whenever filterType or allTickets changes
     useEffect(() => {
@@ -165,10 +227,12 @@ export default function HDDashboard() {
         setFilteredTickets(filtered);
 
         // Counters
-        setOpen(filtered.filter(ticket => ticket.ticket_status === 'open').length);
-        setNotReviewed(filtered.filter(ticket => ticket.is_reviewed === false && ticket.ticket_status === 'closed').length);
+        setOpen(filtered.filter(ticket => (ticket.ticket_status === 'in-progress' || ticket.ticket_status === 'assigned' || ticket.ticket_status === 're-opened') &&
+            (ticket.assigned_to === userInfo.user_name && ticket.is_active === true)).length);
 
-        setClosed(filtered.filter(ticket => ticket.is_reviewed === true && ticket.ticket_status === 'closed').length);
+        setNotReviewed(filtered.filter(ticket => ticket.is_reviewed === false && ticket.ticket_status === 'closed' && (ticket.assigned_to === userInfo.user_name && ticket.is_active === true)).length);
+
+        setClosed(filtered.filter(ticket => ticket.ticket_status === 'open' && ticket.is_active === true).length);
 
         // Group by subcategory
         const grouped = filtered.reduce((acc, ticket) => {
@@ -242,17 +306,6 @@ export default function HDDashboard() {
         });
     }, [filterType, allTickets]);
 
-    const totalRow = stats.reduce(
-        (totals, row) => {
-            totals.total += row.total;
-            totals.resolved += row.resolved;
-            totals.closed += row.closed;
-            totals.open += row.open;
-            return totals;
-        },
-        { total: 0, resolved: 0, closed: 0, open: 0 }
-    );
-
     return (
         <Container fluid className="pt-100 px-3 px-md-5"
             style={{
@@ -263,7 +316,7 @@ export default function HDDashboard() {
             }}>
             <Row className="align-items-center g-3 mb-4">
                 <Col xs={12} md={8} lg={9}>
-                    <h2 className="mb-0"><b>Reports</b></h2>
+                    <h2 className="mb-0"><b>Dashboard</b></h2>
                 </Col>
                 <Col xs={12} md={4} lg={3}>
                     <Form.Group controlId="status-filter" style={{ width: '100%' }}>
@@ -292,11 +345,11 @@ export default function HDDashboard() {
                         style={{ cursor: "pointer" }}
                         onClick={() => openModal(
                             "All Open Tickets",
-                            <TicketsTable tickets={filteredTickets.filter(t => t.ticket_status === 'open')} />
+                            <TicketsTable tickets={filteredTickets.filter(t => (t.ticket_status === 'in-progress' || t.ticket_status === 'assigned' || t.ticket_status === 're-opened') && (t.assigned_to === userInfo.user_name && t.is_active === true))} />
                         )}
                     >
                         <div style={{ background: '#004e0dff', borderRadius: '5px 5px 0 0', color: '#fff', padding: '5px', textAlign: 'center' }}>
-                            <b>Open Tickets</b>
+                            <b>Tickets</b>
                         </div>
                         <div style={{ textAlign: 'center', paddingTop: '10px' }}>
                             <h1>{open}</h1>
@@ -309,7 +362,7 @@ export default function HDDashboard() {
                         style={{ cursor: "pointer" }}
                         onClick={() => openModal(
                             "Not Reviewed Tickets",
-                            <TicketsTable tickets={filteredTickets.filter(t => t.is_reviewed === false && t.ticket_status === 'closed')} />
+                            <TicketsTable tickets={filteredTickets.filter(t => t.is_reviewed === false && t.ticket_status === 'closed' && (t.assigned_to === userInfo.user_name && t.is_active === true))} />
                         )}
                     >
                         <div style={{ background: '#004e0dff', borderRadius: '5px 5px 0 0', color: '#fff', padding: '5px', textAlign: 'center' }}>
@@ -326,11 +379,11 @@ export default function HDDashboard() {
                         style={{ cursor: "pointer" }}
                         onClick={() => openModal(
                             "Closed Tickets",
-                            <TicketsTable tickets={filteredTickets.filter(t => t.is_reviewed === true && t.ticket_status === 'closed')} />
+                            <TicketsTable tickets={filteredTickets.filter(t => t.ticket_status === 'open' && t.is_active === true)} />
                         )}
                     >
                         <div style={{ background: '#004e0dff', borderRadius: '5px 5px 0 0', color: '#fff', padding: '5px', textAlign: 'center' }}>
-                            <b>Closed Tickets</b>
+                            <b>Open Tickets</b>
                         </div>
                         <div style={{ textAlign: 'center', paddingTop: '10px' }}>
                             <h1>{closed}</h1>
@@ -347,62 +400,148 @@ export default function HDDashboard() {
                             <table border="1" cellPadding="5" style={{ borderCollapse: "collapse", width: '100%' }}>
                                 <thead style={{ background: '#053b00ff', color: 'white' }}>
                                     <tr>
-                                        <th>Subcategory</th>
-                                        <th>Total</th>
-                                        <th>Resolved</th>
-                                        <th>Closed</th>
-                                        <th>Open</th>
-                                        <th>Average TAT</th>
+                                        <th>Ticket ID</th>
+                                        <th>Subject</th>
+                                        <th>Status</th>
+                                        <th>Level</th>
+                                        <th>Ticket For</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr style={{ fontWeight: "bold", backgroundColor: "#f0f0f0" }}>
-                                        <td>Total</td>
-                                        <td>{totalRow.total}</td>
-                                        <td>{totalRow.resolved}</td>
-                                        <td>{totalRow.closed}</td>
-                                        <td>{totalRow.open}</td>
-                                        <td>-</td>
-                                    </tr>
-                                    {stats.map((row, index) => (
-                                        <tr key={index}>
-                                            <td>{row.subcategory}</td>
-                                            <td>{row.total}</td>
-                                            <td>{row.resolved}</td>
-                                            <td>{row.closed}</td>
-                                            <td>{row.open}</td>
-                                            <td>{row.avgTAT}</td>
+                                    {currentItems.length > 0 ? (
+                                        currentItems.map(e => (
+                                            <tr key={e.ticket_id}>
+                                                <td>{e.ticket_id}</td>
+                                                <td>{e.ticket_subject}</td>
+                                                <td>{e.ticket_status}</td>
+                                                <td>{e.ticket_urgencyLevel}</td>
+                                                <td>
+                                                    {`${e.ticket_for.charAt(0).toUpperCase() + e.ticket_for.slice(1).toLowerCase()}`}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="5" style={{ textAlign: "center" }}>No Tickets Found</td>
                                         </tr>
-                                    ))}
+                                    )}
                                 </tbody>
                             </table>
+                            {/* Pagination controls */}
+                            {totalPages > 1 && (
+                                <div className="d-flex justify-content-center mt-3">
+                                    <Pagination
+                                        className="tickets-pagination"
+                                        style={{
+                                            "--bs-pagination-active-bg": "#053b00ff",
+                                            "--bs-pagination-active-border-color": "#053b00ff",
+                                            "--bs-pagination-color": "#053b00ff"
+                                        }}
+                                    >
+                                        <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+                                        <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
+
+                                        {Array.from({ length: totalPages }, (_, i) => (
+                                            <Pagination.Item
+                                                key={i + 1}
+                                                active={i + 1 === currentPage}
+                                                onClick={() => setCurrentPage(i + 1)}
+                                            >
+                                                {i + 1}
+                                            </Pagination.Item>
+                                        ))}
+
+                                        <Pagination.Next onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
+                                        <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+                                    </Pagination>
+                                </div>
+                            )}
+
                         </div>
                     </div>
                 </Col>
+
                 <Col>
-                    <div className="bento-item bento-users"
-                        onClick={() => openModal("Ticket Summary", <SubCatDepartmentTable filterType={filterType} />)}>
-                        <h3>Summary</h3>
-                        <div className="bento-chart-wrapper">
-                            <SubCatDepartment filterType={filterType} />
+                    <div
+                        className="bento-item-header"
+                        onClick={() =>
+                            openModal(
+                                "Ticket Summary",
+                                <AllTicketSCAT filterType={filterType} showChart={false} location={location} />
+                            )
+                        }
+                    >
+                        <div
+                            style={{
+                                background: "#004e0dff",
+                                borderRadius: "5px 5px 0 0",
+                                color: "#fff",
+                                padding: "10px",
+                                textAlign: "center",
+                                display: "flex",           // row layout
+                                justifyContent: "center",  // center horizontally
+                                alignItems: "center",      // align vertically
+                                gap: "8px"                 // space between h4 and h6
+                            }}
+                        >
+                            <h5 style={{ margin: 0, color: "#fff" }}><b>CSAT</b></h5>
+                            <h6 style={{ margin: 0, color: "#fff" }}>(Customer Satisfaction Score)</h6>
+                        </div>
+
+                        <div className="bento-chart-wrapper" style={{ height: "100%" }}>
+                            <AllTicketSCAT filterType={filterType} location={location} showChart={true} />
                         </div>
                     </div>
                 </Col>
+
             </Row>
 
             {/* Other Charts */}
             <Row className="g-3">
                 <Col xs={12} md={4}>
                     <div
+                        className="bento-item-header"
+                        onClick={() =>
+                            openModal(
+                                "Tickets by Location",
+                                <AllDataOwn filterType={filterType} showChart={false} location={location} />
+                            )
+                        }
+                    >
+                        <div
+                            style={{
+                                background: "#004e0dff",
+                                borderRadius: "5px 5px 0 0",
+                                color: "#fff",
+                                padding: "10px",
+                                textAlign: "center",
+                                display: "flex",           // row layout
+                                justifyContent: "center",  // center horizontally
+                                alignItems: "center",      // align vertically
+
+                            }}
+                        >
+                            <h5 style={{ margin: 0, color: "#fff" }}><b>Ticket Completion Rate</b></h5>
+                        </div>
+
+                        <div className="bento-chart-wrapper" style={{ height: "100%" }}>
+                            <AllDataOwn filterType={filterType} showChart={true} location={location} />
+                        </div>
+
+
+                    </div>
+                </Col>
+                <Col xs={12} md={4}>
+                    <div
                         className="bento-item bento-users"
                         onClick={() =>
                             openModal(
                                 "Tickets by Type",
-                                <AllTicketbyType filterType={filterType} showChart={false} />
+                                <AllTicketbyTypeOwn filterType={filterType} showChart={false} location={location} />
                             )
                         }
                     >
-                        <AllTicketbyType filterType={filterType} showChart={true} />
+                        <AllTicketbyTypeOwn filterType={filterType} showChart={true} location={location} />
                     </div>
                 </Col>
 
@@ -412,27 +551,15 @@ export default function HDDashboard() {
                         onClick={() =>
                             openModal(
                                 "All Tickets by Category",
-                                <GetAllByCategory filterType={filterType} showChart={false} />
+                                <GetAllByCategoryOwn filterType={filterType} showChart={false} location={location} />
                             )
                         }
                     >
-                        <GetAllByCategory filterType={filterType} showChart={true} />
+                        <GetAllByCategoryOwn filterType={filterType} showChart={true} location={location} />
                     </div>
                 </Col>
 
-                <Col xs={12} md={4}>
-                    <div
-                        className="bento-item bento-users"
-                        onClick={() =>
-                            openModal(
-                                "Tickets by Location",
-                                <LocationTicketsChart filterType={filterType} showChart={false} />
-                            )
-                        }
-                    >
-                        <LocationTicketsChart filterType={filterType} showChart={true} />
-                    </div>
-                </Col>
+
             </Row>
 
             {/* Modal */}

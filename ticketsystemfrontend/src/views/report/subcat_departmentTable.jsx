@@ -168,20 +168,23 @@ const TicketSummaryTable = ({ filterType, location, onDataReady }) => {
 
     return (
         <div>
-            {/* Filter */}
-            <Form.Group className="mb-3" style={{ maxWidth: "300px" }}>
-                <Form.Label>Filter by Category</Form.Label>
-                <Form.Select value={filter} onChange={e => setFilter(e.target.value)}>
-                    <option value="ALL">All</option>
-                    <option value="hardware">Hardware</option>
-                    <option value="network">Network</option>
-                    <option value="software">Software</option>
-                </Form.Select>
-            </Form.Group>
+            {/* Filter + Export Row */}
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <Form.Group style={{ maxWidth: "300px" }}>
+                    <Form.Label>Filter by Category</Form.Label>
+                    <Form.Select value={filter} onChange={e => setFilter(e.target.value)}>
+                        <option value="ALL">All</option>
+                        <option value="hardware">Hardware</option>
+                        <option value="network">Network</option>
+                        <option value="software">Software</option>
+                        <option value="system">System</option>
+                    </Form.Select>
+                </Form.Group>
 
-            <Button onClick={handleExportExcel} className="mb-3">
-                Export to Excel
-            </Button>
+                <Button onClick={handleExportExcel}>
+                    Export to Excel
+                </Button>
+            </div>
 
             <Table striped bordered hover>
                 <thead>
@@ -234,6 +237,7 @@ const TicketSummaryTable = ({ filterType, location, onDataReady }) => {
             </Table>
         </div>
     );
+
 };
 
 export default TicketSummaryTable;

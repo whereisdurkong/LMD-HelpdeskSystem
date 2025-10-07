@@ -11,12 +11,15 @@ import {
     Tooltip,
     Legend
 } from "chart.js";
+import { Pagination } from "react-bootstrap";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function LocationTicketsChart({ filterType, showChart = true }) {
     const [chartData, setChartData] = useState(null);
     const [ticketsBySite, setTicketsBySite] = useState({});
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -25,7 +28,7 @@ export default function LocationTicketsChart({ filterType, showChart = true }) {
                 let tickets = res.data || [];
                 const today = new Date();
 
-                // Filter tickets based on filterType
+                // ✅ Filter tickets
                 tickets = tickets.filter(ticket => {
                     const ticketDate = new Date(ticket.created_at);
                     switch (filterType) {
@@ -60,7 +63,7 @@ export default function LocationTicketsChart({ filterType, showChart = true }) {
                     }
                 });
 
-                // Group tickets per site
+                // ✅ Group tickets per site
                 const grouped = tickets.reduce((acc, t) => {
                     const site = t.assigned_location?.trim() || "Unknown";
                     if (!acc[site]) acc[site] = [];
@@ -69,7 +72,7 @@ export default function LocationTicketsChart({ filterType, showChart = true }) {
                 }, {});
                 setTicketsBySite(grouped);
 
-                // Build chart data only if showChart is true
+                // ✅ Build chart data
                 if (showChart) {
                     let labels = [];
                     let datasets = [];
@@ -116,40 +119,69 @@ export default function LocationTicketsChart({ filterType, showChart = true }) {
         fetchData();
     }, [filterType, showChart]);
 
-    const renderTable = (site, rows) => (
-        <div key={site} style={{ marginTop: "20px" }}>
-            <h4>{`${site.toUpperCase()}`} Tickets</h4>
-            <table border="1" cellPadding="5" style={{ borderCollapse: "collapse", width: "100%" }}>
-                <thead style={{ background: "#053b00ff", color: "white" }}>
-                    <tr>
-                        <th>Ticket ID</th>
-                        <th>Subject</th>
-                        <th>Status</th>
-                        <th>Type</th>
-                        <th>Assigned To</th>
-                        <th>For</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows.map((t, idx) => (
-                        <tr key={idx}>
-                            <td>{t.ticket_id}</td>
-                            <td>{t.ticket_subject}</td>
-                            <td>{t.ticket_status}</td>
-                            <td>{t.ticket_type}</td>
-                            <td>{t.assigned_to || "-"}</td>
-                            <td>{t.ticket_for || "-"}</td>
-                        </tr>
-                    ))}
-                    {rows.length === 0 && (
-                        <tr>
-                            <td colSpan="6" style={{ textAlign: "center" }}>No tickets found</td>
-                        </tr>
+    // ✅ Table renderer with title + pagination inline
+    const renderTable = (site, rows) => {
+        const totalPages = Math.ceil(rows.length / itemsPerPage);
+        const indexOfLastItem = currentPage * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        const currentRows = rows.slice(indexOfFirstItem, indexOfLastItem);
+
+        return (
+            <div key={site} style={{ marginTop: "20px" }}>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h4 className="mb-0">{`${site.toUpperCase()} Tickets`}</h4>
+                    {totalPages > 1 && (
+                        <Pagination className="tickets-pagination" style={{ "--bs-pagination-active-bg": "#053b00ff", "--bs-pagination-active-border-color": "#053b00ff", "--bs-pagination-color": "#053b00ff" }}>                            <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+                            <Pagination.Prev onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} />
+
+                            {Array.from({ length: totalPages }, (_, i) => (
+                                <Pagination.Item
+                                    key={i + 1}
+                                    active={i + 1 === currentPage}
+                                    onClick={() => setCurrentPage(i + 1)}
+                                >
+                                    {i + 1}
+                                </Pagination.Item>
+                            ))}
+
+                            <Pagination.Next onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages} />
+                            <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+                        </Pagination>
                     )}
-                </tbody>
-            </table>
-        </div>
-    );
+                </div>
+
+                <table border="1" cellPadding="5" style={{ borderCollapse: "collapse", width: "100%" }}>
+                    <thead style={{ background: "#053b00ff", color: "white" }}>
+                        <tr>
+                            <th>Ticket ID</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>Type</th>
+                            <th>Assigned To</th>
+                            <th>For</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {currentRows.map((t, idx) => (
+                            <tr key={idx}>
+                                <td>{t.ticket_id}</td>
+                                <td>{t.ticket_subject}</td>
+                                <td>{t.ticket_status}</td>
+                                <td>{t.ticket_type}</td>
+                                <td>{t.assigned_to || "-"}</td>
+                                <td>{t.ticket_for || "-"}</td>
+                            </tr>
+                        ))}
+                        {rows.length === 0 && (
+                            <tr>
+                                <td colSpan="6" style={{ textAlign: "center" }}>No tickets found</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
 
     return (
         <div style={{ width: "100%", height: "100%" }}>

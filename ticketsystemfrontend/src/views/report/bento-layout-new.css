@@ -6,6 +6,20 @@
   gap: 15px;
 }
 
+.summary-table {
+  font-size: 1rem;
+  /* smaller font so it fits nicely */
+  margin: 0;
+  /* remove outer gaps */
+}
+
+.summary-table th,
+.summary-table td {
+  padding: 6px 10px;
+  /* tighter padding */
+  vertical-align: middle;
+}
+
 .bento-item {
   background: white;
   border-radius: 8px;
@@ -41,6 +55,20 @@
   height: auto;
   /* let content decide height */
   min-height: unset;
+  overflow-y: auto;
+  /* override */
+}
+
+.bento-item-header {
+  background: white;
+  border-radius: 8px;
+  padding: 0px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  /* let content decide height */
+  min-height: 450px;
   overflow-y: auto;
   /* override */
 }

@@ -15,7 +15,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function AllTicketbyType({ filterType, showChart = true, location, onDataReady }) {
+export default function AllTicketbyTypeOwn({ filterType, showChart = true, location, onDataReady }) {
     const [chartData, setChartData] = useState(null);
     const [tickets, setTickets] = useState([]);
 
@@ -59,17 +59,12 @@ export default function AllTicketbyType({ filterType, showChart = true, location
 
     useEffect(() => {
         const fetch = async () => {
+            const empInfo = JSON.parse(localStorage.getItem("user"));
             try {
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 let ticketres = res.data || [];
 
-                if (location === "lmd") {
-                    ticketres = ticketres.filter(t => t.assigned_location === "lmd");
-                } else if (location === "corp") {
-                    ticketres = ticketres.filter(t => t.assigned_location === "corp");
-                }
-
-                ticketres = ticketres.filter(t => isInFilter(t.created_at));
+                ticketres = ticketres.filter(t => isInFilter(t.created_at) && t.assigned_to === empInfo.user_name);
                 setTickets(ticketres);
                 setCurrentPage(1); // reset page when data changes
 

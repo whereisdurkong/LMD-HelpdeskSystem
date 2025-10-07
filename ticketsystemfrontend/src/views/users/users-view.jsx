@@ -137,6 +137,7 @@ export default function UsersView() {
 
         } catch (error) {
             console.error("Error updating user:", error);
+            setLoading(false)
             setError('Failed to update user. Please try again.');
         }
     };

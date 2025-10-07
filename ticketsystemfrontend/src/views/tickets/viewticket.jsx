@@ -243,6 +243,10 @@ export default function ViewTicket() {
         else {
             setClose(true)
         }
+        if (formData.is_reviewed === true && formData.ticket_status === 'closed') {
+            setShowCloseReviewModal(false)
+            setClose(false)
+        }
 
         if (hasChanges === false && formData.ticket_status === 'closed' && (formData.is_reviewed === false || formData.is_reviewed === null)) {
             setShowCloseReviewModal(true)
@@ -304,6 +308,7 @@ export default function ViewTicket() {
 
     }, [formData, attachmentState, attachmentButtonState]);
 
+    //Lock Function
     useEffect(() => {
         const interval = setInterval(() => {
             const getUpdated = async () => {
@@ -314,10 +319,14 @@ export default function ViewTicket() {
                     const ticketdata = response.data.data || response.data;
 
                     if (ticketdata.is_locked === '1') {
+                        setLoading(false)
                         setError(`${ticketdata.updating_by} is currently working on this ticket`)
                         setClose(false)
                         setShowCloseReasonModal(false)
                         setShowCloseReviewModal(false)
+                    }
+                    else if ((ticketdata.is_locked === '0' || ticketdata.is_locked === null) && ticketdata.is_reviewed === true) {
+                        setClose(false)
                     }
                     else if (ticketdata.is_locked === '0' || ticketdata.is_locked === null) {
                         setClose(true)
@@ -378,13 +387,13 @@ export default function ViewTicket() {
             setShowCloseReasonModal(true);
         }
         else {
-            // await handleSave();
+            await handleSave();
         }
     }
 
 
 
-    //Close tikcet function
+    //Reson why Close tikcet function
     const handleConfirmClosure = async (e) => {
         e.preventDefault();
         const empInfo = JSON.parse(localStorage.getItem('user'));
@@ -403,6 +412,7 @@ export default function ViewTicket() {
                 ticket_id: ticket_id,
                 user_id: empInfo.user_id
             })
+
             setShowCloseReasonModal(false);
             setClosureReason('');
             setClose(false);
@@ -412,6 +422,7 @@ export default function ViewTicket() {
             setSuccessful('Ticket closed successfully.');
         } catch (err) {
             console.log(err);
+            setLoading(false)
             setError('Failed to close ticket. Please try again.');
             setShowCloseReasonModal(false);
             setClosureReason('');
@@ -419,33 +430,58 @@ export default function ViewTicket() {
         }
     }
 
-    const handleReview = async () => {
-        const empInfo = JSON.parse(localStorage.getItem('user'));
-        console.log('was triggered. ', `Review ${userfeedback} HelpDesk: ${hdUser.user_id} Reviewed by: ${empInfo.user_name}`)
+    const handleReview = async (value, userfeedback) => {
+        const empInfo = JSON.parse(localStorage.getItem("user"));
+        console.log("was triggered. ", `Review ${userfeedback} HelpDesk: ${hdUser.user_id} Reviewed by: ${empInfo.user_name}`);
 
+        // validate input first
         if (!userfeedback) {
-            setError('Feedback must not be empty!');
-            return
+            setError("Feedback must not be empty!");
+            return;
         }
 
-        if (formData.ticket_status === 'closed') {
-            try {
-                setLoading(true)
+        try {
+            setLoading(true);
+            // get all feedback first
+            const res = await axios.get(`${config.baseApi}/ticket/get-all-feedback`);
+            const feedData = res.data || [];
+            const feedTicket = feedData.filter((f) => String(f.ticket_id) === String(ticket_id));
+
+            if (feedTicket.length > 0) {
+                // delete first, then insert inside .then
+                await axios
+                    .post(`${config.baseApi}/ticket/feedback-delete-by-id`, {
+                        ticket_id: ticket_id,
+                        review: userfeedback,
+                        user_id: hdUser.user_id,
+                        created_by: empInfo.user_name,
+                        ticket_id: formData.ticket_id,
+                        score: value,
+                    })
+
+            } else {
+                // if no feedback existed, insert directly
                 await axios.post(`${config.baseApi}/ticket/feedback`, {
                     review: userfeedback,
                     user_id: hdUser.user_id,
                     created_by: empInfo.user_name,
                     ticket_id: formData.ticket_id,
-                    score: value
-                })
-                setShowCloseReviewModal(false);
-                setUserFeedback('');
-                setLoading(true)
-            } catch (err) {
-                console.log('Unable to submit review: ', err)
+                    score: value,
+                });
+                console.log("Feedback submitted (no old feedback) ✅");
             }
+
+
+            setShowCloseReviewModal(false);
+            setUserFeedback("");
+            setLoading(true)
+        } catch (err) {
+            console.log("Error while submitting review: ", err);
+        } finally {
+            setLoading(false);
         }
-    }
+    };
+
 
 
 
@@ -540,6 +576,7 @@ export default function ViewTicket() {
                     setHasChanges(false);
                 }
             } else if (ticket.is_locked === true || ticket.updating_by !== empInfo.user_name) {
+                setLoading(false)
                 setError(`${ticket.updating_by} is currently working on this ticket`);
                 return;
             }
@@ -547,6 +584,7 @@ export default function ViewTicket() {
 
         } catch (err) {
             console.error("Error updating ticket:", err);
+            setLoading(false)
             setError('Failed to update ticket.');
         }
     };

@@ -11,14 +11,15 @@ const SubCatDepartment = ({ filterType, location, onDataReady }) => {
 
     useEffect(() => {
         const fetch = async () => {
+            console.log(location)
             try {
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 let tickets = res.data || [];
 
                 // 🔹 filters (location + date)
-                if (location === "lmd") tickets = tickets.filter(t => t.assigned_location === "lmd");
-                else if (location === "corp") tickets = tickets.filter(t => t.assigned_location === "corp");
-
+                if (location === "lmd") tickets = tickets.filter(t => t.assigned_location === "lmd" && t.is_active === true);
+                else if (location === "corp") tickets = tickets.filter(t => t.assigned_location === "corp" && t.is_active === true);
+                else if (location === 'all') tickets = tickets.filter(t => t.is_active === true);
                 const now = new Date();
                 if (filterType === "today") {
                     tickets = tickets.filter(t => new Date(t.created_at).toDateString() === now.toDateString());
@@ -144,29 +145,39 @@ const SubCatDepartment = ({ filterType, location, onDataReady }) => {
     }, [filterType, location]);
 
     return (
-        <div>
-            <Table striped bordered hover>
+        <div style={{ width: "100%", maxWidth: "100vw", overflowX: "auto", height: "100%", overflowY: "auto" }}>
+            <Table
+                striped
+                bordered
+                hover
+                size="sm"
+                responsive
+                className="summary-table"
+                style={{ tableLayout: "fixed", width: "100%" }}
+            >
                 <thead>
                     <tr>
-                        <th>Department</th>
-                        <th>Total Tickets</th>
+                        <th style={{ width: "50%", wordWrap: "break-word" }}>Department</th>
+                        <th style={{ width: "30%", textAlign: "center" }}>Total Tickets</th>
                     </tr>
                 </thead>
                 <tbody>
                     {departments.map(dept => (
                         <tr key={dept}>
-                            <td>{dept}</td>
-                            <td>{deptCount[dept]}</td>
+                            <td style={{ wordWrap: "break-word" }}>{dept}</td>
+                            <td style={{ textAlign: "center" }}>{deptCount[dept]}</td>
                         </tr>
                     ))}
                     <tr style={{ fontWeight: "bold", backgroundColor: "#f1f1f1" }}>
                         <td>Total</td>
-                        <td>{grandTotal}</td>
+                        <td style={{ textAlign: "center" }}>{grandTotal}</td>
                     </tr>
                 </tbody>
             </Table>
         </div>
     );
+
+
 };
 
 export default SubCatDepartment;

@@ -1,8 +1,9 @@
-import { Container, Row, Col, Form, Modal, Button } from "react-bootstrap";
+import { Container, Row, Col, Form, Modal, Button, Pagination } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import config from "config";
 import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import SubCatDepartment from "./subcat_department";
 import SubCatDepartmentTable from "./subcat_departmentTable";
@@ -63,6 +64,15 @@ export default function Report() {
     };
 
     const TicketsTable = ({ tickets }) => {
+        const [currentPage, setCurrentPage] = useState(1);
+        const itemsPerPage = 10;
+
+        const indexOfLastItem = currentPage * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        const currentTickets = tickets.slice(indexOfFirstItem, indexOfLastItem);
+
+        const totalPages = Math.ceil(tickets.length / itemsPerPage);
+
         return (
             <div style={{ overflowX: "auto" }}>
                 <table border="1" cellPadding="5" style={{ borderCollapse: "collapse", width: "100%" }}>
@@ -78,8 +88,8 @@ export default function Report() {
                         </tr>
                     </thead>
                     <tbody>
-                        {tickets.length > 0 ? (
-                            tickets.map(ticket => (
+                        {currentTickets.length > 0 ? (
+                            currentTickets.map(ticket => (
                                 <tr key={ticket.ticket_id}>
                                     <td>{ticket.ticket_id}</td>
                                     <td>{ticket.ticket_subject}</td>
@@ -97,6 +107,29 @@ export default function Report() {
                         )}
                     </tbody>
                 </table>
+
+                {/* Pagination controls */}
+                {totalPages > 1 && (
+                    <div className="d-flex justify-content-center mt-3">
+                        <Pagination className="tickets-pagination" style={{ "--bs-pagination-active-bg": "#053b00ff", "--bs-pagination-active-border-color": "#053b00ff", "--bs-pagination-color": "#053b00ff" }}>
+                            <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+                            <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
+
+                            {Array.from({ length: totalPages }, (_, i) => (
+                                <Pagination.Item
+                                    key={i + 1}
+                                    active={i + 1 === currentPage}
+                                    onClick={() => setCurrentPage(i + 1)}
+                                >
+                                    {i + 1}
+                                </Pagination.Item>
+                            ))}
+
+                            <Pagination.Next onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
+                            <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+                        </Pagination>
+                    </div>
+                )}
             </div>
         );
     };
@@ -272,179 +305,176 @@ export default function Report() {
         },
         { total: 0, resolved: 0, closed: 0, open: 0 }
     );
-    const handleDownloadExcel = () => {
-        const workbook = XLSX.utils.book_new();
 
-        if (!ticketTypeSummary && !subcatSummary && !filteredTickets.length) {
+
+
+    const handleDownloadExcel = async () => {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("All Reports");
+
+        // Helper: add section title
+        worksheet.columns = Array.from({ length: 8 }, () => ({ width: 20 }));
+
+        // Helper: add section title
+        const addTitle = (title) => {
+            const row = worksheet.addRow([title]);
+            row.font = { bold: true, size: 14 };
+            row.alignment = { vertical: "middle", horizontal: "center" };
+
+            worksheet.mergeCells(`A${row.number}:H${row.number}`);
+            worksheet.addRow([]);
+        };
+
+        // Helper: add a styled table
+        const addTable = (title, headers, rows) => {
+            addTitle(title);
+
+            const headerRow = worksheet.addRow(headers);
+            headerRow.font = { bold: true, size: 12 };
+            headerRow.alignment = { vertical: "middle", horizontal: "center" };
+            headerRow.height = 25; // taller headers
+
+            rows.forEach(r => {
+                const row = worksheet.addRow(r);
+                row.height = 20; // extra space for data rows
+            });
+
+            // Apply borders & alignment
+            const tableRows = [headerRow, ...worksheet.getRows(headerRow.number + 1, rows.length)];
+            tableRows.forEach(row => {
+                row.eachCell(cell => {
+                    cell.border = {
+                        top: { style: "thin" },
+                        left: { style: "thin" },
+                        bottom: { style: "thin" },
+                        right: { style: "thin" },
+                    };
+                    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+                });
+            });
+
+            // Add extra spacing row between tables
+            worksheet.addRow([]);
+            worksheet.addRow([]);
+        };
+
+        if (!ticketTypeSummary && !subcatSummary && !ticketCategorySummary && !ticketUsersSummary && !filteredTickets.length) {
             alert("No data available to download");
             return;
         }
 
         // ---- Tickets by Type ----
         if (ticketTypeSummary) {
-            let ws1;
-            const summaryArray = Array.isArray(ticketTypeSummary)
-                ? ticketTypeSummary
-                : [ticketTypeSummary];
+            const summaryArray = Array.isArray(ticketTypeSummary) ? ticketTypeSummary : [ticketTypeSummary];
+            const headers = summaryArray[0]?.month
+                ? ["Month", "Incident", "Request", "Inquiry", "Total"]
+                : Object.keys(summaryArray[0] || {});
+            const rows = summaryArray.map(r =>
+                summaryArray[0]?.month
+                    ? [r.month, r.incident, r.request, r.inquiry, r.total]
+                    : headers.map(h => r[h] ?? "")
+            );
+            addTable("Tickets By Type Summary", headers, rows);
 
-            if (summaryArray[0]?.month) {
-                const header = ["Month", "Incident", "Request", "Inquiry", "Total"];
-                const rows = summaryArray.map(r => [
-                    r.month,
-                    r.incident,
-                    r.request,
-                    r.inquiry,
-                    r.total
-                ]);
-                ws1 = XLSX.utils.aoa_to_sheet([header, ...rows]);
-            } else {
-                ws1 = XLSX.utils.json_to_sheet(summaryArray);
-            }
-
-            // ✅ Append Incident, Request, Inquiry tables below Tickets by Type
-            let currentRow = XLSX.utils.decode_range(ws1['!ref']).e.r + 3; // start 3 rows below
-
-            const addTable = (title, tickets) => {
-                // Title row
-                const titleCell = [[title]];
-                XLSX.utils.sheet_add_aoa(ws1, titleCell, { origin: { r: currentRow, c: 0 } });
-                currentRow++;
-
-                // Header row
-                const headers = [["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"]];
-                XLSX.utils.sheet_add_aoa(ws1, headers, { origin: { r: currentRow, c: 0 } });
-                currentRow++;
-
-                // Data rows
-                const rows = tickets.map(t => [
-                    t.ticket_id,
-                    t.ticket_subject,
-                    t.ticket_status,
-                    t.ticket_type,
-                    t.assigned_to || "-",
-                    t.ticket_for || "-",
-                    new Date(t.created_at).toLocaleString()
-                ]);
-
-                XLSX.utils.sheet_add_aoa(ws1, rows, { origin: { r: currentRow, c: 0 } });
-                currentRow += rows.length + 2; // leave 2 spaces after each table
-            };
-
-            addTable("Incident Tickets", filteredTickets.filter(t => t.ticket_type === "incident"));
-            addTable("Request Tickets", filteredTickets.filter(t => t.ticket_type === "request"));
-            addTable("Inquiry Tickets", filteredTickets.filter(t => t.ticket_type === "inquiry"));
-
-            XLSX.utils.book_append_sheet(workbook, ws1, "Tickets By Type");
+            addTable("Incident Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+                filteredTickets.filter(t => t.ticket_type === "incident").map(t => [
+                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
+                ])
+            );
+            addTable("Request Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+                filteredTickets.filter(t => t.ticket_type === "request").map(t => [
+                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
+                ])
+            );
+            addTable("Inquiry Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+                filteredTickets.filter(t => t.ticket_type === "inquiry").map(t => [
+                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
+                ])
+            );
         }
 
         // ---- Subcategory Summary ----
         if (subcatSummary) {
-            let ws2;
-            const summaryArray = Array.isArray(subcatSummary)
-                ? subcatSummary
-                : [subcatSummary];
-
+            const summaryArray = Array.isArray(subcatSummary) ? subcatSummary : [subcatSummary];
             if (summaryArray[0]?.month) {
                 const departments = summaryArray[0].departments || [];
-                const header = ["Month", ...departments, "Total"];
-                const rows = summaryArray.map(r => {
-                    const deptCounts = departments.map(
-                        dept => r.deptCount?.[dept] ?? 0
-                    );
-                    return [r.month, ...deptCounts, r.grandTotal ?? 0];
-                });
-                ws2 = XLSX.utils.aoa_to_sheet([header, ...rows]);
+                const headers = ["Month", ...departments, "Total"];
+                const rows = summaryArray.map(r => [
+                    r.month,
+                    ...departments.map(d => r.deptCount?.[d] ?? 0),
+                    r.grandTotal ?? 0
+                ]);
+                addTable("Subcategory Summary", headers, rows);
             } else {
                 const departments = subcatSummary.departments || [];
-                const header = ["Department", "Tickets"];
-                const rows = departments.map(dept => [
-                    dept,
-                    subcatSummary.deptCount?.[dept] ?? 0
-                ]);
+                const headers = ["Department", "Tickets"];
+                const rows = departments.map(d => [d, subcatSummary.deptCount?.[d] ?? 0]);
                 rows.push(["Total", subcatSummary.grandTotal ?? 0]);
-                ws2 = XLSX.utils.aoa_to_sheet([header, ...rows]);
+                addTable("Subcategory Summary", headers, rows);
             }
-            XLSX.utils.book_append_sheet(workbook, ws2, "SubCat Summary");
         }
 
         // ---- Tickets by Category ----
         if (ticketCategorySummary) {
-            let ws3;
-            const summaryArray = Array.isArray(ticketCategorySummary)
-                ? ticketCategorySummary
-                : [ticketCategorySummary];
+            const summaryArray = Array.isArray(ticketCategorySummary) ? ticketCategorySummary : [ticketCategorySummary];
+            const headers = summaryArray[0]?.month
+                ? ["Month", ...Object.keys(summaryArray[0]).filter(k => k !== "month")]
+                : Object.keys(summaryArray[0] || {});
+            const rows = summaryArray.map(r =>
+                summaryArray[0]?.month
+                    ? [r.month, ...headers.slice(1).map(k => r[k] ?? 0)]
+                    : headers.map(h => r[h] ?? "")
+            );
+            addTable("Tickets By Category Summary", headers, rows);
 
-            if (summaryArray[0]?.month) {
-                const keys = Object.keys(summaryArray[0]).filter(k => k !== "month");
-                const header = ["Month", ...keys];
-                const rows = summaryArray.map(r => [r.month, ...keys.map(k => r[k] ?? 0)]);
-                ws3 = XLSX.utils.aoa_to_sheet([header, ...rows]);
-            } else {
-                ws3 = XLSX.utils.json_to_sheet(summaryArray);
-            }
-            let currentRow = XLSX.utils.decode_range(ws3['!ref']).e.r + 3; // start 3 rows below
-            const addTable = (title, tickets) => {
-                // Title row
-                const titleCell = [[title]];
-                XLSX.utils.sheet_add_aoa(ws3, titleCell, { origin: { r: currentRow, c: 0 } });
-                currentRow++;
-
-                // Header row
-                const headers = [["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"]];
-                XLSX.utils.sheet_add_aoa(ws3, headers, { origin: { r: currentRow, c: 0 } });
-                currentRow++;
-
-                // Data rows
-                const rows = tickets.map(t => [
-                    t.ticket_id,
-                    t.ticket_subject,
-                    t.ticket_status,
-                    t.ticket_type,
-                    t.assigned_to || "-",
-                    t.ticket_for || "-",
-                    new Date(t.created_at).toLocaleString()
-                ]);
-
-                XLSX.utils.sheet_add_aoa(ws3, rows, { origin: { r: currentRow, c: 0 } });
-                currentRow += rows.length + 2; // leave 2 spaces after each table
-            };
-
-            addTable("Incident Tickets", filteredTickets.filter(t => t.ticket_category === "hardware"));
-            addTable("Request Tickets", filteredTickets.filter(t => t.ticket_category === "network"));
-            addTable("Inquiry Tickets", filteredTickets.filter(t => t.ticket_category === "software"));
-
-            XLSX.utils.book_append_sheet(workbook, ws3, "Tickets By Category");
+            addTable("Hardware Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+                filteredTickets.filter(t => t.ticket_category === "hardware").map(t => [
+                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
+                ])
+            );
+            addTable("Network Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+                filteredTickets.filter(t => t.ticket_category === "network").map(t => [
+                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
+                ])
+            );
+            addTable("Software Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+                filteredTickets.filter(t => t.ticket_category === "software").map(t => [
+                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
+                ])
+            );
+            addTable("System Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+                filteredTickets.filter(t => t.ticket_category === "system").map(t => [
+                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
+                ])
+            );
         }
 
-        // ---- Tickets by Helpdesk Users ----
+        // ---- Tickets by User ----
         if (ticketUsersSummary) {
-            let ws4;
-            const summaryArray = Array.isArray(ticketUsersSummary)
-                ? ticketUsersSummary
-                : [ticketUsersSummary];
-
-            if (summaryArray[0]?.month) {
-                // Per month view
-                const keys = Object.keys(summaryArray[0]).filter(k => k !== "month");
-                const header = ["Month", ...keys];
-                const rows = summaryArray.map(r => [r.month, ...keys.map(k => r[k] ?? 0)]);
-                ws4 = XLSX.utils.aoa_to_sheet([header, ...rows]);
-            } else {
-                // Simple user → total tickets
-                ws4 = XLSX.utils.json_to_sheet(summaryArray);
-            }
-
-            XLSX.utils.book_append_sheet(workbook, ws4, "Tickets By User");
+            const summaryArray = Array.isArray(ticketUsersSummary) ? ticketUsersSummary : [ticketUsersSummary];
+            const headers = summaryArray[0]?.month
+                ? ["Month", ...Object.keys(summaryArray[0]).filter(k => k !== "month")]
+                : Object.keys(summaryArray[0] || {});
+            const rows = summaryArray.map(r =>
+                summaryArray[0]?.month
+                    ? [r.month, ...headers.slice(1).map(k => r[k] ?? 0)]
+                    : headers.map(h => r[h] ?? "")
+            );
+            addTable("Tickets By User", headers, rows);
         }
 
-
-
-
-        // ---- Save Excel file ----
-        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-        const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-        saveAs(blob, "Reports.xlsx");
+        // ---- Save file ----
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), "Reports.xlsx");
     };
+
 
 
 
@@ -562,6 +592,7 @@ export default function Report() {
             <Row style={{ paddingBottom: '20px' }}>
                 <Col xs={8}>
                     <div className="bento-item bento-users">
+                        <h4>Ticket Status</h4>
                         <div>
                             <table border="1" cellPadding="5" style={{ borderCollapse: "collapse", width: '100%' }}>
                                 <thead style={{ background: '#053b00ff', color: 'white' }}>
@@ -601,7 +632,7 @@ export default function Report() {
                 <Col>
                     <div className="bento-item bento-users"
                         onClick={() => openModal("Ticket Summary", <SubCatDepartmentTable filterType={filterType} location={location} onDataReady={setSubcatSummary} />)}>
-                        <h3>Summary</h3>
+                        <h4>Summary</h4>
                         <div className="bento-chart-wrapper">
                             <SubCatDepartment filterType={filterType} location={location} onDataReady={setSubcatSummary} />
                         </div>

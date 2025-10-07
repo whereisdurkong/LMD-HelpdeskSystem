@@ -90,9 +90,7 @@ export default function ViewHDTicket() {
             ],
             software: [
                 "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
-                "Oracle (PROD/BIPUB)",
                 "Email (Setup, Creation, Error, Backup)",
-                "System Updates & Patches",
                 "Active Directory (User Creation, Login, Password)",
                 "Zoom / Video Conferencing Tools",
                 "FoxPro (Accounting System)",
@@ -102,11 +100,20 @@ export default function ViewHDTicket() {
                 "PDF (Conversion, Reduce Size, Editing)",
                 "Antivirus / Security Software",
                 "Operating System (Windows, macOS, Linux)",
-                "Custom In-house Applications",
-                "Backup & Restore Tools",
                 "Cloud Services (OneDrive, Google Drive, Dropbox)",
                 "Others",
             ],
+            system: [
+                "Oracle (PROD/BIPUB)",
+                "System Updates & Patches",
+                "Backup & Restore Tools",
+                "CCTV Incident Report System",
+                "Safety Accident Report System",
+                "Compliance Registry System",
+                "Information Management System (Comrel)",
+                "Lepanto IT Help Desk System",
+                "Others"
+            ]
         },
         request: {
             hardware: [
@@ -133,13 +140,22 @@ export default function ViewHDTicket() {
                 "Cloud Storage Request",
                 "Others",
             ],
+            system: [
+                "New Account",
+                "Delete Account",
+                "Edit Account",
+                "Request Access",
+                "Others"
+            ]
         },
         inquiry: {
             hardware: ["Warranty Inquiry", "Specs Inquiry", "Others"],
             network: ["Network Policy Inquiry", "Coverage Inquiry", "Others"],
             software: ["Software Policy Inquiry", "Version Inquiry", "Others"],
+            system: ["System Policy Inquiry", "Assistance", "Others"]
         },
     };
+
 
     const customSelectStyles = {
         container: (provided) => ({
@@ -499,9 +515,13 @@ export default function ViewHDTicket() {
                 setShowAcceptButton(false)
                 window.location.reload();
             } else if (ticket.is_locked === true || ticket.updating_by !== empInfo.user_name) {
+                setLoading(false)
                 setError(`${ticket.updating_by} is currently working on this ticket`);
                 return;
             }
+
+
+
         } catch (err) {
             console.log(err)
         }
@@ -680,24 +700,24 @@ export default function ViewHDTicket() {
     const handleSave = async () => {
         try {
 
-
-
             setLoading(true);
             const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
                 params: { id: ticket_id }
             });
             const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
-            console.log(ticket.updating_by)
             //Check if someone is working on this ticket
             if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
                 if (formData.ticket_status === 'in-progress') {
+
                     if (!formData.ticket_type || !formData.ticket_status || !formData.ticket_category || !formData.ticket_SubCategory || !formData.ticket_urgencyLevel) {
+                        setLoading(false)
                         setError('Unable to save empty fields! Please try again!');
                         return;
                     }
                 }
 
                 if (formData.ticket_status === 'escalate' && (formData.assigned_to === originalData.assigned_to)) {
+                    setLoading(false)
                     setError('Change the assigned to if you will escalate the ticket! ')
                     return
                 }
@@ -805,6 +825,7 @@ export default function ViewHDTicket() {
                 window.location.reload();
 
             } else if (ticket.is_locked === true || ticket.updating_by !== empInfo.user_name) {
+                setLoading(false)
                 setError(`${ticket.updating_by} is currently working on this ticket`);
                 return;
             }
@@ -812,6 +833,7 @@ export default function ViewHDTicket() {
 
         } catch (err) {
             console.error("Error updating ticket:", err);
+            setLoading(false)
             setError('Failed to update ticket. Please try again later.');
         }
 
@@ -888,6 +910,7 @@ export default function ViewHDTicket() {
             setCollaboratorState(true)
         } else {
             setCollaboratorState(false)
+            setLoading(false)
             setError('Make sure you are assigned to this ticket to add collaborators!')
         }
     }
@@ -914,6 +937,7 @@ export default function ViewHDTicket() {
                 console.log(err)
             }
         } else if (ticket.is_locked === true || ticket.updating_by !== empInfo.user_name) {
+            setLoading(false)
             setError(`${ticket.updating_by} is currently working on this ticket`);
             return;
         }
@@ -1475,6 +1499,7 @@ export default function ViewHDTicket() {
                                     <option value="hardware">Hardware</option>
                                     <option value="network">Network</option>
                                     <option value="software">Software</option>
+                                    <option value="system">System</option>
                                 </Form.Select>
                             </Form.Group>
                             <Form.Group as={Col} md={6} className="mb-2">

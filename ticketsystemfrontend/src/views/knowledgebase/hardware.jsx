@@ -222,59 +222,65 @@ export default function Hardware() {
                     <hr />
 
                     <Accordion defaultActiveKey={0} flush>
-                        {faqData.map((faq, index) => (
-                            <Accordion.Item eventKey={index.toString()} key={index}>
-                                <Accordion.Header>{faq.question}</Accordion.Header>
+                        {faqData.length === 0 ? (
+                            <div className="text-center text-muted py-3">
+                                No hardware articles found
+                            </div>
+                        ) : (
+                            faqData.map((faq, index) => (
+                                <Accordion.Item eventKey={index.toString()} key={index}>
+                                    <Accordion.Header>{faq.question}</Accordion.Header>
+                                    <Accordion.Body>
+                                        <div className="d-flex justify-content-between align-items-start">
+                                            <div
+                                                className="text-muted"
+                                                style={{ flex: 1 }}
+                                                dangerouslySetInnerHTML={{ __html: faq.answer }}
+                                            />
+                                            {access && (
+                                                <div>
+                                                    {/* EDIT BUTTON */}
+                                                    <Button
+                                                        variant="outline-secondary"
+                                                        size="sm"
+                                                        className="ms-2"
+                                                        onClick={() => {
+                                                            setNewTitle(faq.question);
+                                                            setNewContent(faq.answer);
+                                                            setShowModal(true);
+                                                            setEditMode(true);
+                                                            setKbID(faq.id);
+                                                        }}
+                                                    >
+                                                        <PencilSquare />
+                                                    </Button>
 
-                                <Accordion.Body>
-                                    <div className="d-flex justify-content-between align-items-start">
-                                        <div
-                                            className="text-muted"
-                                            style={{ flex: 1 }}
-                                            dangerouslySetInnerHTML={{ __html: faq.answer }}
-                                        />
-                                        {access && (
-                                            <div>
-
-                                                {/* EDIT BUTTON */}
-                                                < Button
-                                                    variant="outline-secondary"
-                                                    size="sm"
-                                                    className="ms-2"
-                                                    onClick={() => {
-                                                        setNewTitle(faq.question);
-                                                        setNewContent(faq.answer);
-                                                        setShowModal(true);
-                                                        setEditMode(true);
-                                                        setKbID(faq.id);
-                                                    }}
-                                                >
-                                                    <PencilSquare />
-                                                </Button>
-                                                {/* Archive BUtton */}
-                                                <Button
-                                                    variant="outline-secondary"
-                                                    size="sm"
-                                                    className="ms-2"
-                                                    onClick={() => {
-                                                        handleArchive(faq.id);
-                                                        setKbID(faq.id);
-                                                        setShowModal(false);
-                                                        setNewTitle("");
-                                                        setNewContent("");
-                                                        setAddMode(false);
-                                                        setEditMode(false);
-                                                    }}
-                                                >
-                                                    <Archive />
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </Accordion.Body>
-                            </Accordion.Item>
-                        ))}
+                                                    {/* ARCHIVE BUTTON */}
+                                                    <Button
+                                                        variant="outline-secondary"
+                                                        size="sm"
+                                                        className="ms-2"
+                                                        onClick={() => {
+                                                            handleArchive(faq.id);
+                                                            setKbID(faq.id);
+                                                            setShowModal(false);
+                                                            setNewTitle("");
+                                                            setNewContent("");
+                                                            setAddMode(false);
+                                                            setEditMode(false);
+                                                        }}
+                                                    >
+                                                        <Archive />
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </Accordion.Body>
+                                </Accordion.Item>
+                            ))
+                        )}
                     </Accordion>
+
 
                     <hr className="my-4" />
                     <p className="text-muted text-center">
@@ -306,7 +312,7 @@ export default function Hardware() {
                         </Form.Group>
 
                         <Form.Group>
-                            <Form.Label>Content</Form.Label>
+                            <Form.Label>Content </Form.Label>
 
                             <ButtonGroup size="sm" className="mb-2">
                                 <Button variant="outline-secondary" onClick={() => applyFormat("bold")}><b>B</b></Button>

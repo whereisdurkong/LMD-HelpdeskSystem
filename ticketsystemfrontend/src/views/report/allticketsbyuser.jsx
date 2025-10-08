@@ -11,6 +11,7 @@ import {
     Legend
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
+import { Pagination } from "react-bootstrap";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -18,6 +19,9 @@ export default function AllTicketsByUser({ filterType, showChart = true, onDataR
     const [alluser, setAllUser] = useState([]);
     const [chartData, setChartData] = useState(null);
     const [userTickets, setUserTickets] = useState({});
+
+    const [currentPage, setCurrentPage] = useState({}); // <-- holds pagination state for each user
+    const itemsPerPage = 5;
 
     // ---- date filter
     const isInFilter = (date) => {
@@ -177,45 +181,82 @@ export default function AllTicketsByUser({ filterType, showChart = true, onDataR
         if (alluser.length) fetchData();
     }, [alluser, filterType, showChart, location]);
 
+    const handlePageChange = (username, page) => {
+        setCurrentPage(prev => ({ ...prev, [username]: page }));
+    };
+
     // ---- table rendering
     const renderTables = () => (
         <>
-            {Object.entries(userTickets).map(([username, tickets]) => (
-                <div key={username} style={{ marginBottom: 30 }}>
-                    <h4>
-                        Tickets of {username.charAt(0).toUpperCase() + username.slice(1).toLowerCase()}
-                    </h4>
-                    <table
-                        border="1"
-                        cellPadding="5"
-                        style={{ width: "100%", borderCollapse: "collapse" }}
-                    >
-                        <thead style={{ background: "#053b00ff", color: "white" }}>
-                            <tr>
-                                <th>Ticket ID</th>
-                                <th>Subject</th>
-                                <th>Status</th>
-                                <th>Created At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tickets.map(t => (
-                                <tr key={t.ticket_id}>
-                                    <td>{t.ticket_id}</td>
-                                    <td>{t.ticket_subject}</td>
-                                    <td>{t.ticket_status}</td>
-                                    <td>{new Date(t.created_at).toLocaleString()}</td>
-                                </tr>
-                            ))}
-                            {tickets.length === 0 && (
-                                <tr>
-                                    <td colSpan="4" style={{ textAlign: "center" }}>No tickets found</td>
-                                </tr>
+            {Object.entries(userTickets).map(([username, tickets]) => {
+                const current = currentPage[username] || 1;
+                const totalPages = Math.ceil(tickets.length / itemsPerPage);
+                const startIdx = (current - 1) * itemsPerPage;
+                const currentTickets = tickets.slice(startIdx, startIdx + itemsPerPage);
+
+                return (
+                    <div key={username} style={{ marginBottom: 30 }}>
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                            <h4>
+                                Tickets of {username.charAt(0).toUpperCase() + username.slice(1).toLowerCase()}
+                            </h4>
+                            {/* Pagination controls */}
+                            {totalPages > 1 && (
+                                <Pagination className="mb-0" style={{ "--bs-pagination-active-bg": "#053b00ff", "--bs-pagination-active-border-color": "#053b00ff", "--bs-pagination-color": "#053b00ff" }}>
+                                    <Pagination.First onClick={() => handlePageChange(username, 1)} disabled={current === 1} />
+                                    <Pagination.Prev onClick={() => handlePageChange(username, current - 1)} disabled={current === 1} />
+                                    {[...Array(totalPages)].map((_, i) => (
+                                        <Pagination.Item
+                                            key={i + 1}
+                                            active={i + 1 === current}
+                                            onClick={() => handlePageChange(username, i + 1)}
+                                        >
+                                            {i + 1}
+                                        </Pagination.Item>
+                                    ))}
+                                    <Pagination.Next onClick={() => handlePageChange(username, current + 1)} disabled={current === totalPages} />
+                                    <Pagination.Last onClick={() => handlePageChange(username, totalPages)} disabled={current === totalPages} />
+                                </Pagination>
                             )}
-                        </tbody>
-                    </table>
-                </div>
-            ))}
+                        </div>
+
+
+                        <table
+                            border="1"
+                            cellPadding="5"
+                            style={{ width: "100%", borderCollapse: "collapse" }}
+                        >
+                            <thead style={{ background: "#053b00ff", color: "white" }}>
+                                <tr>
+                                    <th>Ticket ID</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {currentTickets.map(t => (
+                                    <tr key={t.ticket_id}
+                                        style={{ cursor: "pointer" }}
+                                        onClick={() => window.location.replace(`view-hd-ticket?id=${t.ticket_id}`)}>
+                                        <td>{t.ticket_id}</td>
+                                        <td>{t.ticket_subject}</td>
+                                        <td>{t.ticket_status}</td>
+                                        <td>{new Date(t.created_at).toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                                {tickets.length === 0 && (
+                                    <tr>
+                                        <td colSpan="4" style={{ textAlign: "center" }}>No tickets found</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+
+
+                    </div>
+                );
+            })}
         </>
     );
 

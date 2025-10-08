@@ -54,6 +54,12 @@ export default function HDDashboard() {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = ownTicket.slice(indexOfFirstItem, indexOfLastItem);
 
+    const openModal = (title, content) => {
+        setModalTitle(title);
+        setModalContent(content);
+        setShowModal(true);
+    };
+
     // Fetch tickets once
     useEffect(() => {
         const fetch = async () => {
@@ -85,11 +91,7 @@ export default function HDDashboard() {
         };
         fetch();
     }, []);
-    const openModal = (title, content) => {
-        setModalTitle(title);
-        setModalContent(content);
-        setShowModal(true);
-    };
+
 
     const calcTAT = (start, end) => {
         const startDate = new Date(start);
@@ -230,7 +232,7 @@ export default function HDDashboard() {
         setOpen(filtered.filter(ticket => (ticket.ticket_status === 'in-progress' || ticket.ticket_status === 'assigned' || ticket.ticket_status === 're-opened') &&
             (ticket.assigned_to === userInfo.user_name && ticket.is_active === true)).length);
 
-        setNotReviewed(filtered.filter(ticket => ticket.is_reviewed === false && ticket.ticket_status === 'closed' && (ticket.assigned_to === userInfo.user_name && ticket.is_active === true)).length);
+        setNotReviewed(filtered.filter(ticket => ticket.is_reviewed === false && (ticket.ticket_status === 'closed' || ticket.ticket_status === 'resolved') && (ticket.assigned_to === userInfo.user_name && ticket.is_active === true)).length);
 
         setClosed(filtered.filter(ticket => ticket.ticket_status === 'open' && ticket.is_active === true).length);
 
@@ -362,7 +364,9 @@ export default function HDDashboard() {
                         style={{ cursor: "pointer" }}
                         onClick={() => openModal(
                             "Not Reviewed Tickets",
-                            <TicketsTable tickets={filteredTickets.filter(t => t.is_reviewed === false && t.ticket_status === 'closed' && (t.assigned_to === userInfo.user_name && t.is_active === true))} />
+                            <TicketsTable tickets={filteredTickets.filter(t => t.is_reviewed === false &&
+                                (t.assigned_to === userInfo.user_name && t.is_active === true) &&
+                                (t.ticket_status === 'closed' || t.ticket_status === 'resolved'))} />
                         )}
                     >
                         <div style={{ background: '#004e0dff', borderRadius: '5px 5px 0 0', color: '#fff', padding: '5px', textAlign: 'center' }}>
@@ -410,7 +414,10 @@ export default function HDDashboard() {
                                 <tbody>
                                     {currentItems.length > 0 ? (
                                         currentItems.map(e => (
-                                            <tr key={e.ticket_id}>
+                                            <tr key={e.ticket_id}
+                                                style={{ cursor: "pointer" }}
+                                                onClick={() => window.location.replace(`view-hd-ticket?id=${e.ticket_id}`)}
+                                            >
                                                 <td>{e.ticket_id}</td>
                                                 <td>{e.ticket_subject}</td>
                                                 <td>{e.ticket_status}</td>

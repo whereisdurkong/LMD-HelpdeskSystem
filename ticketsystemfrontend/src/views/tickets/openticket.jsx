@@ -161,7 +161,9 @@ export default function Openticket() {
             ticket.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             ticket.sub_category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             ticket.asset_tag?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            ticket.Description?.toLowerCase().includes(searchTerm.toLowerCase())
+            ticket.Description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            ticket.assigned_to?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            ticket.ticket_for?.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
         const matchesLocation =

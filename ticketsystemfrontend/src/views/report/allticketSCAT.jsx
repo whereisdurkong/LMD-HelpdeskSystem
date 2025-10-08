@@ -179,12 +179,12 @@ export default function AllTicketSCAT({ filterType, location, showChart = true }
     return (
         <>
             {/* PER MONTH CHART.JS BAR CHART */}
-            {filterType === "perMonth" ? (
+            {filterType === "perMonth" && showChart ? (
                 <div style={{ width: "100%", height: "400px", alignContent: 'center' }}>
                     <Bar data={chartData} options={chartOptions} />
                 </div>
             ) : (
-                // DEFAULT CIRCULAR CHART DISPLAY
+                // CIRCULAR CHART DISPLAY
                 showChart && (
                     <div className="text-center mb-3">
                         <div style={{ width: "100%", height: "100%", margin: "0 auto" }}>
@@ -212,7 +212,7 @@ export default function AllTicketSCAT({ filterType, location, showChart = true }
             )}
 
             {/* TABLE VIEW */}
-            {!showChart && filterType !== "perMonth" && (
+            {!showChart && (
                 <div className="table-responsive">
                     <table
                         border="1"
@@ -235,7 +235,10 @@ export default function AllTicketSCAT({ filterType, location, showChart = true }
                         <tbody>
                             {currentItems.length > 0 ? (
                                 currentItems.map((f) => (
-                                    <tr key={f.review_id}>
+                                    <tr key={f.review_id}
+                                        style={{ cursor: "pointer" }}
+                                        onClick={() => window.location.replace(`view-hd-ticket?id=${f.ticket_id}`)}
+                                    >
                                         <td>{f.ticket_id}</td>
                                         <td className="text-truncate" style={{ maxWidth: "150px" }}>
                                             {f.review}

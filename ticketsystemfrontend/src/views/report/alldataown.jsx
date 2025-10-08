@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Pagination } from "react-bootstrap";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import { Bar } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -11,9 +12,8 @@ import {
     BarElement,
     Title,
     Tooltip,
-    Legend,
-} from "chart.js";
-import { Bar } from "react-chartjs-2";
+    Legend
+} from 'chart.js';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -80,7 +80,7 @@ export default function AllDataOwn({ filterType, location, showChart = true }) {
 
                 const createdNotes = noteFilter.filter((n) => n.created_by === userData.user_name);
                 const uniqueIds = [...new Set(createdNotes.map((n) => n.ticket_id))];
-
+                console.log(uniqueIds)
                 const worked = activeTickets.filter((t) => {
                     const isUniqueId = uniqueIds.includes(t.ticket_id);
                     const collaborators = t.assigned_collaborators?.split(",").map((n) => n.trim()) || [];
@@ -94,6 +94,7 @@ export default function AllDataOwn({ filterType, location, showChart = true }) {
                 });
 
                 setAllTickets(worked);
+
 
                 const resolvedTickets = worked.filter(
                     (t) => t.ticket_status === "closed" || t.ticket_status === "resolved"
@@ -109,19 +110,46 @@ export default function AllDataOwn({ filterType, location, showChart = true }) {
                 setPercentage(percent);
 
                 if (filterType === "perMonth") {
+                    // use all activeTickets from the whole year, not just filtered
+                    const yearTickets = ticketRes.data.filter(
+                        (t) => new Date(t.created_at).getFullYear() === new Date().getFullYear()
+                    );
+
+                    const activeYearTickets = yearTickets.filter((t) => t.is_active === true);
+
+                    // same worked-tickets logic applied on year data
+                    const workedYear = activeYearTickets.filter((t) => {
+                        const collaborators = t.assigned_collaborators?.split(",").map((n) => n.trim()) || [];
+                        const isCollaborator = collaborators.includes(userData.user_name);
+                        const isAssignedOrCreatedByUser =
+                            t.assigned_to === userData.user_name ||
+                            t.created_by === userData.user_name ||
+                            t.resolved_by === userData.user_name ||
+                            t.updated_by === userData.user_name;
+                        return isCollaborator || isAssignedOrCreatedByUser;
+                    });
+
+                    // compute per-month %
                     const monthly = Array.from({ length: 12 }, (_, i) => {
-                        const monthTickets = worked.filter((t) => new Date(t.created_at).getMonth() === i);
+                        const monthTickets = workedYear.filter((t) => new Date(t.created_at).getMonth() === i);
+
                         if (monthTickets.length === 0) return { month: i, percent: 0 };
+
                         const resolved = monthTickets.filter(
-                            (t) => t.ticket_status === "closed" || t.ticket_status === "resolved"
+                            (t) =>
+                                t.ticket_status.toLowerCase() === "closed" ||
+                                t.ticket_status.toLowerCase() === "resolved"
                         );
+
                         const percent = ((resolved.length / monthTickets.length) * 100).toFixed(2);
                         return { month: i, percent: Number(percent) };
                     });
+
                     setMonthlyPercentages(monthly);
                 } else {
                     setMonthlyPercentages([]);
                 }
+
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
@@ -170,6 +198,10 @@ export default function AllDataOwn({ filterType, location, showChart = true }) {
         },
         plugins: {
             legend: { display: false },
+            title: {
+                display: true,
+                text: filterType === "perMonth" ? "Tickets Rate per Month" : "Tickets by Rate"
+            },
             tooltip: {
                 callbacks: {
                     label: (ctx) => `${ctx.parsed.y.toFixed(1)}%`,
@@ -180,7 +212,7 @@ export default function AllDataOwn({ filterType, location, showChart = true }) {
 
     return (
         <>
-            {filterType === "perMonth" ? (
+            {filterType === "perMonth" && showChart ? (
                 // Bar chart display
                 <div style={{ width: "100%", height: "400px", alignContent: 'center' }}>
                     <Bar data={chartData} options={chartOptions} />
@@ -272,7 +304,10 @@ export default function AllDataOwn({ filterType, location, showChart = true }) {
                         <tbody>
                             {currentItems.length > 0 ? (
                                 currentItems.map((t) => (
-                                    <tr key={t.ticket_id}>
+                                    <tr key={t.ticket_id}
+                                        style={{ cursor: "pointer" }}
+                                        onClick={() => window.location.replace(`view-hd-ticket?id=${t.ticket_id}`)}
+                                    >
                                         <td>{t.ticket_id}</td>
                                         <td>{t.ticket_subject || "-"}</td>
                                         <td>{t.ticket_status || "-"}</td>

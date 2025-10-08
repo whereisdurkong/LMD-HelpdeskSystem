@@ -185,7 +185,10 @@ export default function AllTicketbyTypeOwn({ filterType, showChart = true, locat
                     </thead>
                     <tbody>
                         {currentRows.map((t, idx) => (
-                            <tr key={idx}>
+                            <tr key={idx}
+                                style={{ cursor: "pointer" }}
+                                onClick={() => window.location.replace(`view-hd-ticket?id=${t.ticket_id}`)}
+                            >
                                 <td>{t.ticket_id}</td>
                                 <td>{t.ticket_subject}</td>
                                 <td>{t.ticket_status}</td>

@@ -68,6 +68,8 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 let tickets = res.data || [];
 
+                tickets = tickets.filter(t => t.is_active === true)
+
                 // Filter tickets by date range
                 tickets = tickets.filter(t => isInFilter(t.created_at));
 
@@ -218,7 +220,10 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                     </thead>
                     <tbody>
                         {currentRows.map((t, idx) => (
-                            <tr key={idx}>
+                            <tr key={idx}
+                                style={{ cursor: "pointer" }}
+                                onClick={() => window.location.replace(`view-hd-ticket?id=${t.ticket_id}`)}
+                            >
                                 <td>{t.ticket_id}</td>
                                 <td>{t.ticket_subject}</td>
                                 <td>{t.ticket_status}</td>

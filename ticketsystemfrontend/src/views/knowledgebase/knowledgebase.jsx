@@ -31,21 +31,27 @@ export default function Knowledgebase() {
     const items = [
         {
             title: 'Hardware',
-            desc: 'Everything you need to know to get started and get to work in Slack.',
+            desc: 'Learn how to troubleshoot and maintain your computer’s physical components and devices.',
             src: 'src/assets/images/hardware.png',
             link: '/hardware',
         },
         {
             title: 'Network',
-            desc: 'From channels to search, learn how Slack works from top to bottom.',
+            desc: 'Find guides to fix connectivity issues and understand how your network keeps you online.',
             src: 'src/assets/images/network.png',
             link: '/network',
         },
         {
             title: 'Software',
-            desc: 'Adjust your profile and preferences to make Slack work just for you.',
+            desc: 'Explore tips and solutions for common application errors and software usage.',
             src: 'src/assets/images/software.png',
             link: '/software',
+        },
+        {
+            title: 'System',
+            desc: 'Access guides and troubleshooting tips for our in-house applications and tools.',
+            src: 'src/assets/images/system.png',
+            link: '/system',
         },
     ];
 
@@ -203,6 +209,9 @@ export default function Knowledgebase() {
                     minHeight: '50vh',
                     paddingTop: '40px',
                     paddingBottom: '40px',
+                    display: 'flex',               // enable flexbox
+                    alignItems: 'center',          // vertically center content
+                    justifyContent: 'center',      // horizontally center content
                 }}
             >
                 <Container fluid="lg">
@@ -214,11 +223,20 @@ export default function Knowledgebase() {
                                 sm={6}
                                 md={4}
                                 lg={3}
-                                className="mb-4 d-flex flex-column align-items-center"
+                                className="mb-4 d-flex justify-content-center"
                             >
                                 <Link
                                     to={item.link}
-                                    style={{ textDecoration: 'none', color: 'inherit' }}
+                                    style={{
+                                        textDecoration: 'none',
+                                        color: 'inherit',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        textAlign: 'center',
+                                        width: '100%',
+                                        maxWidth: '220px',
+                                    }}
                                 >
                                     <img
                                         src={item.src}
@@ -239,12 +257,22 @@ export default function Knowledgebase() {
                                     >
                                         <b>{item.title}</b>
                                     </h4>
-                                    <p style={{ color: '#fff', maxWidth: '90%' }}>{item.desc}</p>
+                                    <p
+                                        style={{
+                                            color: '#fff',
+                                            maxWidth: '90%',
+                                            textAlign: 'center',
+                                            margin: 0,
+                                        }}
+                                    >
+                                        {item.desc}
+                                    </p>
                                 </Link>
                             </Col>
                         ))}
                     </Row>
                 </Container>
+
             </div>
         </div>
     );

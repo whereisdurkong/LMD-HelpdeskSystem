@@ -63,6 +63,8 @@ export default function AllTicketbyType({ filterType, showChart = true, location
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 let ticketres = res.data || [];
 
+                ticketres = ticketres.filter(t => t.is_active === true)
+
                 if (location === "lmd") {
                     ticketres = ticketres.filter(t => t.assigned_location === "lmd");
                 } else if (location === "corp") {
@@ -153,7 +155,7 @@ export default function AllTicketbyType({ filterType, showChart = true, location
 
         return (
             <div style={{ marginTop: "20px" }}>
-                {/* ✅ Title + Pagination in same row */}
+                {/* Title + Pagination in same row */}
                 <div className="d-flex justify-content-between align-items-center mb-2">
                     <h4 className="mb-0">{title}</h4>
                     {totalPages > 1 && (
@@ -190,7 +192,10 @@ export default function AllTicketbyType({ filterType, showChart = true, location
                     </thead>
                     <tbody>
                         {currentRows.map((t, idx) => (
-                            <tr key={idx}>
+                            <tr key={idx}
+                                style={{ cursor: "pointer" }}
+                                onClick={() => window.location.replace(`view-hd-ticket?id=${t.ticket_id}`)}
+                            >
                                 <td>{t.ticket_id}</td>
                                 <td>{t.ticket_subject}</td>
                                 <td>{t.ticket_status}</td>

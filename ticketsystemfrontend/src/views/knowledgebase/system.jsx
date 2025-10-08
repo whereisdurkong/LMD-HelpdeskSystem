@@ -6,7 +6,7 @@ import { useNavigate } from "react-router";
 import { PencilSquare, Archive } from 'react-bootstrap-icons';
 import Spinner from 'react-bootstrap/Spinner';
 
-export default function Network() {
+export default function System() {
     const [loaded] = useState(true);
     const navigate = useNavigate();
     const [showModal, setShowModal] = useState(false);
@@ -64,7 +64,7 @@ export default function Network() {
                 if (all.data && Array.isArray(all.data)) {
                     setFaqData(
                         all.data
-                            .filter(item => item.is_active === true && item.kb_category === "network")
+                            .filter(item => item.is_active === true && item.kb_category === "system")
                             .map(item => ({
                                 id: item.kb_id,
                                 question: item.kb_title,
@@ -94,7 +94,7 @@ export default function Network() {
             const empInfo = JSON.parse(localStorage.getItem("user"));
             await axios.post(`${config.baseApi}/knowledgebase/archive-knowledgebase`, { kb_id: id, updated_by: empInfo.user_name })
 
-            setSuccess("Network troubleshooting step archived successfully");
+            setSuccess("System troubleshooting step archived successfully");
             window.location.reload();
 
         } catch (err) {
@@ -125,7 +125,7 @@ export default function Network() {
                 })
 
                 setEditMode(false);
-                setSuccess("Network updated successfully");
+                setSuccess("System updated successfully");
                 setNewTitle("");
                 setNewContent("");
                 setShowModal(false);
@@ -137,12 +137,13 @@ export default function Network() {
     }
 
     const handleSave = async () => {
-        console.log("Saving Network:", newTitle, newContent);
-        setLoading(false)
+        console.log("Saving System:", newTitle, newContent);
+
         if (newTitle === '') {
-            setError("Please fill in title.");
             setLoading(false)
+            setError("Please fill in title.");
         } else if (newContent.replace(/<(.|\n)*?>/g, '').trim() === '') {
+            setLoading(false)
             setError("Please fill in description.");
         } else {
             const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -152,11 +153,11 @@ export default function Network() {
                     kb_title: newTitle,
                     kb_desc: newContent,
                     created_by: empInfo.user_name,
-                    kb_category: "network"
+                    kb_category: "system"
                 });
-                setSuccess("network saved successfully");
+                setSuccess("System saved successfully");
             } catch (err) {
-                console.error("Error saving Network:", err);
+                console.error("Error saving System:", err);
             }
 
             setFaqData([...faqData, { question: newTitle, answer: newContent }]);
@@ -210,10 +211,10 @@ export default function Network() {
             <Container>
                 <Card className="p-4 shadow-lg" style={{ borderRadius: "20px", backgroundColor: "#fff" }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h2 className="fw-bold text-dark mb-0">Network Frequently Asked Questions</h2>
+                        <h2 className="fw-bold text-dark mb-0">System Frequently Asked Questions</h2>
                         {access && (
                             <div className="d-flex gap-2">
-                                <Button variant="primary" onClick={() => navigate('/networkarchive')}>Archive</Button>
+                                <Button variant="primary" onClick={() => navigate('/systemarchive')}>Archive</Button>
                                 <Button variant="primary" onClick={() => { setShowModal(true); setAddMode(true); }}>Add</Button>
                             </div>
                         )}
@@ -224,7 +225,7 @@ export default function Network() {
                     <Accordion defaultActiveKey={0} flush>
                         {faqData.length === 0 ? (
                             <div className="text-center text-muted py-3">
-                                No network articles found
+                                No system articles found
                             </div>
                         ) : (
                             faqData.map((faq, index) => (
@@ -294,7 +295,7 @@ export default function Network() {
             {/* Modal */}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
                 <Modal.Header >
-                    <Modal.Title>{editMode ? 'Edit Network Troubleshooting Step' : 'Add Network Troubleshooting Step'}</Modal.Title>
+                    <Modal.Title>{editMode ? 'Edit System Troubleshooting Step' : 'Add System Troubleshooting Step'}</Modal.Title>
 
                 </Modal.Header>
                 <Modal.Body>
@@ -356,6 +357,7 @@ export default function Network() {
                     </Button>
                 </Modal.Footer>
             </Modal>
+
             {loading && (
                 <div
                     style={{

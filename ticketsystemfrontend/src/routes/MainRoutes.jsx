@@ -4,6 +4,8 @@ import MainLayout from 'layouts/MainLayout';
 import { Navigate } from 'react-router-dom';
 import AllTicketSCAT from 'views/report/allticketSCAT';
 import AllDataOwn from 'views/report/alldataown';
+import System from 'views/knowledgebase/system';
+import SystemArchive from 'views/knowledgebase/systemarchive';
 
 
 
@@ -227,6 +229,14 @@ const MainRoutes = {
     {
       path: '/softwarearchive',
       element: withSpinner(<ASoftware />)
+    },
+    {
+      path: '/system',
+      element: withSpinner(<System />)
+    },
+    {
+      path: '/systemarchive',
+      element: withSpinner(<SystemArchive />)
     },
     {
       path: '/reports',

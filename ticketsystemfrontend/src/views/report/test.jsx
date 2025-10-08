@@ -90,7 +90,9 @@ export default function Report() {
                     <tbody>
                         {currentTickets.length > 0 ? (
                             currentTickets.map(ticket => (
-                                <tr key={ticket.ticket_id}>
+                                <tr key={ticket.ticket_id}
+                                    style={{ cursor: "pointer" }}
+                                    onClick={() => window.location.replace(`view-hd-ticket?id=${ticket.ticket_id}`)}>
                                     <td>{ticket.ticket_id}</td>
                                     <td>{ticket.ticket_subject}</td>
                                     <td>{ticket.ticket_status}</td>
@@ -143,7 +145,8 @@ export default function Report() {
             try {
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 const data = res.data || [];
-                setAllTickets(data);
+                const activetickets = data.filter(t => t.is_active === true)
+                setAllTickets(activetickets);
 
 
             } catch (err) {
@@ -633,8 +636,21 @@ export default function Report() {
                     <div className="bento-item bento-users"
                         onClick={() => openModal("Ticket Summary", <SubCatDepartmentTable filterType={filterType} location={location} onDataReady={setSubcatSummary} />)}>
                         <h4>Summary</h4>
-                        <div className="bento-chart-wrapper">
-                            <SubCatDepartment filterType={filterType} location={location} onDataReady={setSubcatSummary} />
+                        <div
+                            className="bento-chart-wrapper"
+                            style={{
+                                width: "100%",
+                                overflowX: "auto",
+                                paddingBottom: "10px",
+                            }}
+                        >
+                            <div style={{ width: "100%", height: "350px" }}>
+                                <SubCatDepartment
+                                    filterType={filterType}
+                                    location={location}
+                                    onDataReady={setSubcatSummary}
+                                />
+                            </div>
                         </div>
                     </div>
                 </Col>

@@ -55,6 +55,9 @@ const upload = multer({
 
 const { DataTypes } = Sequelize;
 
+
+
+
 const Tickets = db.define('ticket_master', {
     ticket_id: {
         type: DataTypes.INTEGER,
@@ -441,6 +444,7 @@ router.post("/unlock", async (req, res) => {
 
 router.post('/archive-ticket', async (req, res) => {
     try {
+        const currentTimestamp = new Date();
         const {
             ticket_id,
             updated_by
@@ -451,6 +455,13 @@ router.post('/archive-ticket', async (req, res) => {
             updated_by: updated_by
         });
 
+        await knex('ticket_logs').insert({
+            ticket_id: ticket_id,
+            created_by: updated_by,
+            time_date: currentTimestamp,
+            changes_made: `${updated_by} Archived this ticket`
+        });
+
         res.status(200).json({ message: 'Ticket archived successfully' });
     } catch (err) {
         console.log('INTERNAL ERROR: ', err)
@@ -459,6 +470,7 @@ router.post('/archive-ticket', async (req, res) => {
 
 router.post('/un-archive-ticket', async (req, res) => {
     try {
+        const currentTimestamp = new Date();
         const {
             ticket_id,
             updated_by
@@ -467,6 +479,13 @@ router.post('/un-archive-ticket', async (req, res) => {
         await knex('ticket_master').where({ ticket_id: ticket_id }).update({
             is_active: true,
             updated_by: updated_by
+        });
+
+        await knex('ticket_logs').insert({
+            ticket_id: ticket_id,
+            created_by: updated_by,
+            time_date: currentTimestamp,
+            changes_made: `${updated_by} Un-Archived this ticket`
         });
 
         res.status(200).json({ message: 'Ticket un-archived successfully' });
@@ -887,7 +906,7 @@ router.post('/update-accept-ticket', async (req, res, next) => {
                 changes_made: `${empInfo.user_name} accepted closed ticket and re-opened the ticket, Ticket ID: ${ticket_id}`
             })
         } else {
-            const notclosed = await knex('ticket_master').where('ticket_id', ticket_id).update({
+            await knex('ticket_master').where('ticket_id', ticket_id).update({
                 assigned_to: empInfo.user_name,
                 updated_at: currentTimestamp,
                 responded_at: currentTimestamp,
@@ -950,6 +969,41 @@ router.post('/update-accept-ticket', async (req, res, next) => {
 
 })
 
+const Logs = db.define('ticket_logs', {
+    ticket_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true
+    },
+    created_by: {
+        type: DataTypes.STRING,
+    },
+    changes_made: {
+        type: DataTypes.STRING,
+    },
+    time_date: {
+        type: DataTypes.STRING,
+    },
+}, {
+    freezeTableName: false,
+    timestamps: false,
+    createdAt: false,
+    updatedAt: false,
+    tableName: 'ticket_logs'
+})
+
+router.get('/ticket-logs', async (req, res) => {
+    try {
+        console.log('/ticket-logs was triggered');
+        const getById = await Logs.findAll({
+            where: {
+                ticket_id: req.query.id
+            }
+        })
+        res.json(getById)
+    } catch (err) {
+        console.log('INTERNAL ERROR:,', err)
+    }
+})
 
 
 //Adding a note to a ticket
@@ -968,6 +1022,15 @@ router.post('/note-post', async (req, res, next) => {
             created_at: currentTimestamp,
             ticket_id: ticket_id
         })
+
+        await knex('ticket_logs').insert({
+            ticket_id: ticket_id,
+            created_by: current_user,
+            time_date: currentTimestamp,
+            changes_made: `${current_user} placed a note "${notes}"`
+        })
+
+
         console.log(`${current_user} placed a note successfully`)
         res.status(200).json({ message: 'PLaced a note successfully' });
     } catch (err) {

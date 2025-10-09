@@ -6,6 +6,9 @@ import config from 'config';
 import Select from 'react-select';
 import FeatherIcon from 'feather-icons-react';
 import Spinner from 'react-bootstrap/Spinner';
+import { useNavigate } from "react-router-dom";
+import ViewTicketLogs from './viewticketlogs';
+
 
 export default function ViewHDTicket() {
     const [formData, setFormData] = useState({});
@@ -51,6 +54,13 @@ export default function ViewHDTicket() {
     const [archiveState, setArchiveState] = useState(false)
     const [unarchiveState, setUnArchiveState] = useState(false)
     const [archiveTextState, setArchiveTextState] = useState(false)
+
+    // Modal states
+    const [showModal, setShowModal] = useState(false);
+    const [modalTitle, setModalTitle] = useState("");
+    const [modalContent, setModalContent] = useState(null);
+
+    const navigate = useNavigate();
 
 
     const subCategoryOptions = {
@@ -193,6 +203,12 @@ export default function ViewHDTicket() {
                 color: '#ff0000',
             },
         }),
+    };
+
+    const openModal = (title, content) => {
+        setModalTitle(title);
+        setModalContent(content);
+        setShowModal(true);
     };
 
     useEffect(() => {
@@ -431,6 +447,7 @@ export default function ViewHDTicket() {
 
     }, [formData])
 
+    //get all users hd/users
     useEffect(() => {
         axios.get(`${config.baseApi}/authentication/get-all-users`)
             .then((res) => {
@@ -444,7 +461,6 @@ export default function ViewHDTicket() {
                 console.error("Error fetching users:", err);
             });
     }, [])
-
 
     // handle text area change
     const handleNoteChange = (e) => {
@@ -844,6 +860,7 @@ export default function ViewHDTicket() {
                     setNoteAlert(true)
                 } else {
                     setLoading(true);
+
                     await axios.post(`${config.baseApi}/ticket/note-post`, {
                         notes,
                         current_user: empInfo.user_name,
@@ -960,6 +977,15 @@ export default function ViewHDTicket() {
         }
     }
 
+
+
+    const HandleView = () => {
+        setModalTitle("Ticket Logs");
+        setModalContent(<ViewTicketLogs ticket_id={ticket_id} />);
+        setShowModal(true);
+    };
+
+
     return (
         <Container
             fluid
@@ -999,6 +1025,19 @@ export default function ViewHDTicket() {
                                 <Row className="align-items-center">
                                     <Col xs="auto">
                                         <h3 className="fw-bold text-dark mb-0">Ticket Details</h3>
+                                        <h7
+                                            style={{
+                                                fontStyle: "italic",
+                                                color: "#2c7e36ff",
+                                                cursor: "pointer",
+                                                textDecoration: "none",
+                                            }}
+                                            onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
+                                            onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+                                            onClick={HandleView}
+                                        >
+                                            view ticket logs
+                                        </h7>
                                     </Col>
                                     {archiveTextState && (
                                         <Col xs="auto">
@@ -1800,7 +1839,36 @@ export default function ViewHDTicket() {
                     </Modal.Footer>
                 </Modal>
 
-            </Container>
+                <Modal
+                    show={showModal}
+                    onHide={() => setShowModal(false)}
+                    size="lg" // smaller than xl
+                    centered
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title>{modalTitle}</Modal.Title>
+                    </Modal.Header>
+
+                    <Modal.Body
+                        style={{
+                            maxHeight: "50vh", // responsive height limit
+                            overflowY: "auto", // scroll if content is long
+                            padding: "20px",
+                        }}
+                    >
+                        {modalContent}
+                    </Modal.Body>
+
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowModal(false)}>
+                            Close
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+
+
+
+            </Container >
 
             {loading && (
 
@@ -1820,8 +1888,9 @@ export default function ViewHDTicket() {
                 >
                     <Spinner animation="border" variant="light" />
                 </div>
-            )}
+            )
+            }
 
-        </Container>
+        </Container >
     );
 }

@@ -15,7 +15,7 @@ import { Bar } from "react-chartjs-2";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function GetAllByCategoryOwn({ filterType, showChart = true, location, onDataReady }) {
+export default function GetAllByCategoryOwn({ filterType, showChart = true, location, onDataReady, helpdesk }) {
     const [chartData, setChartData] = useState(null);
     const [hardwareTickets, setHardwareTickets] = useState([]);
     const [networkTickets, setNetworkTickets] = useState([]);
@@ -69,8 +69,15 @@ export default function GetAllByCategoryOwn({ filterType, showChart = true, loca
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 let tickets = res.data || [];
 
+                const calluser = helpdesk || empInfo.user_name
+
+                const a = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
+                    params: { user_name: calluser }
+                })
+                const userhd = a.data || empInfo
+
                 // Filter tickets by date range
-                tickets = tickets.filter(t => isInFilter(t.created_at) && t.assigned_to === empInfo.user_name);
+                tickets = tickets.filter(t => isInFilter(t.created_at) && t.assigned_to === userhd.user_name);
 
                 // Separate into categories
                 const hardware = tickets.filter(t => t.ticket_category?.toLowerCase() === "hardware");
@@ -160,7 +167,7 @@ export default function GetAllByCategoryOwn({ filterType, showChart = true, loca
             }
         };
         fetch();
-    }, [filterType, showChart, location]);
+    }, [filterType, showChart, location, helpdesk]);
 
     const renderTable = (title, rows) => {
         const totalPages = Math.ceil(rows.length / itemsPerPage);

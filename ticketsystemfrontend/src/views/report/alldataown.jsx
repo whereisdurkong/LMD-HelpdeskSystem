@@ -17,7 +17,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function AllDataOwn({ filterType, location, showChart = true }) {
+export default function AllDataOwn({ filterType, location, showChart = true, helpdesk }) {
     const [userData, setUserData] = useState([]);
     const [workedTickets, setWorkedTickets] = useState([]);
     const [onGoingTickets, setOnGoingTickets] = useState([]);
@@ -66,7 +66,7 @@ export default function AllDataOwn({ filterType, location, showChart = true }) {
     };
 
     useEffect(() => {
-        if (!userData || !userData.user_name) return;
+        // if (!userData || !userData.user_name) return;
 
         const fetchData = async () => {
             try {
@@ -78,18 +78,24 @@ export default function AllDataOwn({ filterType, location, showChart = true }) {
                 const activeTickets = filteredTickets.filter((t) => t.is_active === true);
                 const noteFilter = notes.filter((t) => isInFilter(t.created_at));
 
-                const createdNotes = noteFilter.filter((n) => n.created_by === userData.user_name);
+                const calluser = helpdesk || userData.user_name
+                const a = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
+                    params: { user_name: calluser }
+                })
+                const userhd = a.data || userData
+
+                const createdNotes = noteFilter.filter((n) => n.created_by === userhd.user_name);
                 const uniqueIds = [...new Set(createdNotes.map((n) => n.ticket_id))];
                 console.log(uniqueIds)
                 const worked = activeTickets.filter((t) => {
                     const isUniqueId = uniqueIds.includes(t.ticket_id);
                     const collaborators = t.assigned_collaborators?.split(",").map((n) => n.trim()) || [];
-                    const isCollaborator = collaborators.includes(userData.user_name);
+                    const isCollaborator = collaborators.includes(userhd.user_name);
                     const isAssignedOrCreatedByUser =
-                        t.assigned_to === userData.user_name ||
-                        t.created_by === userData.user_name ||
-                        t.resolved_by === userData.user_name ||
-                        t.updated_by === userData.user_name;
+                        t.assigned_to === userhd.user_name ||
+                        t.created_by === userhd.user_name ||
+                        t.resolved_by === userhd.user_name ||
+                        t.updated_by === userhd.user_name;
                     return isUniqueId || isCollaborator || isAssignedOrCreatedByUser;
                 });
 
@@ -120,12 +126,12 @@ export default function AllDataOwn({ filterType, location, showChart = true }) {
                     // same worked-tickets logic applied on year data
                     const workedYear = activeYearTickets.filter((t) => {
                         const collaborators = t.assigned_collaborators?.split(",").map((n) => n.trim()) || [];
-                        const isCollaborator = collaborators.includes(userData.user_name);
+                        const isCollaborator = collaborators.includes(userhd.user_name);
                         const isAssignedOrCreatedByUser =
-                            t.assigned_to === userData.user_name ||
-                            t.created_by === userData.user_name ||
-                            t.resolved_by === userData.user_name ||
-                            t.updated_by === userData.user_name;
+                            t.assigned_to === userhd.user_name ||
+                            t.created_by === userhd.user_name ||
+                            t.resolved_by === userhd.user_name ||
+                            t.updated_by === userhd.user_name;
                         return isCollaborator || isAssignedOrCreatedByUser;
                     });
 
@@ -156,7 +162,7 @@ export default function AllDataOwn({ filterType, location, showChart = true }) {
         };
 
         fetchData();
-    }, [userData, filterType]);
+    }, [userData, filterType, helpdesk]);
 
     const totalPages = Math.ceil(onGoingTickets.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;

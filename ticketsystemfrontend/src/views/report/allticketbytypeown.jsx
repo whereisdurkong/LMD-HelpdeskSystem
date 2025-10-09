@@ -15,7 +15,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function AllTicketbyTypeOwn({ filterType, showChart = true, location, onDataReady }) {
+export default function AllTicketbyTypeOwn({ filterType, showChart = true, location, onDataReady, helpdesk }) {
     const [chartData, setChartData] = useState(null);
     const [tickets, setTickets] = useState([]);
 
@@ -64,7 +64,14 @@ export default function AllTicketbyTypeOwn({ filterType, showChart = true, locat
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-ticket`);
                 let ticketres = res.data || [];
 
-                ticketres = ticketres.filter(t => isInFilter(t.created_at) && t.assigned_to === empInfo.user_name);
+                const calluser = helpdesk || empInfo.user_name
+
+                const a = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
+                    params: { user_name: calluser }
+                })
+                const userhd = a.data || empInfo
+
+                ticketres = ticketres.filter(t => isInFilter(t.created_at) && t.assigned_to === userhd.user_name);
                 setTickets(ticketres);
                 setCurrentPage(1); // reset page when data changes
 
@@ -137,7 +144,7 @@ export default function AllTicketbyTypeOwn({ filterType, showChart = true, locat
         };
 
         fetch();
-    }, [filterType, location]);
+    }, [filterType, location, helpdesk]);
 
     // ✅ Table renderer with pagination
     const renderTable = (title, rows) => {

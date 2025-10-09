@@ -6,6 +6,7 @@ import AllTicketSCAT from 'views/report/allticketSCAT';
 import AllDataOwn from 'views/report/alldataown';
 import System from 'views/knowledgebase/system';
 import SystemArchive from 'views/knowledgebase/systemarchive';
+import ViewTicketLogs from 'views/tickets/viewticketlogs';
 
 
 
@@ -96,7 +97,7 @@ const MainRoutes = {
   children: [
     {
       path: '/sample',
-      element: withSpinner(<AllTicketsByUser />)
+      element: withSpinner(<ViewTicketLogs />)
     },
     {
       path: '/sample1',

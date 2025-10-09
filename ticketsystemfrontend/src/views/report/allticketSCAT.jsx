@@ -18,7 +18,7 @@ import { Bar } from "react-chartjs-2";
 // Register chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function AllTicketSCAT({ filterType, location, showChart = true }) {
+export default function AllTicketSCAT({ filterType, location, showChart = true, helpdesk }) {
     const [feedbacks, setFeedbacks] = useState([]);
     const [avgScore, setAvgScore] = useState(null);
     const [monthlyScores, setMonthlyScores] = useState([]);
@@ -82,15 +82,24 @@ export default function AllTicketSCAT({ filterType, location, showChart = true }
 
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
-
+        console.log(filterType)
         const fetchData = async () => {
             try {
                 const res = await axios.get(`${config.baseApi}/ticket/get-all-feedback`);
                 const data = res.data || [];
 
                 const filteredTickets = data.filter((t) => isInFilter(String(t.created_at)));
+
+                const calluser = helpdesk || empInfo.user_name
+
+                const a = await axios.get(`${config.baseApi}/authentication/get-by-username`, {
+                    params: { user_name: calluser }
+                })
+                const userhd = a.data || empInfo
+
                 const feedback = filteredTickets.filter(
-                    (s) => String(s.user_id) === String(empInfo.user_id)
+                    (s) => String(s.user_id) === String(userhd.user_id)
+
                 );
                 setFeedbacks(feedback);
 
@@ -122,7 +131,7 @@ export default function AllTicketSCAT({ filterType, location, showChart = true }
         };
 
         fetchData();
-    }, [filterType]);
+    }, [filterType, helpdesk]);
 
     const totalPages = Math.ceil(feedbacks.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;

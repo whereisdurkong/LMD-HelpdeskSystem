@@ -210,18 +210,24 @@ export default function Announcements() {
             )}
             {access &&
                 (
-                    <Row className="mb-3">
-                        <Col>
-                            <div className="d-flex flex-wrap justify-content-end gap-2">
+                    <Row className="align-items-center mb-3">
+                        <Col xs={12} md={6}>
+                            <h2 className="mb-0"><b>Announcements</b></h2>
+                        </Col>
+
+                        <Col xs={12} md={6}>
+                            <div className="d-flex justify-content-md-end justify-content-start gap-2 mt-2 mt-md-0">
                                 <Button variant="secondary" onClick={HandleArchive}>Archive</Button>
                                 <Button variant="primary" onClick={HandleAdd}>+ Create Post</Button>
                             </div>
                         </Col>
                     </Row>
+
                 )}
 
 
             <div className="mt-4">
+
                 {announcementsList.length === 0 ? (
                     <div
                         className="d-flex justify-content-center align-items-center"

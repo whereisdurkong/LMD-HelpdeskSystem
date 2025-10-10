@@ -12,11 +12,13 @@ export default function UserDashboard() {
     const [exitAnc, setExitAnc] = useState(true);
 
     const navigate = useNavigate()
+
+    //Display users Username
     const empInfo = JSON.parse(localStorage.getItem("user"));
     const userName = empInfo?.user_name || "";
-    const allcaps =
-        userName.charAt(0).toUpperCase() + userName.slice(1).toLowerCase();
+    const allcaps = userName.charAt(0).toUpperCase() + userName.slice(1).toLowerCase();
 
+    //Fetch All Announcements
     useEffect(() => {
         const fetchAnc = async () => {
             try {
@@ -46,6 +48,7 @@ export default function UserDashboard() {
         fetchAnc();
     }, []);
 
+    //navigate create a ticket
     const handleCreate = () => {
         navigate('/create-ticket')
     }

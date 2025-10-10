@@ -46,9 +46,22 @@ export default function UsersView() {
     const [error, setError] = useState('');
     const [successful, setSuccessful] = useState('');
 
+    const [perror, setPError] = useState('');
+    const [psuccessful, setPSuccessful] = useState('');
+
     const [loading, setLoading] = useState(false);
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    const [showchangePassword, setShowChangePassword] = useState(false)
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+
+    const [showNew, setShowNew] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+
+    const newPasswordRef = useRef();
+    const confirmPasswordRef = useRef();
 
     const departmentOptions = {
         lmd: ['MISD', 'HR', 'IOSD', 'SMED', 'Mill', 'IMD', 'PCES', 'MOG', 'Accounting', 'Expolartion', 'Assay'],
@@ -72,7 +85,15 @@ export default function UsersView() {
             }, 3000);
             return () => clearTimeout(timer);
         }
-    }, [error, successful]);
+
+        if (perror || psuccessful) {
+            const timer = setTimeout(() => {
+                setPError('');
+                setPSuccessful('');
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [error, successful, perror, psuccessful]);
 
     useEffect(() => {
         const current_user = JSON.parse(localStorage.getItem('user'));
@@ -157,6 +178,41 @@ export default function UsersView() {
         }
     }
 
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        if (!newPassword) {
+            setPError('Password is empty!');
+            newPasswordRef.current.focus()
+            return;
+        }
+        if (!confirmPassword) {
+            setPError("Confirm Password is empty!");
+            confirmPasswordRef.current.focus()
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setPError("Password does not match!");
+            return;
+        }
+        setLoading(true)
+
+        try {
+            await axios.post(`${config.baseApi}/authentication/edit-password`, {
+                user_id: user_id,
+                new_password: newPassword
+            })
+
+            setShowChangePassword(false)
+            setPSuccessful('Successfullly changed your password')
+            window.location.replace(`/ticketsystem/users-view?id=${user_id}`)
+        } catch (err) {
+            console.log(err);
+            setShowChangePassword(false)
+            setPError('Unable to change the password!')
+        }
+
+    }
+
 
     return (
         <div
@@ -189,9 +245,15 @@ export default function UsersView() {
                                         <div className="text-center">
                                             <h4 className="fw-bold">User Details</h4>
                                         </div>
-                                        <div style={{ cursor: 'pointer', color: '#dc3545', alignItems: 'center' }} onClick={() => setShowDeleteModal(true)}>
-                                            <FeatherIcon icon="trash-2" />
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }}>
+                                            <div title="Delete User" style={{ cursor: 'pointer', color: '#dc3545', alignItems: 'center', paddingRight: '10px' }} onClick={() => setShowDeleteModal(true)}>
+                                                <FeatherIcon icon="trash-2" />
+                                            </div>
+                                            <div title="Change Password" style={{ cursor: 'pointer', color: '#005a14ff', alignItems: 'center' }} onClick={() => setShowChangePassword(true)}>
+                                                <FeatherIcon icon="lock" />
+                                            </div>
                                         </div>
+
                                     </div>
 
 
@@ -314,6 +376,7 @@ export default function UsersView() {
                                         </Row>
 
 
+
                                         <Form.Label>Role</Form.Label>
                                         <InputGroup className="mb-3">
                                             <InputGroup.Text>
@@ -422,6 +485,93 @@ export default function UsersView() {
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            <Modal show={showchangePassword} onHide={() => setShowChangePassword(false)} centered>
+                {perror && (
+                    <div
+                        className="position-fixed start-50 l translate-middle-x"
+                        style={{ top: '200px', zIndex: 9999, minWidth: '300px' }}
+                    >
+                        <Alert variant="danger" onClose={() => setPError('')} dismissible>
+                            {perror}
+                        </Alert>
+                    </div>
+                )}
+                {psuccessful && (
+                    <div
+                        className="position-fixed start-50 l translate-middle-x"
+                        style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}
+                    >
+                        <Alert variant="success" onClose={() => setPSuccessful('')} dismissible>
+                            {psuccessful}
+                        </Alert>
+                    </div>
+                )}
+                <Modal.Header closeButton>
+                    <Modal.Title>Change Password</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Form.Group className="mb-4">
+                            <Form.Label>New Password</Form.Label>
+                            <InputGroup>
+                                <Form.Control
+                                    type={showNew ? "text" : "password"}
+                                    placeholder="Enter new password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    ref={newPasswordRef}
+                                    style={{ borderRight: "none" }}
+                                />
+                                <InputGroup.Text
+                                    onClick={() => setShowNew(!showNew)}
+                                    style={{
+                                        cursor: "pointer",
+                                        background: "transparent",
+                                        borderLeft: "none"
+                                    }}
+                                >
+                                    <FeatherIcon icon={showNew ? "eye-off" : "eye"} />
+                                </InputGroup.Text>
+                            </InputGroup>
+                        </Form.Group>
+
+
+                        <Form.Group className="mb-4">
+                            <Form.Label>Confirm Password</Form.Label>
+                            <InputGroup>
+                                <Form.Control
+                                    type={showConfirm ? "text" : "password"}
+                                    placeholder="Confirm new password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    ref={confirmPasswordRef}
+                                    style={{ borderRight: "none" }}
+                                />
+                                <InputGroup.Text
+                                    onClick={() => setShowConfirm(!showConfirm)}
+                                    style={{
+                                        cursor: "pointer",
+                                        background: "transparent",
+                                        borderLeft: "none"
+                                    }}
+                                >
+                                    <FeatherIcon icon={showConfirm ? "eye-off" : "eye"} />
+                                </InputGroup.Text>
+                            </InputGroup>
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowChangePassword(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant="primary" onClick={handleChangePassword}>
+                        Save
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
 
 
 

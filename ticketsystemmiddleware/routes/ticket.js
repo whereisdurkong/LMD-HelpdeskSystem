@@ -562,7 +562,7 @@ router.get('/ticket-by-id', async (req, res, next) => {
 })
 
 router.post('/update-ticket-assigned', async (req, res) => {
-    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
     try {
         const currentTimestamp = new Date()
         const {
@@ -575,7 +575,6 @@ router.post('/update-ticket-assigned', async (req, res) => {
         const updateByInfo = await knex('users_master').where('user_id', updated_by).first();
         console.log(req.body)
 
-        console.log('1111111111111111HHHHHHHHHHHHHHHAAAAAAAAAAAAAAATTTTTDDDOOOOGGG')
         await knex('ticket_master').where('ticket_id', ticket_id).update({
             assigned_to: assigned_to,
             ticket_status,
@@ -589,6 +588,53 @@ router.post('/update-ticket-assigned', async (req, res) => {
             time_date: currentTimestamp,
             changes_made: `${updateByInfo.user_name} assinged the ticket to ${assigned_to}`
         });
+
+        const transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST,
+            secure: false,
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
+        //Setting assigned HD username
+        var end = `Best regards,<br> Lepanto Helpdesk System`;
+        var privacy = '<br><p style="color:gray;font-size:12px">Privacy Notice: </p>' +
+            '<p style="color:gray;font-size:12px">The content of this email is intended for the person ' +
+            'or entity to which it is addressed only. This email may contain confidential information. If you are not the person ' +
+            'to whom this message is addressed, be aware that any use, reproduction, or distribution of this message is strictly ' +
+            'prohibited.</p>'
+
+
+        const assignedToInfo = await knex('users_master').where('user_name', assigned_to).first();
+        const ticket = await knex('ticket_master').where('ticket_id', ticket_id).first()
+        const hdname = assignedToInfo.user_name
+        const HDFullname = hdname.charAt(0).toUpperCase() + hdname.slice(1).toLowerCase();
+
+        var start = `Hello ${HDFullname}<br><br>`
+        var body = `The following support ticket has been assigned to you:<br>`
+            + `Below are the details of the ticket: <br><br>`
+            + `<b>Ticket Number: </b>${ticket_id} <br>`
+            + `<b>Ticket Subject: </b> ${ticket.ticket_subject} <br>`
+            + `<b>Ticket Status: </b> ${ticket_status} <br><br>`
+
+        var wholeEmail = start + body + end + privacy;
+        const mailOption = {
+            from: process.env.EMAIL,
+            to: assignedToInfo.emp_email,
+            subject: `Help Desk System Notification - Ticket Updated`,
+            html: wholeEmail
+        }
+
+        await transporter.sendMail(mailOption);
+        console.log(`Email sent to ${assignedToInfo.emp_email} regarding ticket update`, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+
+
+
+
         res.status(200).json({ message: 'Ticket updated successfully' });
 
     } catch (err) {
@@ -722,7 +768,8 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
                     await transporter.sendMail(mailOption);
                     console.log(`Email sent to ${ticketForInfo.emp_email} regarding ticket update`);
                 }
-                if (ticket_status === 'escalate2' || ticket_status === 'escalate3') {
+                if (ticket_status === 'escalate') {
+                    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!EMAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                     const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
                     const name = ticketForInfo.user_name
                     const Fullname = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
@@ -743,6 +790,30 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
                     }
                     await transporter.sendMail(mailOption);
                     console.log(`Email sent to ${ticketForInfo.emp_email} regarding ticket update`);
+
+                    // --------------------Assigned_to---------------------------------------------------------//
+                    const assignedto = await knex('users_master').where('user_name', assigned_to).first();
+                    const assignedto_name = assignedto.user_name;
+                    const FullnameAssigned = assignedto_name.charAt(0).toUpperCase() + assignedto_name.slice(1).toLowerCase();
+                    var body = `This is to inform you that a ticket has been escalated to you for next level of support.<br>`
+                        + `Below are the details of your ticket: <br><br>`
+                        + `<b>Ticket Number: </b>${ticket_id} <br>`
+                        + `<b>Ticket Subject: </b> ${ticket_subject} <br>`
+                        + `<b>Ticket Status: </b> ${ticket_status} <br><br>`
+                        + `If you have additional information to provide you can update your ticket directly in the system.<br><br>`
+                    var start = `Hello ${FullnameAssigned}, <br><br>`
+                    var wholeEmail1 = start + body + end + privacy;
+                    const mailOption1 = {
+                        from: process.env.EMAIL,
+                        to: assignedto.emp_email,
+                        subject: `Help Desk System Notification - Ticket Escalated`,
+                        html: wholeEmail1
+                    }
+                    await transporter.sendMail(mailOption1);
+                    console.log(`Email sent to ${assignedto.emp_email} regarding ticket update`);
+
+
+
                 }
                 if (ticket_status === 'resolved') {
                     const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();

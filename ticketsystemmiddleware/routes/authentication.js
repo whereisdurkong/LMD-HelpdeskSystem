@@ -232,6 +232,30 @@ router.post('/update-user', async (req, res, next) => {
 
 })
 
+
+router.post('/edit-password', async (req, res) => {
+  try {
+    const { user_id, new_password } = req.body;
+    const currentTimestamp = new Date();
+    const user_info = knex('users_master').where({ user_id: user_id }).first()
+
+    await knex('users_master').where({ user_id: user_id }).update({
+      pass_word: new_password,
+      updated_at: currentTimestamp
+    })
+
+    await knex('users_logs').insert({
+      user_id: user_id,
+      changes_made: `User ${user_info.user_name}, updated own password`,
+      created_at: currentTimestamp,
+      created_by: user_info.user_name
+    })
+
+    res.status(200).json({ message: "User password updated successfully" });
+  } catch (err) {
+    console.log('INTERNAL ERROR: ', err)
+  }
+})
 //Get all users
 router.get('/get-all-users', async (req, res, next) => {
   try {

@@ -181,6 +181,7 @@ export default function Announcements() {
             setError("Failed to delete announcement.");
         }
     }
+    //Archvie navigate
     const HandleArchive = () => {
         setLoading(true);
         window.location.replace('/ticketsystem/inactive-announcements');

@@ -25,7 +25,7 @@ import FeatherIcon from "feather-icons-react";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function Report() {
+export default function test() {
     const [filterType, setFilterType] = useState("all");
     const [stats, setStats] = useState([]);
     const [allTickets, setAllTickets] = useState([]);
@@ -535,9 +535,142 @@ export default function Report() {
 
 
 
+            <div class="parent">
+                <div class="div1"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => openModal(
+                        "All Open Tickets",
+                        <TicketsTable tickets={filteredTickets.filter(t => t.ticket_status === 'open')} />
+                    )}
+                >
+                    <div style={{ background: '#004e0dff', borderRadius: '5px 5px 0 0', color: '#fff', padding: '5px', textAlign: 'center' }}>
+                        <b>Open Tickets</b>
+                    </div>
+                    <div style={{ textAlign: 'center', paddingTop: '10px' }}>
+                        <h1>{open}</h1>
+                    </div>
+
+                </div>
+                <div
+                    className="div2"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => openModal(
+                        "Not Reviewed Tickets",
+                        <TicketsTable tickets={filteredTickets.filter(t => t.is_reviewed === false && t.ticket_status === 'closed')} />
+                    )}
+                >
+                    <div style={{ background: '#004e0dff', borderRadius: '5px 5px 0 0', color: '#fff', padding: '5px', textAlign: 'center' }}>
+                        <b>Not Reviewed</b>
+                    </div>
+                    <div style={{ textAlign: 'center', paddingTop: '10px' }}>
+                        <h1>{notReviewed}</h1>
+                    </div>
+                </div>
+                <div
+                    className="div3"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => openModal(
+                        "Closed Tickets",
+                        <TicketsTable tickets={filteredTickets.filter(t => t.is_reviewed === true && t.ticket_status === 'closed')} />
+                    )}
+                >
+                    <div style={{ background: '#004e0dff', borderRadius: '5px 5px 0 0', color: '#fff', padding: '5px', textAlign: 'center' }}>
+                        <b>Closed Tickets</b>
+                    </div>
+                    <div style={{ textAlign: 'center', paddingTop: '10px' }}>
+                        <h1>{closed}</h1>
+                    </div>
+                </div>
+                <div className="div4">
+                    <h4>Ticket Status</h4>
+                    <div>
+                        <table border="1" cellPadding="5" style={{ borderCollapse: "collapse", width: '100%' }}>
+                            <thead style={{ background: '#053b00ff', color: 'white' }}>
+                                <tr>
+                                    <th>Subcategory</th>
+                                    <th>Total</th>
+                                    <th>Resolved</th>
+                                    <th>Closed</th>
+                                    <th>Open</th>
+                                    <th>Average TAT</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style={{ fontWeight: "bold", backgroundColor: "#f0f0f0" }}>
+                                    <td>Total</td>
+                                    <td>{totalRow.total}</td>
+                                    <td>{totalRow.resolved}</td>
+                                    <td>{totalRow.closed}</td>
+                                    <td>{totalRow.open}</td>
+                                    <td>-</td>
+                                </tr>
+                                {stats.map((row, index) => (
+                                    <tr key={index}>
+                                        <td>{row.subcategory}</td>
+                                        <td>{row.total}</td>
+                                        <td>{row.resolved}</td>
+                                        <td>{row.closed}</td>
+                                        <td>{row.open}</td>
+                                        <td>{row.avgTAT}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div className="div5"
+                    onClick={() =>
+                        openModal(
+                            "Tickets by Type",
+                            <AllTicketbyType filterType={filterType} showChart={false} location={location} />)}>
+                    <AllTicketbyType filterType={filterType} showChart={true} location={location} onDataReady={setTicketTypeSummary} />
+                </div>
+                <div className="div6"
+                    onClick={() => openModal("Ticket Summary", <SubCatDepartmentTable filterType={filterType} location={location} onDataReady={setSubcatSummary} />)}>
+                    <h4>Summary</h4>
+                    <div
+                        className="bento-chart-wrapper"
+                        style={{
+                            width: "100%",
+                            overflowX: "auto",
+                            paddingBottom: "10px",
+                        }}
+                    >
+                        <div style={{ width: "100%", height: "350px" }}>
+                            <SubCatDepartment
+                                filterType={filterType}
+                                location={location}
+                                onDataReady={setSubcatSummary}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    className="div7"
+                    onClick={() =>
+                        openModal(
+                            "All Tickets by Category",
+                            <GetAllByCategory filterType={filterType} showChart={false} location={location} onDataReady={setTicketCategorySummary} />
+                        )}>
+                    <GetAllByCategory filterType={filterType} showChart={true} location={location} onDataReady={setTicketCategorySummary} />
+                </div>
+                <div
+                    className="div9"
+                    onClick={() =>
+                        openModal(
+                            "Tickets per Help Desk",
+                            <AllTicketsByUser filterType={filterType} showChart={false} location={location} onDataReady={setTicketUsersSummary} />
+                        )
+                    }
+                >
+                    <AllTicketsByUser filterType={filterType} showChart={true} location={location} onDataReady={setTicketUsersSummary} />
+                </div>
+            </div>
+
 
             {/* ✅ Clickable Open / Not Reviewed / Closed cards */}
-            <Row style={{ paddingBottom: '20px' }}>
+            {/* <Row style={{ paddingBottom: '20px' }}>
                 <Col>
                     <div
                         className="bento-item-top"
@@ -589,10 +722,10 @@ export default function Report() {
                         </div>
                     </div>
                 </Col>
-            </Row>
+            </Row> */}
 
             {/* Table and Subcategory Chart */}
-            <Row style={{ paddingBottom: '20px' }}>
+            {/* <Row style={{ paddingBottom: '20px' }}>
                 <Col xs={8}>
                     <div className="bento-item bento-users">
                         <h4>Ticket Status</h4>
@@ -654,10 +787,10 @@ export default function Report() {
                         </div>
                     </div>
                 </Col>
-            </Row>
+            </Row> */}
 
             {/* Other Charts */}
-            <Row className="g-3">
+            {/* <Row className="g-3">
                 <Col xs={12} md={4}>
                     <div
                         className="bento-item bento-users"
@@ -694,7 +827,7 @@ export default function Report() {
                         <AllTicketsByUser filterType={filterType} showChart={true} location={location} onDataReady={setTicketUsersSummary} />
                     </div>
                 </Col>
-            </Row>
+            </Row> */}
 
             {/* Modal */}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="xl" centered>
@@ -706,6 +839,6 @@ export default function Report() {
                     <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
                 </Modal.Footer>
             </Modal>
-        </Container>
+        </Container >
     );
 }

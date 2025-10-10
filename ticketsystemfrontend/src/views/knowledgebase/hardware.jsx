@@ -25,6 +25,7 @@ export default function Hardware() {
     const [access, setAccess] = useState(false)
     const [loading, setLoading] = useState(false);
 
+    //Loading state 2s
     useEffect(() => {
         if (loading) {
             const timer = setTimeout(() => {
@@ -88,8 +89,8 @@ export default function Hardware() {
         }
     }, [showModal]);
 
+    //Archive Function
     const handleArchive = async (id) => {
-
         try {
             setLoading(true)
             const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -106,8 +107,8 @@ export default function Hardware() {
 
     }
 
+    //Update function
     const handleUpdate = async () => {
-
         if (newTitle === '') {
             setLoading(false)
             setError("Please fill in title.");
@@ -137,6 +138,7 @@ export default function Hardware() {
         }
     }
 
+    //handle add article
     const handleSave = async () => {
         if (newTitle === '') {
             setLoading(false)
@@ -168,6 +170,7 @@ export default function Hardware() {
             window.location.reload(); // Reload to reflect changes
         }
     };
+
 
     const handleContentChange = () => {
         setNewContent(contentRef.current.innerHTML);

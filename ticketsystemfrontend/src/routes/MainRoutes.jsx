@@ -7,6 +7,7 @@ import AllDataOwn from 'views/report/alldataown';
 import System from 'views/knowledgebase/system';
 import SystemArchive from 'views/knowledgebase/systemarchive';
 import ViewTicketLogs from 'views/tickets/viewticketlogs';
+import EditPassword from 'views/pages/editpassword';
 
 
 
@@ -33,8 +34,8 @@ const ASoftware = lazy(() => import('views/knowledgebase/softwarearchive'));
 const Network = lazy(() => import('views/knowledgebase/network'));
 const ANetwork = lazy(() => import('views/knowledgebase/networkarchive'));
 
-const Reports1 = lazy(() => import('views/report/reports'));
-const Reports = lazy(() => import('views/report/test'));
+const Reports = lazy(() => import('views/report/reports'));
+const Test = lazy(() => import('views/report/test'));
 
 const Tickets = lazy(() => import('views/tickets'))
 
@@ -240,12 +241,12 @@ const MainRoutes = {
       element: withSpinner(<SystemArchive />)
     },
     {
-      path: '/reports',
-      element: withSpinner(<Reports />)
+      path: '/test',
+      element: withSpinner(<Test />)
     },
     {
-      path: '/reports1',
-      element: withSpinner(<Reports1 />)
+      path: '/reports',
+      element: withSpinner(<Reports />)
     },
     {
       path: '/all-tickets',
@@ -254,6 +255,10 @@ const MainRoutes = {
     {
       path: '/profile',
       element: withSpinner(<Profile />)
+    },
+    {
+      path: '/edit-password',
+      element: withSpinner(<EditPassword />)
     },
     {
       path: '/my-ticket',

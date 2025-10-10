@@ -31,6 +31,7 @@ export default function InActiveAnnouncement() {
     const currentAnnouncements = announcementsList.slice(indexOfFirst, indexOfLast);
     const totalPages = Math.ceil(announcementsList.length / announcementsPerPage);
 
+    //loading time out after 2s
     useEffect(() => {
         if (loading) {
             const timer = setTimeout(() => {

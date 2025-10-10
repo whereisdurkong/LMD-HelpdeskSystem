@@ -56,12 +56,14 @@ export default function HDDashboard() {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = ownTicket.slice(indexOfFirstItem, indexOfLastItem);
 
+    //Modal
     const openModal = (title, content) => {
         setModalTitle(title);
         setModalContent(content);
         setShowModal(true);
     };
 
+    //Filter Select user HD
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         if (getAllHD.length > 0 && !selectedHD) {
@@ -102,7 +104,7 @@ export default function HDDashboard() {
         fetch();
     }, [selectedHD]);
 
-
+    //Date calculator
     const calcTAT = (start, end) => {
         const startDate = new Date(start);
         const endDate = new Date(end);
@@ -113,7 +115,7 @@ export default function HDDashboard() {
         return { diffMs, text: `${diffDays}d ${diffHours}h ${diffMinutes}m` };
     };
 
-
+    //Modal Table
     const TicketsTable = ({ tickets }) => {
         const [currentPage, setCurrentPage] = useState(1);
         const itemsPerPage = 10;
@@ -190,136 +192,6 @@ export default function HDDashboard() {
     };
 
 
-    // Apply filter + sorting whenever filterType or allTickets changes
-    // useEffect(() => {
-    //     if (!allTickets.length) return;
-
-    //     const now = new Date();
-    //     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    //     const startOfWeek = new Date(now);
-    //     startOfWeek.setDate(now.getDate() - now.getDay());
-    //     const startOfLastWeek = new Date(startOfWeek);
-    //     startOfLastWeek.setDate(startOfWeek.getDate() - 7);
-    //     const endOfLastWeek = new Date(startOfWeek);
-    //     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    //     const startOfYear = new Date(now.getFullYear(), 0, 1);
-
-    //     let filtered = [...allTickets];
-
-    //     switch (filterType) {
-    //         case "today":
-    //             filtered = filtered.filter(t => new Date(t.created_at) >= startOfToday);
-    //             break;
-    //         case "thisWeek":
-    //             filtered = filtered.filter(t => new Date(t.created_at) >= startOfWeek);
-    //             break;
-    //         case "lastWeek":
-    //             filtered = filtered.filter(t => {
-    //                 const created = new Date(t.created_at);
-    //                 return created >= startOfLastWeek && created < endOfLastWeek;
-    //             });
-    //             break;
-    //         case "thisMonth":
-    //             filtered = filtered.filter(t => new Date(t.created_at) >= startOfMonth);
-    //             break;
-    //         case "perMonth":
-    //             filtered = filtered.filter(t => new Date(t.created_at) >= startOfYear);
-    //             break;
-    //         case "perYear":
-    //             filtered = filtered.filter(t => new Date(t.created_at).getFullYear() === now.getFullYear());
-    //             break;
-    //         default:
-    //             break;
-    //     }
-
-    //     // Sort by created_at (newest first)
-    //     filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    //     // save filtered tickets for modal usage
-    //     setFilteredTickets(filtered);
-
-    //     // Counters
-    //     setOpen(filtered.filter(ticket => (ticket.ticket_status === 'in-progress' || ticket.ticket_status === 'assigned' || ticket.ticket_status === 're-opened') &&
-    //         (ticket.assigned_to === userInfo.user_name && ticket.is_active === true)).length);
-
-
-
-    //     setNotReviewed(filtered.filter(ticket => ticket.is_reviewed === false && (ticket.ticket_status === 'closed' || ticket.ticket_status === 'resolved') && (ticket.assigned_to === userInfo.user_name && ticket.is_active === true)).length);
-
-    //     setClosed(filtered.filter(ticket => ticket.ticket_status === 'open' && ticket.is_active === true).length);
-
-    //     // Group by subcategory
-    //     const grouped = filtered.reduce((acc, ticket) => {
-    //         const subCat = ticket.ticket_SubCategory || "Unknown";
-    //         const status = ticket.ticket_status?.toLowerCase() || "unknown";
-
-    //         if (!acc[subCat]) {
-    //             acc[subCat] = {
-    //                 subcategory: subCat,
-    //                 total: 0,
-    //                 resolved: 0,
-    //                 closed: 0,
-    //                 open: 0,
-    //                 tatTimes: []
-    //             };
-    //         }
-
-    //         acc[subCat].total += 1;
-
-    //         if (status === "resolved") acc[subCat].resolved += 1;
-    //         else if (status === "closed") acc[subCat].closed += 1;
-    //         else if (status === "open") acc[subCat].open += 1;
-
-    //         if (ticket.created_at && ticket.resolved_at) {
-    //             const tat = calcTAT(ticket.created_at, ticket.resolved_at);
-    //             acc[subCat].tatTimes.push(tat.diffMs);
-    //         }
-
-    //         return acc;
-    //     }, {});
-
-    //     const result = Object.values(grouped).map(item => {
-    //         if (item.tatTimes.length > 0) {
-    //             const avgMs = item.tatTimes.reduce((a, b) => a + b, 0) / item.tatTimes.length;
-    //             const diffDays = Math.floor(avgMs / (1000 * 60 * 60 * 24));
-    //             const diffHours = Math.floor((avgMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    //             const diffMinutes = Math.floor((avgMs % (1000 * 60 * 60)) / (1000 * 60));
-    //             item.avgTAT = `${diffDays}d ${diffHours}h ${diffMinutes}m`;
-    //         } else {
-    //             item.avgTAT = "N/A";
-    //         }
-    //         return item;
-    //     });
-
-    //     setStats(result);
-
-    //     // Chart counts
-    //     const incidentCount = filtered.filter(i => i.ticket_type === 'incident').length;
-    //     const requestCount = filtered.filter(r => r.ticket_type === 'request').length;
-    //     const inquiryCount = filtered.filter(q => q.ticket_type === 'inquiry').length;
-
-    //     setChartData({
-    //         labels: ['Incident', 'Request', 'Inquiry'],
-    //         datasets: [
-    //             {
-    //                 label: 'Number of Tickets',
-    //                 data: [incidentCount, requestCount, inquiryCount],
-    //                 backgroundColor: [
-    //                     'rgba(255, 99, 132, 0.5)',
-    //                     'rgba(54, 162, 235, 0.5)',
-    //                     'rgba(255, 206, 86, 0.5)'
-    //                 ],
-    //                 borderColor: [
-    //                     'rgba(255, 99, 132, 1)',
-    //                     'rgba(54, 162, 235, 1)',
-    //                     'rgba(255, 206, 86, 1)'
-    //                 ],
-    //                 borderWidth: 1
-    //             }
-    //         ]
-    //     });
-    // }, [filterType, allTickets]);
-
     useEffect(() => {
         if (!allTickets.length) return;
 
@@ -368,14 +240,15 @@ export default function HDDashboard() {
         setFilteredTickets(filtered);
 
         // Counters
+        //Tickets
         setOpen(filtered.filter(ticket => (ticket.ticket_status === 'in-progress' || ticket.ticket_status === 'assigned' || ticket.ticket_status === 're-opened') &&
             (ticket.assigned_to === selectedHD && ticket.is_active === true)).length);
 
-
-
+        //Not reviewed
         setNotReviewed(filtered.filter(ticket => ticket.is_reviewed === false && (ticket.ticket_status === 'closed' || ticket.ticket_status === 'resolved') &&
             (ticket.assigned_to === selectedHD && ticket.is_active === true)).length);
 
+        //All open tickets
         setClosed(filtered.filter(ticket => ticket.ticket_status === 'open' && ticket.is_active === true).length);
 
         // Group by subcategory
@@ -482,7 +355,7 @@ export default function HDDashboard() {
                                 <option value="perYear">Per Year</option>
                             </Form.Select>
                         </Form.Group>
-                        {!selectUserState && (
+                        {selectUserState && (
                             <Form.Group controlId="selectUser">
                                 <Form.Select
                                     value={selectedHD}

@@ -120,3 +120,87 @@
     /* full width when stacked */
   }
 }
+
+/* ---------------------------------------------------------------------- */
+.parent {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 10px;
+
+}
+
+/* Shared box style for all divs */
+.parent>div {
+  background-color: #fbf7f1;
+  border: 1px solid #ddd0c1;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  padding: 10px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #222;
+}
+
+/* Corner decorations */
+.parent>div::before,
+.parent>div::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background-color: #ff4fa3;
+}
+
+.parent>div::before {
+  top: 4px;
+  right: 4px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+.parent>div::after {
+  bottom: 4px;
+  left: 4px;
+  background-color: transparent;
+  border-bottom: 3px solid black;
+  border-left: 3px solid black;
+  border-radius: 0 0 0 4px;
+}
+
+/* Individual grid positions (unchanged from your original) */
+.div4 {
+  grid-column: span 2 / span 2;
+  grid-row: span 2 / span 2;
+  grid-column-start: 1;
+  grid-row-start: 2;
+}
+
+.div5 {
+  grid-column: span 3 / span 3;
+  grid-row: span 2 / span 2;
+  grid-column-start: 1;
+  grid-row-start: 4;
+}
+
+.div6 {
+  grid-row: span 2 / span 2;
+  grid-column-start: 3;
+  grid-row-start: 2;
+}
+
+.div7 {
+  grid-column: span 2 / span 2;
+  grid-row: span 2 / span 2;
+  grid-column-start: 4;
+  grid-row-start: 1;
+}
+
+.div9 {
+  grid-column: span 2 / span 2;
+  grid-row: span 3 / span 3;
+  grid-column-start: 4;
+  grid-row-start: 3;
+}

@@ -39,6 +39,8 @@ export default function ViewTicket() {
 
     const [loading, setLoading] = useState(false);
 
+    const [resolveState, setResolveState] = useState(false)
+
 
     const labels = {
         1: "Very Dissatisfied",
@@ -238,6 +240,8 @@ export default function ViewTicket() {
         if (formData.ticket_status === 'closed') {
             setClose(false)
         } else if (formData.ticket_status === 'resolved') {
+            setResolveState(true)
+
             setClose(false)
         }
         else {
@@ -1007,6 +1011,33 @@ export default function ViewTicket() {
                             disabled={closureReason.trim() === ''}
                         >
                             Confirm
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+
+
+                <Modal show={resolveState} onHide={() => setResolveState(false)} centered>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Ticket was marked Resolve</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Form.Group controlId="closureReason">
+
+                            <div style={{ marginBottom: '5px', color: '#6c757d', fontSize: '0.9rem' }}>
+                                You may now change the status to <b>Close</b> since the ticket has been resolved.
+                                However, if the issue still persists, you may change the status to <b>Re-open</b> for further action.</div>
+                        </Form.Group>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setResolveState(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={() => setResolveState(false)}
+
+                        >
+                            Ok
                         </Button>
                     </Modal.Footer>
                 </Modal>

@@ -1211,7 +1211,7 @@ export default function ViewHDTicket() {
 
                                     {/* Employee Select */}
                                     <div style={{ flex: 1 }}>
-                                        <Select
+                                        {/* <Select
                                             name="ticket_for"
                                             value={
                                                 allUser.find(u => u.user_name === formData.ticket_for)
@@ -1239,7 +1239,40 @@ export default function ViewHDTicket() {
                                             placeholder="Select Employee"
                                             styles={customSelectStyles}
                                             classNamePrefix="react-select"
+                                        /> */}
+
+                                        <Select
+                                            name="ticket_for"
+                                            value={
+                                                allUser.find(u => u.user_name === formData.ticket_for)
+                                                    ? {
+                                                        value: formData.ticket_for,
+                                                        label: `${allUser.find(u => u.user_name === formData.ticket_for).emp_FirstName} ${allUser.find(u => u.user_name === formData.ticket_for).emp_LastName}`
+                                                    }
+                                                    : formData.ticket_for
+                                                        ? { value: formData.ticket_for, label: formData.ticket_for } // fallback if not in options
+                                                        : null
+                                            }
+                                            onChange={option => {
+                                                handleChange({
+                                                    target: {
+                                                        name: 'ticket_for',
+                                                        value: option ? option.value : ''
+                                                    }
+                                                });
+                                                setShowUserCard(false);
+                                            }}
+                                            options={allUser.map(user => ({
+                                                value: user.user_name,
+                                                label: `${user.emp_FirstName} ${user.emp_LastName}`
+                                            }))}
+                                            isDisabled={!isEditable}
+                                            isClearable
+                                            placeholder="Select Employee"
+                                            styles={customSelectStyles}
+                                            classNamePrefix="react-select"
                                         />
+
                                     </div>
                                 </InputGroup>
                             </Col>
@@ -1251,7 +1284,7 @@ export default function ViewHDTicket() {
                                     <InputGroup.Text>
                                         <FeatherIcon icon="briefcase" />
                                     </InputGroup.Text>
-                                    <Form.Control value={ticketForData.emp_department ?? ''} disabled />
+                                    <Form.Control value={ticketForData.emp_department ?? '-'} disabled />
                                 </InputGroup>
                             </Col>
                             <Col md={6} className="mb-2">

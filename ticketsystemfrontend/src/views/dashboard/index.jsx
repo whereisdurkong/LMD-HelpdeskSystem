@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router';
 export default function Dashboard() {
     const navigate = useNavigate();
 
+    //Handle navigation route for dashboard
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         console.log(empInfo)

@@ -11,6 +11,7 @@ export default function Alltickets() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
     const [forAdminTickets, setForAdminTickets] = useState([]);
+    const [hdstate, setHDstate] = useState(false)
 
     const [filterLocation, setFilterLocation] = useState('All');
     const [empLocation, setEmpLocation] = useState('');
@@ -61,12 +62,16 @@ export default function Alltickets() {
         const filtered = allticket.filter(ticket => usernamesInDept.includes(ticket.ticket_for));
 
         if (userData.emp_role === 'admin' && userData.emp_tier === 'user') {
+            setHDstate(false)
             setForAdminTickets(filtered);
         } else if (userData.emp_role === 'user' && userData.emp_tier === 'helpdesk') {
+            setHDstate(true)
             setForAdminTickets(allticket)
         } else if (userData.emp_role === 'admin' && userData.emp_tier === 'helpdesk') {
+            setHDstate(true)
             setForAdminTickets(allticket)
         } else if (userData.emp_role === 'user' && userData.emp_tier === 'user') {
+            setHDstate(false)
             console.log('change account to view archived tickets')
         }
 
@@ -200,69 +205,117 @@ export default function Alltickets() {
             }}
         >
             {/* Search and Filter */}
-            <Row className="align-items-center g-3 mb-4" >
-                <Col xs={12} md={6} lg={6}>
-                    <Form.Group controlId="search" style={{ width: '100%' }}>
-                        <Form.Control
-                            type="text"
-                            placeholder="Search by Subject, ID, Category, etc."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{
-                                border: '2px solid #e9ecef',
-                                borderRadius: '12px',
-                                padding: '12px 16px',
-                                fontSize: '15px',
-                                background: '#f8f9fa',
-                            }}
-                        />
-                    </Form.Group>
-                </Col>
-                <Col xs={6} md={3} lg={3}>
-                    <Form.Group controlId="status-filter" style={{ width: '100%' }}>
-                        <Form.Select
-                            value={filterStatus}
-                            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-                            style={{
-                                border: '2px solid #e9ecef',
-                                borderRadius: '12px',
-                                padding: '12px 16px',
-                                fontSize: '15px',
-                                background: '#f8f9fa',
-                            }}
-                        >
-                            <option value="All">All Status</option>
-                            <option value="open">Open</option>
-                            <option value="assigned">Assigned</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="escalate">Escalated</option>
-                            <option value="resolved">Resolved</option>
-                            <option value="re-opened">Re-opened</option>
-                            <option value="closed">Closed</option>
-                        </Form.Select>
-                    </Form.Group>
-                </Col>
-                <Col xs={6} md={3} lg={3}>
-                    <Form.Group controlId="location-filter" style={{ width: '100%' }}>
-                        <Form.Select
-                            value={filterLocation}
-                            onChange={(e) => { setFilterLocation(e.target.value); setCurrentPage(1); }}
-                            style={{
-                                border: '2px solid #e9ecef',
-                                borderRadius: '12px',
-                                padding: '12px 16px',
-                                fontSize: '15px',
-                                background: '#f8f9fa',
-                            }}
-                        >
-                            <option value="All">LMD & CORP</option>
-                            <option value="lmd">LMD</option>
-                            <option value="corp">Corp</option>
-                        </Form.Select>
-                    </Form.Group>
-                </Col>
-            </Row>
+            {hdstate ? (
+                <Row className="align-items-center g-3 mb-4" >
+                    <Col xs={12} md={6} lg={6}>
+                        <Form.Group controlId="search" style={{ width: '100%' }}>
+                            <Form.Control
+                                type="text"
+                                placeholder="Search by Subject, ID, Category, etc."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{
+                                    border: '2px solid #e9ecef',
+                                    borderRadius: '12px',
+                                    padding: '12px 16px',
+                                    fontSize: '15px',
+                                    background: '#f8f9fa',
+                                }}
+                            />
+                        </Form.Group>
+                    </Col>
+                    <Col xs={6} md={3} lg={3}>
+                        <Form.Group controlId="status-filter" style={{ width: '100%' }}>
+                            <Form.Select
+                                value={filterStatus}
+                                onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                                style={{
+                                    border: '2px solid #e9ecef',
+                                    borderRadius: '12px',
+                                    padding: '12px 16px',
+                                    fontSize: '15px',
+                                    background: '#f8f9fa',
+                                }}
+                            >
+                                <option value="All">All Status</option>
+                                <option value="open">Open</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="escalate">Escalated</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="re-opened">Re-opened</option>
+                                <option value="closed">Closed</option>
+                            </Form.Select>
+                        </Form.Group>
+                    </Col>
 
+                    <Col xs={6} md={3} lg={3}>
+                        <Form.Group controlId="location-filter" style={{ width: '100%' }}>
+                            <Form.Select
+                                value={filterLocation}
+                                onChange={(e) => { setFilterLocation(e.target.value); setCurrentPage(1); }}
+                                style={{
+                                    border: '2px solid #e9ecef',
+                                    borderRadius: '12px',
+                                    padding: '12px 16px',
+                                    fontSize: '15px',
+                                    background: '#f8f9fa',
+                                }}
+                            >
+                                <option value="All">LMD & CORP</option>
+                                <option value="lmd">LMD</option>
+                                <option value="corp">Corp</option>
+                            </Form.Select>
+                        </Form.Group>
+                    </Col>
+
+                </Row>
+            ) : (
+                <Row className="align-items-center g-3 mb-4" >
+                    <Col xs={12} md={8} lg={9}>
+                        <Form.Group controlId="search" style={{ width: '100%' }}>
+                            <Form.Control
+                                type="text"
+                                placeholder="Search by Subject, ID, Category, etc."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{
+                                    border: '2px solid #e9ecef',
+                                    borderRadius: '12px',
+                                    padding: '12px 16px',
+                                    fontSize: '15px',
+                                    background: '#f8f9fa',
+                                }}
+                            />
+                        </Form.Group>
+                    </Col>
+                    <Col xs={12} md={4} lg={3}>
+                        <Form.Group controlId="status-filter" style={{ width: '100%' }}>
+                            <Form.Select
+                                value={filterStatus}
+                                onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                                style={{
+                                    border: '2px solid #e9ecef',
+                                    borderRadius: '12px',
+                                    padding: '12px 16px',
+                                    fontSize: '15px',
+                                    background: '#f8f9fa',
+                                }}
+                            >
+                                <option value="All">All Status</option>
+                                <option value="open">Open</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="escalate">Escalated</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="re-opened">Re-opened</option>
+                                <option value="closed">Closed</option>
+                            </Form.Select>
+                        </Form.Group>
+                    </Col>
+
+                </Row>
+            )}
             {/* Desktop Table */}
             <div className="d-none d-md-block" >
                 <table className="table mb-0 table-hover align-middle" >

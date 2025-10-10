@@ -23,6 +23,8 @@ export default function SignIn1() {
   const [loginError, setLoginError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [show, setShow] = useState(false);
+  //Snack bar timeout after 3s
   useEffect(() => {
     if (loginError) {
       const timer = setTimeout(() => {
@@ -32,6 +34,7 @@ export default function SignIn1() {
     }
   }, [loginError]);
 
+  //Loading state after 3s
   useEffect(() => {
     if (loading) {
       const timer = setTimeout(() => {
@@ -178,12 +181,18 @@ export default function SignIn1() {
                       <InputGroup.Text>
                         <FeatherIcon icon="lock" />
                       </InputGroup.Text>
+
                       <Form.Control
-                        type="password"
+                        type={show ? "text" : "password"}
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        style={{ borderRight: "none" }}
                       />
+
+                      <InputGroup.Text >
+                        <FeatherIcon onClick={() => setShow(!show)} style={{ cursor: "pointer" }} icon={show ? "eye-off" : "eye"} />
+                      </InputGroup.Text>
                     </InputGroup>
                     <RoundedSlideButton type="submit">Signin</RoundedSlideButton>
                   </Form>

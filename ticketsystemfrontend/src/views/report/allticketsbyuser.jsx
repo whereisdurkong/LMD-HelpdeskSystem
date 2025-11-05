@@ -229,7 +229,7 @@ export default function AllTicketsByUser({ filterType, showChart = true, onDataR
                             <thead style={{ background: "#053b00ff", color: "white" }}>
                                 <tr>
                                     <th>Ticket ID</th>
-                                    <th>Subject</th>
+                                    <th>Problem/Issue</th>
                                     <th>Status</th>
                                     <th>Created At</th>
                                 </tr>

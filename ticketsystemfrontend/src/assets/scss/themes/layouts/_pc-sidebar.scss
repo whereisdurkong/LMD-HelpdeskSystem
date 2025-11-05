@@ -95,9 +95,24 @@
       text-decoration: none;
       color: var(--pc-sidebar-active-color);
 
+      font: {
+        size: 14px;
+        weight: 500;
+      }
+
       .pc-micon {
 
-        i,
+        i {
+          font-size: 18px;
+          color: var(--pc-sidebar-icon-color);
+
+          &.material-icons-two-tone {
+            background-color: #035500;
+            font-size: 22px;
+            display: inline-block;
+          }
+        }
+
         svg {
           color: var(--pc-sidebar-active-color);
         }

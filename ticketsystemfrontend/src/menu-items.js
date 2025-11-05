@@ -4,21 +4,14 @@ const empRole = empInfo.emp_role;
 
 const menuItems = {
   items: [
+
+    //tickets
     {
-      id: 'tools',
-      title: 'Tools',
+      id: 'tickets',
+      title: 'Tickets',
       type: 'group',
-      icon: 'icon-ui',
+      icon: 'icon-pages',
       children: [
-        {
-          id: 'register',
-          title: 'Register',
-          type: 'item',
-          icon: 'material-icons-two-tone',
-          iconname: 'person_add_alt_1',
-          url: '/register',
-          target: true
-        },
         {
           id: 'create-ticket',
           title: 'Create Ticket',
@@ -37,6 +30,41 @@ const menuItems = {
           url: '/tickets',
           target: true
         },
+      ]
+    },
+    {
+      id: 'PMS',
+      title: 'PMS',
+      type: 'group',
+      icon: 'icon-pages',
+      children: [
+        {
+          id: 'create-pms-ticket',
+          title: 'Create PMS Ticket',
+          type: 'item',
+          icon: 'material-icons-two-tone',
+          iconname: 'construction',
+          url: '/create-pms-user',
+          target: true
+        },
+        {
+          id: 'pms',
+          title: 'PMS',
+          type: 'item',
+          icon: 'material-icons-two-tone',
+          iconname: 'settings_applications',
+          url: '/pms',
+          target: true
+        },
+      ]
+    },
+    //Tools
+    {
+      id: 'tools',
+      title: 'Tools',
+      type: 'group',
+      icon: 'icon-ui',
+      children: [
         {
           id: 'all-users',
           title: 'Users',
@@ -58,6 +86,8 @@ const menuItems = {
 
       ]
     },
+
+    //Pages
     {
       id: 'pages',
       title: 'Pages',
@@ -92,49 +122,37 @@ const menuItems = {
         },
         {
           id: 'reports',
-          title: 'Reports',
+          title: 'Support Reports',
           type: 'item',
           icon: 'material-icons-two-tone',
           iconname: 'bar_chart',
           url: '/reports',
           target: true
         },
-
+        {
+          id: 'pmsreports',
+          title: 'PMS Reports',
+          type: 'item',
+          icon: 'material-icons-two-tone',
+          iconname: 'analytics',
+          url: '/pmsreport',
+          target: true
+        },
       ]
     },
   ]
 };
 
-if (empTier === 'user' && empRole === 'user') {
-  const tools = menuItems.items.find(item => item.id === 'tools');
+if (empTier === 'user' && (empRole === 'user' || empRole === 'admin')) {
+  // Remove the Tools group entirely
+  menuItems.items = menuItems.items.filter(item => item.id !== 'tools');
 
-  if (tools) {
-    tools.children = tools.children.filter(
-      child => child.id !== 'register' && child.id !== 'assets' && child.id !== 'all-users'
-    );
-  }
-
+  // Optionally, also hide Reports for these users
   const pages = menuItems.items.find(item => item.id === 'pages');
   if (pages) {
     pages.children = pages.children.filter(child => child.id !== 'reports');
   }
 }
-
-if (empTier === 'user' && empRole === 'admin') {
-  const tools = menuItems.items.find(item => item.id === 'tools');
-  if (tools) {
-    tools.children = tools.children.filter(
-      child => child.id !== 'register' &&
-        child.id !== 'assets' && child.id !== 'all-users'
-    );
-  }
-
-
-  const pages = menuItems.items.find(item => item.id === 'pages');
-  if (pages) {
-    pages.children = pages.children.filter(child => child.id !== 'reports');
-  }
-}
-
 
 export default menuItems;
+

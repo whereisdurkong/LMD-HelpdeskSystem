@@ -4,6 +4,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import axios from 'axios';
 import config from 'config';
 import Spinner from 'react-bootstrap/Spinner';
+import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
 
 
 
@@ -198,201 +199,214 @@ export default function Announcements() {
                 paddingBottom: '20px',
             }}
         >
+            <AnimatedContent
+                distance={100}
+                direction="vertical"
+                reverse={true}
+                duration={0.8}
+                ease="power3.out"
+                initialOpacity={0}
+                animateOpacity
+                scale={1.0}
+                threshold={0.1}
+                delay={0}
+            >
 
-            {error && (
-                <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
-                    <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
-                </div>
-            )}
-            {success && (
-                <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
-                    <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>
-                </div>
-            )}
-            {access &&
-                (
-                    <Row className="align-items-center mb-3">
-                        <Col xs={12} md={6}>
-                            <h2 className="mb-0"><b>Announcements</b></h2>
-                        </Col>
-
-                        <Col xs={12} md={6}>
-                            <div className="d-flex justify-content-md-end justify-content-start gap-2 mt-2 mt-md-0">
-                                <Button variant="secondary" onClick={HandleArchive}>Archive</Button>
-                                <Button variant="primary" onClick={HandleAdd}>+ Create Post</Button>
-                            </div>
-                        </Col>
-                    </Row>
-
-                )}
-
-
-            <div className="mt-4">
-
-                {announcementsList.length === 0 ? (
-                    <div
-                        className="d-flex justify-content-center align-items-center"
-                        style={{ minHeight: '200px' }}
-                    >
-                        <Card.Text style={{
-                            fontSize: '1.2rem',
-                            fontWeight: '500',
-                            textAlign: 'center'
-                        }}>
-                            NO ANNOUNCEMENTS
-                        </Card.Text>
+                {error && (
+                    <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
+                        <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
                     </div>
-                ) : (
-                    currentAnnouncements.map((item) => (
-                        <Card key={item.announcements_id} className="mb-4 shadow-sm" style={{ borderRadius: '15px' }}>
-                            <Card.Body>
-                                <div className="d-flex align-items-center justify-content-between mb-4">
-                                    <div className="d-flex align-items-center">
-                                        <img
-                                            src="src/assets/images/user/avatar-2.jpg"
-                                            alt="Profile"
-                                            style={{
-                                                width: '40px',
-                                                height: '40px',
-                                                borderRadius: '50%',
-                                                objectFit: 'cover',
-                                                marginRight: '10px'
-                                            }}
-                                        />
-                                        <div>
-                                            <strong>
-                                                {fullname[item.created_by] || item.created_by || 'Unknown'}
-                                            </strong>
-                                            <br />
-                                            <small className="text-muted">
-                                                {new Date(item.created_at).toLocaleString()}
-                                            </small>
-                                        </div>
-                                    </div>
-                                    {access && (
-                                        <div onClick={() => {
-                                            setAncId(item.announcements_id === ancId ? null : item.announcements_id);
-                                        }}>
-                                            <i className="bi bi-three-dots" style={{ cursor: 'pointer' }}></i>
+                )}
+                {success && (
+                    <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
+                        <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>
+                    </div>
+                )}
+                {access &&
+                    (
+                        <Row className="align-items-center mb-3">
+                            <Col xs={12} md={6}>
+                                <h2 className="mb-0"><b>Announcements</b></h2>
+                            </Col>
 
-                                            {ancId === item.announcements_id && (
-                                                <div
-                                                    className="position-absolute bg-white border rounded shadow-sm"
-                                                    style={{ top: '20px', right: '0', zIndex: 1000, minWidth: '100px' }}
-                                                >
-                                                    <div
-                                                        className="p-2 text-dark border-bottom"
-                                                        style={{ cursor: 'pointer' }}
-                                                        onClick={() => handleEditClick(item)}
-                                                    >
-                                                        Edit
-                                                    </div>
-                                                    <div
-                                                        className="p-2 text-danger"
-                                                        style={{ cursor: 'pointer' }}
-                                                        onClick={() => {
-                                                            handleDelete(item.announcements_id);
-                                                        }}
-                                                    >
-                                                        Archive
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                            <Col xs={12} md={6}>
+                                <div className="d-flex justify-content-md-end justify-content-start gap-2 mt-2 mt-md-0">
+                                    <Button variant="secondary" onClick={HandleArchive}>Archive</Button>
+                                    <Button variant="primary" onClick={HandleAdd}>+ Create Post</Button>
                                 </div>
-                                <Card.Text className="mb-0" style={{ fontSize: '1.5rem' }}>
-                                    <b>{item.announcementTitle}</b>
-                                </Card.Text>
-                                <Card.Text className="mb-0" style={{ fontSize: '1.0rem' }}>
-                                    {item.announcements}
-                                </Card.Text>
-                            </Card.Body>
+                            </Col>
+                        </Row>
 
-                        </Card>
-                    )))}
-                {totalPages > 1 && (
-                    <div className="d-flex justify-content-center mt-3 flex-wrap gap-2">
-                        <Button
-                            variant="miColor"
-                            size="sm"
-                            className="me-2"
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
+                    )}
+
+
+                <div className="mt-4">
+
+                    {announcementsList.length === 0 ? (
+                        <div
+                            className="d-flex justify-content-center align-items-center"
+                            style={{ minHeight: '200px' }}
                         >
-                            Prev
-                        </Button>
-                        <span className="align-self-center">
-                            Page {currentPage} of {totalPages}
-                        </span>
-                        <Button
-                            variant="miColor"
-                            size="sm"
-                            className="ms-2"
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            Next
-                        </Button>
-                    </div>
-                )}
-            </div>
+                            <Card.Text style={{
+                                fontSize: '1.2rem',
+                                fontWeight: '500',
+                                textAlign: 'center'
+                            }}>
+                                NO ANNOUNCEMENTS
+                            </Card.Text>
+                        </div>
+                    ) : (
+                        currentAnnouncements.map((item) => (
+                            <Card key={item.announcements_id} className="mb-4 shadow-sm" style={{ borderRadius: '15px' }}>
+                                <Card.Body>
+                                    <div className="d-flex align-items-center justify-content-between mb-4">
+                                        <div className="d-flex align-items-center">
+                                            <img
+                                                src="src/assets/images/user/avatar-2.jpg"
+                                                alt="Profile"
+                                                style={{
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    borderRadius: '50%',
+                                                    objectFit: 'cover',
+                                                    marginRight: '10px'
+                                                }}
+                                            />
+                                            <div>
+                                                <strong>
+                                                    {fullname[item.created_by] || item.created_by || 'Unknown'}
+                                                </strong>
+                                                <br />
+                                                <small className="text-muted">
+                                                    {new Date(item.created_at).toLocaleString()}
+                                                </small>
+                                            </div>
+                                        </div>
+                                        {access && (
+                                            <div onClick={() => {
+                                                setAncId(item.announcements_id === ancId ? null : item.announcements_id);
+                                            }}>
+                                                <i className="bi bi-three-dots" style={{ cursor: 'pointer' }}></i>
 
-            {showCard && (
-                <Card className='announcement-card p-4 shadow' style={{ borderRadius: '15px', maxWidth: '600px', margin: '0 auto' }}>
-                    <Card.Title className="mb-3">
-                        {isEditing ? "Edit Announcement" : "Create Announcement"}
-                    </Card.Title>
-                    <Form>
-                        {/* Title Input */}
-                        <Form.Group controlId="announcementTitle" className="mb-3">
-                            <Form.Label>Title</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Enter title"
-                                value={announcementTitleText}
-                                onChange={(e) => setAnnouncementTitleText(e.target.value)}
-                                required
-                            />
-                        </Form.Group>
+                                                {ancId === item.announcements_id && (
+                                                    <div
+                                                        className="position-absolute bg-white border rounded shadow-sm"
+                                                        style={{ top: '20px', right: '0', zIndex: 1000, minWidth: '100px' }}
+                                                    >
+                                                        <div
+                                                            className="p-2 text-dark border-bottom"
+                                                            style={{ cursor: 'pointer' }}
+                                                            onClick={() => handleEditClick(item)}
+                                                        >
+                                                            Edit
+                                                        </div>
+                                                        <div
+                                                            className="p-2 text-danger"
+                                                            style={{ cursor: 'pointer' }}
+                                                            onClick={() => {
+                                                                handleDelete(item.announcements_id);
+                                                            }}
+                                                        >
+                                                            Archive
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <Card.Text className="mb-0" style={{ fontSize: '1.5rem' }}>
+                                        <b>{item.announcementTitle}</b>
+                                    </Card.Text>
+                                    <Card.Text className="mb-0" style={{ fontSize: '1.0rem' }}>
+                                        {item.announcements}
+                                    </Card.Text>
+                                </Card.Body>
 
-                        {/* Announcement Textarea */}
-                        <Form.Group controlId="announcementText">
-                            <Form.Label>Announcement</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                value={announcementText}
-                                onChange={(e) => setAnnouncementText(e.target.value)}
-                                placeholder="What's on your mind?"
-                            />
-                        </Form.Group>
-
-                        {/* Buttons */}
-                        <div className="mt-3 d-flex justify-content-end gap-2 flex-wrap">
+                            </Card>
+                        )))}
+                    {totalPages > 1 && (
+                        <div className="d-flex justify-content-center mt-3 flex-wrap gap-2">
                             <Button
-                                variant="secondary"
-                                onClick={() => {
-                                    setShowCard(false);
-                                    setIsEditing(false);
-                                    setEditId(null);
-                                    setAnnouncementTitleText('');
-                                    setAnnouncementText('');
-                                }}
+                                variant="miColor"
+                                size="sm"
                                 className="me-2"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
                             >
-                                Cancel
+                                Prev
                             </Button>
+                            <span className="align-self-center">
+                                Page {currentPage} of {totalPages}
+                            </span>
                             <Button
-                                variant="primary"
-                                onClick={isEditing ? handleUpdate : HandleSave}
+                                variant="miColor"
+                                size="sm"
+                                className="ms-2"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
                             >
-                                {isEditing ? "Update" : "Post"}
+                                Next
                             </Button>
                         </div>
-                    </Form>
-                </Card>
-            )}
+                    )}
+                </div>
+
+                {showCard && (
+                    <Card className='announcement-card p-4 shadow' style={{ borderRadius: '15px', maxWidth: '600px', margin: '0 auto' }}>
+                        <Card.Title className="mb-3">
+                            {isEditing ? "Edit Announcement" : "Create Announcement"}
+                        </Card.Title>
+                        <Form>
+                            {/* Title Input */}
+                            <Form.Group controlId="announcementTitle" className="mb-3">
+                                <Form.Label>Title</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Enter title"
+                                    value={announcementTitleText}
+                                    onChange={(e) => setAnnouncementTitleText(e.target.value)}
+                                    required
+                                />
+                            </Form.Group>
+
+                            {/* Announcement Textarea */}
+                            <Form.Group controlId="announcementText">
+                                <Form.Label>Announcement</Form.Label>
+                                <Form.Control
+                                    as="textarea"
+                                    rows={3}
+                                    value={announcementText}
+                                    onChange={(e) => setAnnouncementText(e.target.value)}
+                                    placeholder="What's on your mind?"
+                                />
+                            </Form.Group>
+
+                            {/* Buttons */}
+                            <div className="mt-3 d-flex justify-content-end gap-2 flex-wrap">
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => {
+                                        setShowCard(false);
+                                        setIsEditing(false);
+                                        setEditId(null);
+                                        setAnnouncementTitleText('');
+                                        setAnnouncementText('');
+                                    }}
+                                    className="me-2"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    onClick={isEditing ? handleUpdate : HandleSave}
+                                >
+                                    {isEditing ? "Update" : "Post"}
+                                </Button>
+                            </div>
+                        </Form>
+                    </Card>
+                )}
+            </AnimatedContent>
             {loading && (
                 <div
                     style={{
@@ -411,6 +425,7 @@ export default function Announcements() {
                     <Spinner animation="border" variant="light" />
                 </div>
             )}
+
         </Container>
     );
 }

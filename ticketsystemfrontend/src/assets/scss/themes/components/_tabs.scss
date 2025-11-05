@@ -30,7 +30,7 @@
 
 .tabs-light {
   &.nav-pill {
-    + .tab-content {
+    +.tab-content {
       border-top: 1px solid $border-color;
     }
 
@@ -39,12 +39,13 @@
 
       .nav-link {
         color: $primary;
+
         background: shift-color($primary, $soft-bg-level);
         border-radius: 4px;
         transition: background 0.3s ease-out;
       }
 
-      + .nav-item {
+      +.nav-item {
         margin-left: 10px;
       }
     }

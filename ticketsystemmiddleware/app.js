@@ -12,6 +12,8 @@ require('dotenv').config();
 var indexRouter = require('./routes/index'); //predefin
 var authRouter = require('./routes/authentication');//predefined
 var ticketRouter = require('./routes/ticket');//predefined
+var pmsRouter = require('./routes/pms');//predefined
+var pmsticketRouter = require('./routes/pmsticket');//predefined
 var announcementsRouter = require('./routes/announcements');//predefined
 var knowledgebaseRouter = require('./routes/knowledgebase');//predefine
 
@@ -89,6 +91,9 @@ app.use('/api/authentication', authRouter);
 app.use('/api/ticket', ticketRouter);
 app.use('/api/announcements', announcementsRouter);
 app.use('/api/knowledgebase', knowledgebaseRouter);
+app.use('/api/pms', pmsRouter);
+
+app.use('/api/pmsticket', pmsticketRouter);
 // app.use('/api/headermaster',headerMasterRouter);
 
 

@@ -5,6 +5,7 @@ import { FaSearch } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import axios from "axios";
 import config from "config";
+import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
 
 export default function Knowledgebase() {
     const [allData, setAllData] = useState([]);
@@ -101,6 +102,7 @@ export default function Knowledgebase() {
 
     return (
         <div style={{ minHeight: '100vh', overflowX: 'hidden' }}>
+
             {/* Top Section */}
             <div
                 style={{
@@ -113,93 +115,109 @@ export default function Knowledgebase() {
                     position: 'relative'
                 }}
             >
-                <Container style={{ maxWidth: '1000px', paddingTop: '10vh' }}>
-                    <h1 style={{ paddingBottom: '10px' }}><b>Hi. How can we help?</b></h1>
+                <AnimatedContent
+                    distance={100}
+                    direction="vertical"
+                    reverse={true}
+                    duration={0.8}
+                    ease="power3.out"
+                    initialOpacity={0}
+                    animateOpacity
+                    scale={1.0}
+                    threshold={0.1}
+                    delay={0}
+                >
 
-                    {/* Search Box + Dropdown */}
-                    <div style={{ marginTop: '30px', width: '100%', maxWidth: '700px', margin: '0 auto', position: 'relative' }}>
-                        <div
-                            style={{
-                                backgroundColor: 'white',
-                                borderRadius: '8px',
-                                padding: '10px 20px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                                zIndex: 100
-                            }}
-                        >
-                            <FaSearch style={{ color: '#999', marginRight: '10px' }} />
-                            <Form.Control
-                                type="text"
-                                placeholder="Find anything (ex. slow internet, request new mouse or unable to access)"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{
-                                    border: 'none',
-                                    outline: 'none',
-                                    boxShadow: 'none',
-                                    fontSize: '1rem',
-                                    flex: 1,
-                                }}
-                            />
-                        </div>
 
-                        {/* Search Dropdown */}
-                        {filteredData.length > 0 && (
+
+                    <Container style={{ maxWidth: '1000px', paddingTop: '10vh' }}>
+                        <h1 style={{ paddingBottom: '10px' }}><b>Hi. How can we help?</b></h1>
+
+                        {/* Search Box + Dropdown */}
+                        <div style={{ marginTop: '30px', width: '100%', maxWidth: '700px', margin: '0 auto', position: 'relative' }}>
                             <div
                                 style={{
-                                    position: 'absolute',
-                                    top: '100%',
-                                    left: 0,
-                                    width: '100%',
                                     backgroundColor: 'white',
                                     borderRadius: '8px',
-                                    boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
-                                    zIndex: 9999,
-                                    maxHeight: '250px',
-                                    overflowY: 'auto',
-                                    textAlign: 'left'
+                                    padding: '10px 20px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                                    zIndex: 100
                                 }}
                             >
-                                {filteredData.map(item => (
-                                    <div
-                                        key={item.kb_id}
-                                        style={{
-                                            padding: '10px 15px',
-                                            borderBottom: '1px solid #eee',
-                                            cursor: 'pointer',
-                                            color: '#000'
-                                        }}
-                                        onClick={() => navigate(`/${item.kb_category || ''}`)}
-                                    >
-                                        <div style={{ fontWeight: 700 }}>{item.kb_title}</div>
-                                        <div style={{ fontSize: '0.9rem', color: '#555', marginTop: '6px' }}>
-                                            {item.kb_answer.length > 120 ? item.kb_answer.substring(0, 120) + "..." : item.kb_answer}
-                                        </div>
-                                    </div>
-                                ))}
+                                <FaSearch style={{ color: '#999', marginRight: '10px' }} />
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Find anything (ex. slow internet, request new mouse or unable to access)"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    style={{
+                                        border: 'none',
+                                        outline: 'none',
+                                        boxShadow: 'none',
+                                        fontSize: '1rem',
+                                        flex: 1,
+                                    }}
+                                />
                             </div>
-                        )}
-                    </div>
 
-                    {/* {/* Troubleshooting Links */}
-                    <div
-                        style={{
-                            marginTop: '20px',
-                            fontSize: '0.95rem',
-                            flexWrap: 'wrap',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            gap: '10px',
-                        }}
-                    >
-                        <span>Common troubleshooting topics:</span>
-                        <a href="/ticketsystem/network" style={{ color: '#fff', textDecoration: 'underline' }}>Slow internet</a>
-                        <a href="/ticketsystem/hardware" style={{ color: '#fff', textDecoration: 'underline' }}>Keyboard not working</a>
-                        <a href="/ticketsystem/software" style={{ color: '#fff', textDecoration: 'underline' }}>Outlook Unable to log in</a>
-                    </div>
-                </Container>
+                            {/* Search Dropdown */}
+                            {filteredData.length > 0 && (
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: 0,
+                                        width: '100%',
+                                        backgroundColor: 'white',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                                        zIndex: 9999,
+                                        maxHeight: '250px',
+                                        overflowY: 'auto',
+                                        textAlign: 'left'
+                                    }}
+                                >
+                                    {filteredData.map(item => (
+                                        <div
+                                            key={item.kb_id}
+                                            style={{
+                                                padding: '10px 15px',
+                                                borderBottom: '1px solid #eee',
+                                                cursor: 'pointer',
+                                                color: '#000'
+                                            }}
+                                            onClick={() => navigate(`/${item.kb_category || ''}`)}
+                                        >
+                                            <div style={{ fontWeight: 700 }}>{item.kb_title}</div>
+                                            <div style={{ fontSize: '0.9rem', color: '#555', marginTop: '6px' }}>
+                                                {item.kb_answer.length > 120 ? item.kb_answer.substring(0, 120) + "..." : item.kb_answer}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* {/* Troubleshooting Links */}
+                        <div
+                            style={{
+                                marginTop: '20px',
+                                fontSize: '0.95rem',
+                                flexWrap: 'wrap',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                gap: '10px',
+                            }}
+                        >
+                            <span>Common troubleshooting topics:</span>
+                            <a href="/ticketsystem/network" style={{ color: '#fff', textDecoration: 'underline' }}>Slow internet</a>
+                            <a href="/ticketsystem/hardware" style={{ color: '#fff', textDecoration: 'underline' }}>Keyboard not working</a>
+                            <a href="/ticketsystem/software" style={{ color: '#fff', textDecoration: 'underline' }}>Outlook Unable to log in</a>
+                        </div>
+                    </Container>
+                </AnimatedContent>
             </div>
 
             {/* Bottom Section */}
@@ -214,66 +232,79 @@ export default function Knowledgebase() {
                     justifyContent: 'center',      // horizontally center content
                 }}
             >
-                <Container fluid="lg">
-                    <Row className="text-center justify-content-center">
-                        {items.map((item, idx) => (
-                            <Col
-                                key={idx}
-                                xs={12}
-                                sm={6}
-                                md={4}
-                                lg={3}
-                                className="mb-4 d-flex justify-content-center"
-                            >
-                                <Link
-                                    to={item.link}
-                                    style={{
-                                        textDecoration: 'none',
-                                        color: 'inherit',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        textAlign: 'center',
-                                        width: '100%',
-                                        maxWidth: '220px',
-                                    }}
+                <AnimatedContent
+                    distance={100}
+                    direction="vertical"
+                    reverse={true}
+                    duration={0.8}
+                    ease="power3.out"
+                    initialOpacity={0}
+                    animateOpacity
+                    scale={1.0}
+                    threshold={0.1}
+                    delay={0}
+                >
+                    <Container fluid="lg">
+                        <Row className="text-center justify-content-center">
+                            {items.map((item, idx) => (
+                                <Col
+                                    key={idx}
+                                    xs={12}
+                                    sm={6}
+                                    md={4}
+                                    lg={3}
+                                    className="mb-4 d-flex justify-content-center"
                                 >
-                                    <img
-                                        src={item.src}
-                                        alt={item.title}
+                                    <Link
+                                        to={item.link}
                                         style={{
-                                            width: 'clamp(100px, 10vw, 150px)',
-                                            height: 'auto',
-                                            cursor: 'pointer',
-                                        }}
-                                    />
-                                    <h4
-                                        className="mt-3"
-                                        style={{
-                                            color: '#fff',
-                                            fontSize: 'calc(1rem + 0.3vw)',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        <b>{item.title}</b>
-                                    </h4>
-                                    <p
-                                        style={{
-                                            color: '#fff',
-                                            maxWidth: '90%',
+                                            textDecoration: 'none',
+                                            color: 'inherit',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
                                             textAlign: 'center',
-                                            margin: 0,
+                                            width: '100%',
+                                            maxWidth: '220px',
                                         }}
                                     >
-                                        {item.desc}
-                                    </p>
-                                </Link>
-                            </Col>
-                        ))}
-                    </Row>
-                </Container>
-
+                                        <img
+                                            src={item.src}
+                                            alt={item.title}
+                                            style={{
+                                                width: 'clamp(100px, 10vw, 150px)',
+                                                height: 'auto',
+                                                cursor: 'pointer',
+                                            }}
+                                        />
+                                        <h4
+                                            className="mt-3"
+                                            style={{
+                                                color: '#fff',
+                                                fontSize: 'calc(1rem + 0.3vw)',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            <b>{item.title}</b>
+                                        </h4>
+                                        <p
+                                            style={{
+                                                color: '#fff',
+                                                maxWidth: '90%',
+                                                textAlign: 'center',
+                                                margin: 0,
+                                            }}
+                                        >
+                                            {item.desc}
+                                        </p>
+                                    </Link>
+                                </Col>
+                            ))}
+                        </Row>
+                    </Container>
+                </AnimatedContent>
             </div>
+
         </div>
     );
 }

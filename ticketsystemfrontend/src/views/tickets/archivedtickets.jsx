@@ -15,6 +15,10 @@ export default function ArchivedTickets() {
     const [filterLocation, setFilterLocation] = useState('All');
     const [empLocation, setEmpLocation] = useState('');
 
+    const [sortOrder, setSortOrder] = useState('newest');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const ticketsPerPage = 10;
 
@@ -75,6 +79,9 @@ export default function ArchivedTickets() {
 
     //Filter ticket function
     const filteredTickets = forAdminTickets.filter((ticket) => {
+
+        const ticketDate = new Date(ticket.created_at || ticket.date_created || ticket.date);
+
         const matchesSearch = (
             ticket.ticket_subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             ticket.ticket_id?.toString().includes(searchTerm) ||
@@ -92,15 +99,24 @@ export default function ArchivedTickets() {
             filterLocation === 'All' ||
             ticket.assigned_location?.toLowerCase() === filterLocation.toLowerCase();
 
-        return matchesSearch && matchesStatus && matchesLocation;
+        const matchesDate =
+            (!fromDate || ticketDate >= new Date(fromDate)) &&
+            (!toDate || ticketDate <= new Date(toDate + 'T23:59:59'));
+
+        return matchesSearch && matchesStatus && matchesLocation && matchesDate;
     });
 
+    const sortedTickets = [...filteredTickets].sort((a, b) => {
+        const dateA = new Date(a.created_at || a.date_created || a.date); // adjust based on your DB column
+        const dateB = new Date(b.created_at || b.date_created || b.date);
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
 
     // Pagination calculations
     const indexOfLastTicket = currentPage * ticketsPerPage;
     const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
-    const currentTickets = filteredTickets.slice(indexOfFirstTicket, indexOfLastTicket);
-    const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage);
+    const currentTickets = sortedTickets.slice(indexOfFirstTicket, indexOfLastTicket);
+    const totalPages = Math.ceil(sortedTickets.length / ticketsPerPage);
 
 
     //Design for Status
@@ -128,8 +144,8 @@ export default function ArchivedTickets() {
                 style = { ...baseStyle, backgroundColor: '#033f00ff', color: '#ffffffff' }; label = 'In Progress'; break;
             case 'assigned':
                 style = { ...baseStyle, backgroundColor: '#ffcb5aff', color: '#404040ff' }; label = 'Assigned'; break;
-            case 'escalate':
-                style = { ...baseStyle, backgroundColor: '#ff7d7dff', color: '#404040ff' }; label = 'Escalated'; break;
+            // case 'escalate':
+            //     style = { ...baseStyle, backgroundColor: '#ff7d7dff', color: '#404040ff' }; label = 'Escalated'; break;
             case 'resolved':
                 style = { ...baseStyle, backgroundColor: '#91c6ffff', color: '#404040ff' }; label = 'Resolved'; break;
             case 're-opened':
@@ -193,7 +209,7 @@ export default function ArchivedTickets() {
 
         <Container
             style={{
-                padding: '24px',
+                padding: '20px',
                 background: '#fff',
                 borderRadius: '12px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
@@ -201,12 +217,17 @@ export default function ArchivedTickets() {
             }}
         >
             {/* Search and Filter */}
-            <Row className="align-items-center g-3 mb-4" >
-                <Col xs={12} md={6} lg={6}>
-                    <Form.Group controlId="search" style={{ width: '100%' }}>
+            <div
+                className="d-flex flex-wrap align-items-end gap-3 mb-4"
+                style={{ width: "100%" }}
+            >
+                {/* Search */}
+                <div style={{ flex: "1 1 300px" }}>
+                    <Form.Group controlId="search" style={{ width: "100%" }}>
+                        <Form.Label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>Search</Form.Label>
                         <Form.Control
                             type="text"
-                            placeholder="Search by Subject, ID, Category, etc."
+                            placeholder="Search by Problem/Issue, ID, Category, etc."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{
@@ -218,9 +239,12 @@ export default function ArchivedTickets() {
                             }}
                         />
                     </Form.Group>
-                </Col>
-                <Col xs={6} md={3} lg={3}>
-                    <Form.Group controlId="status-filter" style={{ width: '100%' }}>
+                </div>
+
+                {/* Status Filter */}
+                <div style={{ flex: "0 1 180px" }}>
+                    <Form.Group controlId="status-filter" style={{ width: "100%" }}>
+                        <Form.Label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>Status</Form.Label>
                         <Form.Select
                             value={filterStatus}
                             onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
@@ -236,15 +260,19 @@ export default function ArchivedTickets() {
                             <option value="open">Open</option>
                             <option value="assigned">Assigned</option>
                             <option value="in-progress">In Progress</option>
-                            <option value="escalate">Escalated</option>
+                            {/* <option value="escalate">Escalated</option> */}
                             <option value="resolved">Resolved</option>
                             <option value="re-opened">Re-opened</option>
                             <option value="closed">Closed</option>
                         </Form.Select>
                     </Form.Group>
-                </Col>
-                <Col xs={6} md={3} lg={3}>
-                    <Form.Group controlId="location-filter" style={{ width: '100%' }}>
+                </div>
+
+
+                {/* Location Filter */}
+                <div style={{ flex: "0 1 160px" }}>
+                    <Form.Group controlId="location-filter" style={{ width: "100%" }}>
+                        <Form.Label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>Site</Form.Label>
                         <Form.Select
                             value={filterLocation}
                             onChange={(e) => { setFilterLocation(e.target.value); setCurrentPage(1); }}
@@ -261,20 +289,79 @@ export default function ArchivedTickets() {
                             <option value="corp">Corp</option>
                         </Form.Select>
                     </Form.Group>
-                </Col>
-            </Row>
+                </div>
+
+                {/* Date Range */}
+                <div className="d-flex align-items-end gap-2" style={{ flex: "0 1 300px" }}>
+                    <Form.Group controlId="from-date" className="flex-fill">
+                        <Form.Label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>From</Form.Label>
+                        <Form.Control
+                            type="date"
+                            value={fromDate}
+                            onChange={(e) => { setFromDate(e.target.value); setCurrentPage(1); }}
+                            style={{
+                                border: '2px solid #e9ecef',
+                                borderRadius: '12px',
+                                padding: '10px 14px',
+                                fontSize: '15px',
+                                background: '#f8f9fa',
+                            }}
+                        />
+                    </Form.Group>
+
+
+                    <Form.Group controlId="to-date" className="flex-fill">
+                        <Form.Label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>To</Form.Label>
+                        <Form.Control
+                            type="date"
+                            value={toDate}
+                            onChange={(e) => { setToDate(e.target.value); setCurrentPage(1); }}
+                            style={{
+                                border: '2px solid #e9ecef',
+                                borderRadius: '12px',
+                                padding: '10px 14px',
+                                fontSize: '15px',
+                                background: '#f8f9fa',
+                            }}
+                        />
+                    </Form.Group>
+                </div>
+
+                {/* Sort Filter */}
+                <div style={{ flex: "0 1 180px" }}>
+                    <Form.Group controlId="sort-filter" style={{ width: "100%" }}>
+                        <Form.Label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>Order</Form.Label>
+                        <Form.Select
+                            value={sortOrder}
+                            onChange={(e) => { setSortOrder(e.target.value); setCurrentPage(1); }}
+                            style={{
+                                border: '2px solid #e9ecef',
+                                borderRadius: '12px',
+                                padding: '10px 14px',
+                                fontSize: '15px',
+                                background: '#f8f9fa',
+                            }}
+                        >
+                            <option value="newest">Newest to Oldest</option>
+                            <option value="oldest">Oldest to Newest</option>
+                        </Form.Select>
+                    </Form.Group>
+                </div>
+            </div>
+
+
 
             {/* Desktop Table */}
             <div className="d-none d-md-block" >
                 <table className="table mb-0 table-hover align-middle" >
                     <thead style={{ fontSize: '14px', textTransform: 'uppercase', color: '#555', background: '#f8f9fa' }}>
                         <tr>
-                            <th>Ticket #</th>
-                            <th>Subject</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Urgency</th>
+                            <th>Ticket ID</th>
+                            <th>Created at</th>
+                            <th>Problem/Issue</th>
+                            <th>Assigned to</th>
                             <th>Description</th>
+                            <th>Status</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -294,14 +381,13 @@ export default function ArchivedTickets() {
                                     className="table-row-hover"
                                 >
                                     <td>{ticket.ticket_id}</td>
+                                    <td>{new Date(ticket.created_at).toLocaleString()}</td>
                                     <td>{ticket.ticket_subject}</td>
-                                    <td>{ticket.ticket_type === null || ticket.ticket_type === "" ? "NONE" : ticket.ticket_type}</td>
-
-                                    <td>{renderStatusBadge(ticket.ticket_status)}</td>
-                                    <td>{renderUrgencyBadge(ticket.ticket_urgencyLevel) || ''}</td>
+                                    <td>{ticket.assigned_to || '-'}</td>
                                     <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                         {ticket.Description}
                                     </td>
+                                    <td>{renderStatusBadge(ticket.ticket_status)}</td>
                                     <td style={{ color: '#003006ff', fontWeight: 500 }}>View</td>
                                 </tr>
                             ))
@@ -329,8 +415,8 @@ export default function ArchivedTickets() {
                         >
                             <Card.Body>
                                 <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: 4 }}>#{ticket.ticket_id}</div>
-                                <div><strong>Subject:</strong> {ticket.ticket_subject}</div>
-                                <div><strong>Type:</strong> {ticket.ticket_type}</div>
+                                <div><strong>Problem/Issue:</strong> {ticket.ticket_subject}</div>
+                                {/* <div><strong>Type:</strong> {ticket.ticket_type}</div> */}
                                 <div><strong>Status:</strong> {renderStatusBadge(ticket.ticket_status)}</div>
                                 <div><strong>Urgency:</strong> {renderUrgencyBadge(ticket.ticket_urgencyLevel)}</div>
                                 <div style={{ marginBottom: 4 }}><strong>Description:</strong> {ticket.Description}</div>
@@ -342,28 +428,30 @@ export default function ArchivedTickets() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="d-flex justify-content-center mt-4">
-                    <Pagination>
-                        <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
-                        <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
+            {
+                totalPages > 1 && (
+                    <div className="d-flex justify-content-center mt-4">
+                        <Pagination>
+                            <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+                            <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
 
-                        {[...Array(totalPages)].map((_, index) => (
-                            <Pagination.Item
-                                key={index + 1}
-                                active={index + 1 === currentPage}
-                                onClick={() => setCurrentPage(index + 1)}
-                            >
-                                {index + 1}
-                            </Pagination.Item>
-                        ))}
+                            {[...Array(totalPages)].map((_, index) => (
+                                <Pagination.Item
+                                    key={index + 1}
+                                    active={index + 1 === currentPage}
+                                    onClick={() => setCurrentPage(index + 1)}
+                                >
+                                    {index + 1}
+                                </Pagination.Item>
+                            ))}
 
-                        <Pagination.Next onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
-                        <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
-                    </Pagination>
-                </div>
-            )}
-        </Container>
+                            <Pagination.Next onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
+                            <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+                        </Pagination>
+                    </div>
+                )
+            }
+        </Container >
 
     )
 }

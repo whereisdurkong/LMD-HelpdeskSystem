@@ -87,7 +87,7 @@ const Tickets = db.define('ticket_master', {
     assigned_collaborators: {
         type: DataTypes.STRING,
     },
-    asset_number: {
+    tag_id: {
         type: DataTypes.STRING,
     },
     Attachments: {
@@ -152,7 +152,7 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
     try {
         const {
             ticket_subject,
-            asset_number,
+            tag_id,
             Description,
             assigned_location,
             created_by,
@@ -172,14 +172,14 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
         // Insert the ticket into the database
         const [createTicket] = await knex('ticket_master').insert({
             ticket_subject,
-            ticket_type: '',
+            // ticket_type: '',
             ticket_status: 'open',
-            ticket_urgencyLevel: '',
+            ticket_urgencyLevel: 'low',
             ticket_category: '',
             ticket_SubCategory: '',
             ticket_for: created_by,
             assigned_location,
-            asset_number,
+            tag_id,
             Description,
             created_by,
             created_at: currentTimestamp,
@@ -296,12 +296,9 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
     try {
         const {
             ticket_subject,
-            ticket_type,
-            ticket_status,
-            ticket_urgencyLevel,
             ticket_category,
             ticket_SubCategory,
-            asset_number,
+            tag_id,
             Description,
             assigned_location,
             created_by,
@@ -321,14 +318,14 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
         // Insert the ticket into the database
         const [createTicket] = await knex('ticket_master').insert({
             ticket_subject,
-            ticket_type,
+
             ticket_status: 'open',
-            ticket_urgencyLevel,
+            ticket_urgencyLevel: 'low',
             ticket_category,
             ticket_SubCategory,
             ticket_for: created_by,
             assigned_location,
-            asset_number,
+            tag_id,
             Description,
             created_by,
             created_at: currentTimestamp,
@@ -343,7 +340,7 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
             ticket_id: ticket_id,
             ticket_status: 'open',
             ticket_subject,
-            ticket_urgencyLevel,
+            ticket_urgencyLevel: 'low',
             ticket_category,
             created_by,
             time_date: currentTimestamp,
@@ -648,7 +645,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
         const {
             ticket_id,
             ticket_subject,
-            ticket_type,
+            // ticket_type,
             ticket_status,
             ticket_urgencyLevel,
             Description,
@@ -663,7 +660,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             assigned_to_UserId,
             assigned_to,
             CloseReason,
-            asset_number
+            tag_id
         } = req.body;
         const updateByInfo = await knex('users_master').where('user_id', updated_by).first();
 
@@ -768,53 +765,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
                     await transporter.sendMail(mailOption);
                     console.log(`Email sent to ${ticketForInfo.emp_email} regarding ticket update`);
                 }
-                if (ticket_status === 'escalate') {
-                    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!EMAIL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                    const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
-                    const name = ticketForInfo.user_name
-                    const Fullname = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-                    var body = `This is to inform you that your ticket has been escalated to the next level of support.<br>`
-                        + `Below are the details of your ticket: <br><br>`
-                        + `<b>Ticket Number: </b>${ticket_id} <br>`
-                        + `<b>Ticket Subject: </b> ${ticket_subject} <br>`
-                        + `<b>Ticket Status: </b> ${ticket_status} <br><br>`
-                        + `You will receive further updates as soon as there are developments or when the issue is resolved.<br>`
-                        + `If you have additional information to provide you can update your ticket directly in the system.<br><br>`
-                    var start = `Hello ${Fullname}, <br><br>`
-                    var wholeEmail = start + body + end + privacy;
-                    const mailOption = {
-                        from: process.env.EMAIL,
-                        to: ticketForInfo.emp_email,
-                        subject: `Help Desk System Notification - Ticket Updated`,
-                        html: wholeEmail
-                    }
-                    await transporter.sendMail(mailOption);
-                    console.log(`Email sent to ${ticketForInfo.emp_email} regarding ticket update`);
 
-                    // --------------------Assigned_to---------------------------------------------------------//
-                    const assignedto = await knex('users_master').where('user_name', assigned_to).first();
-                    const assignedto_name = assignedto.user_name;
-                    const FullnameAssigned = assignedto_name.charAt(0).toUpperCase() + assignedto_name.slice(1).toLowerCase();
-                    var body = `This is to inform you that a ticket has been escalated to you for next level of support.<br>`
-                        + `Below are the details of your ticket: <br><br>`
-                        + `<b>Ticket Number: </b>${ticket_id} <br>`
-                        + `<b>Ticket Subject: </b> ${ticket_subject} <br>`
-                        + `<b>Ticket Status: </b> ${ticket_status} <br><br>`
-                        + `If you have additional information to provide you can update your ticket directly in the system.<br><br>`
-                    var start = `Hello ${FullnameAssigned}, <br><br>`
-                    var wholeEmail1 = start + body + end + privacy;
-                    const mailOption1 = {
-                        from: process.env.EMAIL,
-                        to: assignedto.emp_email,
-                        subject: `Help Desk System Notification - Ticket Escalated`,
-                        html: wholeEmail1
-                    }
-                    await transporter.sendMail(mailOption1);
-                    console.log(`Email sent to ${assignedto.emp_email} regarding ticket update`);
-
-
-
-                }
                 if (ticket_status === 'resolved') {
                     const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
                     const name = ticketForInfo.user_name
@@ -912,10 +863,10 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
         // Update the ticket in the database
         await knex('ticket_master').where('ticket_id', ticket_id).update({
             ticket_subject,
-            ticket_type,
+            // ticket_type,
             ticket_status,
             ticket_urgencyLevel,
-            asset_number,
+            tag_id,
             ticket_category,
             ticket_SubCategory,
             Attachments: attachmentPath,
@@ -995,30 +946,6 @@ router.post('/update-accept-ticket', async (req, res, next) => {
                 created_by: empInfo.user_name,
                 time_date: currentTimestamp,
                 changes_made: `${empInfo.user_name} accepted open ticket and was assigned ,Ticket ID: ${ticket_id}`
-            })
-        }
-        if (ticket_status === 'escalate2') {
-            await knex('ticket_logs').insert({
-                ticket_id,
-                ticket_status,
-                ticket_subject: ticketInfo.ticket_subject,
-                ticket_urgencyLevel: ticketInfo.ticket_urgencyLevel,
-                ticket_category: ticketInfo.ticket_category,
-                created_by: empInfo.user_name,
-                time_date: currentTimestamp,
-                changes_made: `${empInfo.user_name} accepted escalate2 ticket and was assigned, Ticket ID: ${ticket_id}`
-            })
-        }
-        if (ticket_status === 'escalate3') {
-            await knex('ticket_logs').insert({
-                ticket_id,
-                ticket_status,
-                ticket_subject: ticketInfo.ticket_subject,
-                ticket_urgencyLevel: ticketInfo.ticket_urgencyLevel,
-                ticket_category: ticketInfo.ticket_category,
-                created_by: empInfo.user_name,
-                time_date: currentTimestamp,
-                changes_made: `${empInfo.user_name} accepted escalate3 ticket and was assigned, Ticket ID: ${ticket_id}`
             })
         }
         if (ticket_status === 'resolved') {

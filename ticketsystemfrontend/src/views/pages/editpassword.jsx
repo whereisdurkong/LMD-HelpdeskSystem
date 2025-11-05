@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Card, Container, Row, Col, Form, Button, Alert, Spinner, InputGroup } from "react-bootstrap";
 
 import FeatherIcon from 'feather-icons-react';
+import BTN from "layouts/ReactBits/BTN";
 
 export default function EditPassword() {
     const [newPassword, setNewPassword] = useState("");
@@ -185,20 +186,10 @@ export default function EditPassword() {
                                     </InputGroup>
                                 </Form.Group>
 
-                                <Button
-                                    variant="warning"
-                                    type="submit"
-                                    className="w-100"
-                                    style={{
-                                        backgroundColor: "#b8860b",
-                                        border: "none",
-                                        fontWeight: "bold",
-                                    }}
-                                >
-                                    Update Password
-                                </Button>
+                                <div style={{ width: '100%', textAlign: 'end', paddingTop: '20px' }}>
+                                    <BTN type="submit" label={'Update Password'} />
+                                </div>
                             </Form>
-
                         </Card.Body>
                     </Card>
 

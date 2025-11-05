@@ -9,6 +9,8 @@ import Spinner from 'react-bootstrap/Spinner';
 import { useNavigate } from "react-router-dom";
 import ViewTicketLogs from './viewticketlogs';
 
+import CreatableSelect from 'react-select/creatable';
+import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
 
 export default function ViewHDTicket() {
     const [formData, setFormData] = useState({});
@@ -60,112 +62,99 @@ export default function ViewHDTicket() {
     const [modalTitle, setModalTitle] = useState("");
     const [modalContent, setModalContent] = useState(null);
 
+    const [assets, setAssets] = useState([]);
+
     const navigate = useNavigate();
 
-
     const subCategoryOptions = {
-        incident: {
-            hardware: [
-                "Desktop",
-                "Laptop",
-                "Monitor",
-                "Printer",
-                "Scanner",
-                "Printer/Scanner Combo",
-                "Peripherals (Keyboard, Mouse, Webcam, External Drive)",
-                "Docking Station",
-                "Projector",
-                "Fax Machine",
-                "Telephone",
-                "Server Hardware",
-                "UPS (Uninterruptible Power Supply)",
-                "Cabling & Ports",
-                "Others",
-            ],
-            network: [
-                "Internet Connectivity",
-                "Wi-Fi",
-                "LAN (Local Area Network)",
-                "WAN (Wide Area Network)",
-                "Server Access",
-                "Network Printer/Scanner",
-                "VPN Connection",
-                "Firewall",
-                "Router/Switch Configuration",
-                "MPLS",
-                "ISP",
-                "Network Security (Intrusion Detection/Prevention)",
-                "Bandwidth Issues",
-                "Others",
-            ],
-            software: [
-                "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
-                "Email (Setup, Creation, Error, Backup)",
-                "Active Directory (User Creation, Login, Password)",
-                "Zoom / Video Conferencing Tools",
-                "FoxPro (Accounting System)",
-                "GEMCOM",
-                "SURPAC",
-                "FTP (Access Creation, Change Password)",
-                "PDF (Conversion, Reduce Size, Editing)",
-                "Antivirus / Security Software",
-                "Operating System (Windows, macOS, Linux)",
-                "Cloud Services (OneDrive, Google Drive, Dropbox)",
-                "Others",
-            ],
-            system: [
-                "Oracle (PROD/BIPUB)",
-                "System Updates & Patches",
-                "Backup & Restore Tools",
-                "CCTV Incident Report System",
-                "Safety Accident Report System",
-                "Compliance Registry System",
-                "Information Management System (Comrel)",
-                "Lepanto IT Help Desk System",
-                "Others"
-            ]
-        },
-        request: {
-            hardware: [
-                "New Laptop Request",
-                "New Monitor Request",
-                "Printer Installation",
-                "Additional Peripherals",
-                "Hardware Upgrade",
-                "Others",
-            ],
-            network: [
-                "New VPN Access",
-                "Firewall Rule Request",
-                "New Router/Switch Setup",
-                "Bandwidth Upgrade",
-                "ISP Request",
-                "Others",
-            ],
-            software: [
-                "New Software Installation",
-                "License Renewal",
-                "User Account Creation",
-                "Database Access Request",
-                "Cloud Storage Request",
-                "Others",
-            ],
-            system: [
-                "New Account",
-                "Delete Account",
-                "Edit Account",
-                "Request Access",
-                "Others"
-            ]
-        },
-        inquiry: {
-            hardware: ["Warranty Inquiry", "Specs Inquiry", "Others"],
-            network: ["Network Policy Inquiry", "Coverage Inquiry", "Others"],
-            software: ["Software Policy Inquiry", "Version Inquiry", "Others"],
-            system: ["System Policy Inquiry", "Assistance", "Others"]
-        },
-    };
 
+        hardware: [
+            "Desktop",
+            "Laptop",
+            "Monitor",
+            "Printer",
+            "Scanner",
+            "Printer/Scanner Combo",
+            "Peripherals (Keyboard, Mouse, Webcam, External Drive)",
+            "Docking Station",
+            "Projector",
+            "Fax Machine",
+            "Telephone",
+            "Server Hardware",
+            "UPS (Uninterruptible Power Supply)",
+            "Cabling & Ports",
+
+            "New Laptop Request",
+            "New Monitor Request",
+            "Printer Installation",
+            "Additional Peripherals",
+            "Hardware Upgrade",
+            "Warranty Inquiry", "Specs Inquiry",
+            "Others",
+        ],
+        network: [
+            "Internet Connectivity",
+            "Wi-Fi",
+            "LAN (Local Area Network)",
+            "WAN (Wide Area Network)",
+            "Server Access",
+            "Network Printer/Scanner",
+            "VPN Connection",
+            "Firewall",
+            "Router/Switch Configuration",
+            "MPLS",
+            "ISP",
+            "Network Security (Intrusion Detection/Prevention)",
+            "Bandwidth Issues",
+            "New VPN Access",
+            "Firewall Rule Request",
+            "New Router/Switch Setup",
+            "Bandwidth Upgrade",
+            "ISP Request",
+            "Network Policy Inquiry",
+            "Coverage Inquiry",
+            "Others"
+        ],
+        software: [
+            "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
+            "Email (Setup, Creation, Error, Backup)",
+            "Active Directory (User Creation, Login, Password)",
+            "Zoom / Video Conferencing Tools",
+            "FoxPro (Accounting System)",
+            "GEMCOM",
+            "SURPAC",
+            "FTP (Access Creation, Change Password)",
+            "PDF (Conversion, Reduce Size, Editing)",
+            "Antivirus / Security Software",
+            "Operating System (Windows, macOS, Linux)",
+            "Cloud Services (OneDrive, Google Drive, Dropbox)",
+            "New Software Installation",
+            "License Renewal",
+            "User Account Creation",
+            "Database Access Request",
+            "Cloud Storage Request",
+            "Software Policy Inquiry", "Version Inquiry",
+            "Others",
+        ],
+        system: [
+            "Oracle (PROD/BIPUB)",
+            "System Updates & Patches",
+            "Backup & Restore Tools",
+            "CCTV Incident Report System",
+            "Safety Accident Report System",
+            "Compliance Registry System",
+            "Information Management System (Comrel)",
+            "Lepanto IT Help Desk System",
+            "New Account",
+            "Delete Account",
+            "Edit Account",
+            "Request Access",
+            "System Policy Inquiry", "Assistance",
+            "Others"
+        ]
+
+
+    };
 
     const customSelectStyles = {
         container: (provided) => ({
@@ -203,12 +192,6 @@ export default function ViewHDTicket() {
                 color: '#ff0000',
             },
         }),
-    };
-
-    const openModal = (title, content) => {
-        setModalTitle(title);
-        setModalContent(content);
-        setShowModal(true);
     };
 
     useEffect(() => {
@@ -273,16 +256,6 @@ export default function ViewHDTicket() {
                     setShowAcceptButton(true)
                 }
             }
-
-            if (formData.ticket_status === 'escalate') {
-                setIsEditable(false);
-                setAssignedToState(true)
-                if (isEditable === true) {
-                    setShowAcceptButton(false)
-                } else {
-                    setShowAcceptButton(true)
-                }
-            }
         }
 
 
@@ -296,7 +269,6 @@ export default function ViewHDTicket() {
             if (formData.ticket_status === 'in-progress' && formData.assigned_to === empInfo.user_name) {
                 setHDNotesState(true)
             }
-
 
             try {
                 //Get all notes
@@ -406,7 +378,6 @@ export default function ViewHDTicket() {
                     params: { id: ticket_id }
                 });
                 const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
-                console.log(ticket.updating_by)
                 setFormData(ticket);
                 setOriginalData(ticket);
 
@@ -461,6 +432,43 @@ export default function ViewHDTicket() {
                 console.error("Error fetching users:", err);
             });
     }, [])
+
+    //asset options
+    useEffect(() => {
+        const empInfo = JSON.parse(localStorage.getItem('user'));
+        const fname = empInfo.user_name;
+        const lname = empInfo.user_name;
+
+        const first = fname.charAt(0).toUpperCase() + fname.slice(1).toLowerCase();
+        const last = lname.charAt(0).toUpperCase() + lname.slice(1).toLowerCase();
+        const fullname = first + ' ' + last;
+
+
+        const fetch = async () => {
+            const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
+            const data = res.data || [];
+            const active = data.filter(a => a.is_active === "1");
+
+            //all of the asset under assign_to 
+            const own = active.filter(e => e.assign_to === formData.ticket_for);
+            console.log('ASSIGNED ASSETS: ', own)
+            const allAssets = active.map(e => e.tag_id);
+
+            setAssets(active)
+            console.log(active)
+
+        }
+        fetch();
+    }, [formData])
+    // const options = assets.map(asset => ({ value: asset, label: asset }));
+    const options = assets.map(asset => ({
+        value: asset.tag_id,
+        label: asset.tag_id,
+        category: asset.pms_category
+    }));
+
+
+
 
     // handle text area change
     const handleNoteChange = (e) => {
@@ -578,8 +586,9 @@ export default function ViewHDTicket() {
         const { name, value } = e.target;
         setFormData(prev => {
             const updatedForm = { ...prev, [name]: value };
-            const fieldsToCheck = ['ticket_subject', 'notes', 'assigned_to', 'assigned_collaborators', 'ticket_for', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory'];
+            const fieldsToCheck = ['ticket_subject', 'tag_id', 'notes', 'assigned_to', 'assigned_collaborators', 'ticket_for', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory'];
             const changed = fieldsToCheck.some(field => updatedForm[field] !== originalData[field]);
+
             setHasChanges(changed);
 
             return updatedForm;
@@ -649,6 +658,7 @@ export default function ViewHDTicket() {
 
         const interval = setInterval(() => {
             if (hasChanges) {
+
                 axios.post(`${config.baseApi}/ticket/lock`, {
                     ticket_id,
                     updating_by: empInfo.user_name,
@@ -694,7 +704,7 @@ export default function ViewHDTicket() {
         try {
             setLoading(true);
             await axios.post(`${config.baseApi}/ticket/note-post`, {
-                notes: resolution,
+                notes: 'Resolution: ' + resolution,
                 current_user: empInfo.user_name,
                 ticket_id: ticket_id
             });
@@ -725,22 +735,22 @@ export default function ViewHDTicket() {
             if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
                 if (formData.ticket_status === 'in-progress') {
 
-                    if (!formData.ticket_type || !formData.ticket_status || !formData.ticket_category || !formData.ticket_SubCategory || !formData.ticket_urgencyLevel) {
+                    if (!formData.ticket_status || !formData.ticket_category || !formData.ticket_SubCategory || !formData.ticket_urgencyLevel) {
                         setLoading(false)
                         setError('Unable to save empty fields! Please try again!');
                         return;
                     }
                 }
 
-                if (formData.ticket_status === 'escalate' && (formData.assigned_to === originalData.assigned_to)) {
-                    setLoading(false)
-                    setError('Change the assigned to if you will escalate the ticket! ')
-                    return
-                }
+                // if (formData.ticket_status === 'escalate' && (formData.assigned_to === originalData.assigned_to)) {
+                //     setLoading(false)
+                //     setError('Change the assigned to if you will escalate the ticket! ')
+                //     return
+                // }
 
                 //Check changes
                 const changedFields = [];
-                const fieldsToCheck = ['ticket_subject', 'notes', 'assigned_collaborators', 'ticket_for', 'ticket_type', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
+                const fieldsToCheck = ['ticket_subject', 'tag_id', 'notes', 'assigned_collaborators', 'ticket_for', 'ticket_status', 'ticket_urgencyLevel', 'ticket_category', 'ticket_SubCategory', 'Description', 'Attachments'];
                 fieldsToCheck.forEach(field => {
                     const original = originalData[field];
                     const current = formData[field];
@@ -754,7 +764,8 @@ export default function ViewHDTicket() {
                 const dataToSend = new FormData();
                 dataToSend.append('ticket_id', formData.ticket_id);
                 dataToSend.append('ticket_subject', formData.ticket_subject);
-                dataToSend.append('ticket_type', formData.ticket_type);
+                dataToSend.append('tag_id', formData.tag_id);
+                // dataToSend.append('ticket_type', formData.ticket_type);
                 dataToSend.append('ticket_status', formData.ticket_status);
                 dataToSend.append('ticket_category', formData.ticket_category);
                 dataToSend.append('ticket_SubCategory', formData.ticket_SubCategory);
@@ -805,34 +816,50 @@ export default function ViewHDTicket() {
                     if (!formData.assigned_to || formData.assigned_to.trim() === '') {
                         // Case 1: Open and no assigned user
                         console.log('OPEN AND EMPTY');
-                        await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
+                        await axios.post(`${config.baseApi}/ticket/update-ticket`, {
                             assigned_to: '',
                             ticket_status: 'open',
                             updated_by: empInfo.user_id,
                             ticket_id: formData.ticket_id
                         });
-                    } else {
+
+                        window.location.reload()
+                    } else if (originalData.assigned_to === formData.assigned_to) {
+                        await axios.post(`${config.baseApi}/ticket/update-ticket`, {
+                            assigned_to: '',
+                            ticket_status: 'open',
+                            updated_by: empInfo.user_id,
+                            ticket_id: formData.ticket_id,
+
+                        });
+                        window.location.reload()
+                    }
+                    else if (originalData.assigned_to !== formData.assigned_to) {
                         // Case 2: Open but has assigned user → treat as assigned
                         console.log('OPEN WITH ASSIGN (saving as assigned)', formData.assigned_to);
                         await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
                             assigned_to: hdUser.user_name,
                             ticket_status: 'assigned',
                             updated_by: empInfo.user_id,
-                            ticket_id: formData.ticket_id
-                        });
+                            ticket_id: formData.ticket_id,
+                            tag_id: formData.tag_id
+                        })
+                        window.location.reload()
                     }
+
                 }
 
                 // Case 3: If status changed to open from another status → reset assigned_to
-                if (originalData.ticket_status !== 'open' && formData.ticket_status === 'open') {
-                    console.log('CHANGED TO OPEN → clearing assigned_to');
-                    await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
-                        assigned_to: '',
-                        ticket_status: 'open',
-                        updated_by: empInfo.user_id,
-                        ticket_id: formData.ticket_id
-                    });
-                }
+                // if (originalData.ticket_status !== 'open' && formData.ticket_status === 'open') {
+                //     console.log('CHANGED TO OPEN → clearing assigned_to');
+                //     await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
+                //         assigned_to: '',
+                //         ticket_status: 'open',
+                //         updated_by: empInfo.user_id,
+                //         ticket_id: formData.ticket_id
+                //     });
+                //     window.location.reload()
+                // }
 
 
                 setSuccessful('Ticket updated successfully.');
@@ -932,7 +959,6 @@ export default function ViewHDTicket() {
         }
     }
 
-
     const Archive = async () => {
         const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
             params: { id: ticket_id }
@@ -977,13 +1003,12 @@ export default function ViewHDTicket() {
         }
     }
 
-
-
     const HandleView = () => {
         setModalTitle("Ticket Logs");
         setModalContent(<ViewTicketLogs ticket_id={ticket_id} />);
         setShowModal(true);
     };
+
 
 
     return (
@@ -1016,202 +1041,214 @@ export default function ViewHDTicket() {
                     </Alert>
                 </div>
             )}
+            <AnimatedContent
+                distance={100}
+                direction="vertical"
+                reverse={true}
+                duration={0.8}
+                ease="power3.out"
+                initialOpacity={0}
+                animateOpacity
+                scale={1.0}
+                threshold={0.1}
+                delay={0}
+            >
 
-            <Container className="bg-white p-4 rounded-3 shadow-sm">
-                <Row>
-                    <Col lg={8}>
-                        <Row className="mb-3">
-                            <div className="d-flex justify-content-between align-items-center">
-                                <Row className="align-items-center">
-                                    <Col xs="auto">
-                                        <h3 className="fw-bold text-dark mb-0">Ticket Details</h3>
-                                        <h7
-                                            style={{
-                                                fontStyle: "italic",
-                                                color: "#2c7e36ff",
-                                                cursor: "pointer",
-                                                textDecoration: "none",
-                                            }}
-                                            onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
-                                            onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
-                                            onClick={HandleView}
-                                        >
-                                            view ticket logs
-                                        </h7>
-                                    </Col>
-                                    {archiveTextState && (
+                <Container className="bg-white p-4 rounded-3 shadow-sm">
+                    <Row>
+                        <Col lg={8}>
+                            <Row className="mb-3">
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <Row className="align-items-center">
                                         <Col xs="auto">
-                                            <h4 className="fw-bold text-secondary mb-0">(archived)</h4>
+                                            <h3 className="fw-bold text-dark mb-0">Ticket Details</h3>
+                                            <h7
+                                                style={{
+                                                    fontStyle: "italic",
+                                                    color: "#2c7e36ff",
+                                                    cursor: "pointer",
+                                                    textDecoration: "none",
+                                                }}
+                                                onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
+                                                onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+                                                onClick={HandleView}
+                                            >
+                                                view ticket logs
+                                            </h7>
                                         </Col>
-                                    )}
-                                </Row>
+                                        {archiveTextState && (
+                                            <Col xs="auto">
+                                                <h4 className="fw-bold text-secondary mb-0">(archived)</h4>
+                                            </Col>
+                                        )}
+                                    </Row>
 
-                                <div className="d-flex gap-2">
-                                    {archBTN1 && (
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            style={{ width: '100px', minHeight: '40px' }}
-                                            onClick={() => setArchiveState(true)}
-                                            title="Archive Ticket"
-                                        >
-                                            <FeatherIcon icon="archive" />
-                                        </Button>
-                                    )}
-                                    {archBTN2 && (
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            style={{ width: '100px', minHeight: '40px' }}
-                                            onClick={() => setUnArchiveState(true)}
-                                            title="Unarchive Ticket"
-                                        >
-                                            <FeatherIcon icon="airplay" />
-                                        </Button>
-                                    )}
-                                    {notifyReview && (
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            style={{ width: '100px', minHeight: '40px' }}
-                                            onClick={handleNotifyReview}
-                                        >
-                                            <FeatherIcon icon="bell" />
-                                        </Button>
-                                    )}
-                                    {showAcceptButton && (
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            style={{ width: '200px', minHeight: '40px' }}
-                                            onClick={HandleAcceptButton}
-                                        >
-                                            Accept
-                                        </Button>
-                                    )}
-                                    {hasChanges && (
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            style={{ width: '200px', minHeight: '40px' }}
-                                            onClick={handleChecker}
-                                        >
-                                            Save Changes
-                                        </Button>
-                                    )}
+                                    <div className="d-flex gap-2">
+                                        {archBTN1 && (
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                style={{ width: '100px', minHeight: '40px' }}
+                                                onClick={() => setArchiveState(true)}
+                                                title="Archive Ticket"
+                                            >
+                                                <FeatherIcon icon="archive" />
+                                            </Button>
+                                        )}
+                                        {archBTN2 && (
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                style={{ width: '100px', minHeight: '40px' }}
+                                                onClick={() => setUnArchiveState(true)}
+                                                title="Unarchive Ticket"
+                                            >
+                                                <FeatherIcon icon="airplay" />
+                                            </Button>
+                                        )}
+                                        {notifyReview && (
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                style={{ width: '100px', minHeight: '40px' }}
+                                                onClick={handleNotifyReview}
+                                            >
+                                                <FeatherIcon icon="bell" />
+                                            </Button>
+                                        )}
+                                        {showAcceptButton && (
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                style={{ width: '200px', minHeight: '40px' }}
+                                                onClick={HandleAcceptButton}
+                                            >
+                                                Accept
+                                            </Button>
+                                        )}
+                                        {hasChanges && (
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                style={{ width: '200px', minHeight: '40px' }}
+                                                onClick={handleChecker}
+                                            >
+                                                Save Changes
+                                            </Button>
+                                        )}
 
+                                    </div>
                                 </div>
-                            </div>
-                        </Row>
+                            </Row>
 
-                        {/* DATES */}
-                        <h6 className="text-muted fw-semibold mb-2">Dates</h6>
-                        <Row>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Created at</Form.Label>
-                                <Form.Control
-                                    value={
-                                        formData.created_at
-                                            ? new Date(formData.created_at).toLocaleString()
-                                            : '-'
-                                    }
-                                    disabled
-                                />
-                            </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Updated at</Form.Label>
-                                <Form.Control
-                                    name="updated_at"
-                                    value={
-                                        formData.updated_at
-                                            ? new Date(formData.updated_at).toLocaleString()
-                                            : '-'
-                                    }
-                                    disabled
-                                />
-                            </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Responded at</Form.Label>
-                                <Form.Control
-                                    name="responded_at"
-                                    value={
-                                        formData.responded_at
-                                            ? new Date(formData.responded_at).toLocaleString()
-                                            : '-'
-                                    }
-                                    disabled
-                                />
-                            </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Resolved at</Form.Label>
-                                <Form.Control
-                                    name="resolved_at"
-                                    value={
-                                        formData.resolved_at
-                                            ? new Date(formData.resolved_at).toLocaleString()
-                                            : '-'
-                                    }
-                                    disabled
-                                />
-                            </Form.Group>
-                        </Row>
+                            {/* DATES */}
+                            <h6 className="text-muted fw-semibold mb-2">Dates</h6>
+                            <Row>
+                                <Form.Group as={Col} md={6} className="mb-2">
+                                    <Form.Label>Created at</Form.Label>
+                                    <Form.Control
+                                        value={
+                                            formData.created_at
+                                                ? new Date(formData.created_at).toLocaleString()
+                                                : '-'
+                                        }
+                                        disabled
+                                    />
+                                </Form.Group>
+                                <Form.Group as={Col} md={6} className="mb-2" hidden>
+                                    <Form.Label>Updated at</Form.Label>
+                                    <Form.Control
+                                        name="updated_at"
+                                        value={
+                                            formData.updated_at
+                                                ? new Date(formData.updated_at).toLocaleString()
+                                                : '-'
+                                        }
+                                        disabled
+                                    />
+                                </Form.Group>
+                                <Form.Group as={Col} md={6} className="mb-2" hidden>
+                                    <Form.Label>Responded at</Form.Label>
+                                    <Form.Control
+                                        name="responded_at"
+                                        value={
+                                            formData.responded_at
+                                                ? new Date(formData.responded_at).toLocaleString()
+                                                : '-'
+                                        }
+                                        disabled
+                                    />
+                                </Form.Group>
+                                <Form.Group as={Col} md={6} className="mb-2" hidden>
+                                    <Form.Label>Resolved at</Form.Label>
+                                    <Form.Control
+                                        name="resolved_at"
+                                        value={
+                                            formData.resolved_at
+                                                ? new Date(formData.resolved_at).toLocaleString()
+                                                : '-'
+                                        }
+                                        disabled
+                                    />
+                                </Form.Group>
+                            </Row>
 
-                        {/* USER DETAILS */}
-                        <h6 className="text-muted fw-semibold mt-4 mb-2">Details</h6>
-                        <Row>
-                            <Col md={6} className="mb-2">
-                                <Form.Label>Created By</Form.Label>
-                                <InputGroup>
-                                    <InputGroup.Text>
-                                        <FeatherIcon icon="user" />
-                                    </InputGroup.Text>
-                                    <Form.Control name="created_by" value={formData.created_by ?? '-'} disabled />
-                                </InputGroup>
-                            </Col>
-                            <Col md={6} className="mb-2" style={{ position: 'relative' }}>
-                                <Form.Label>Employee</Form.Label>
-                                <InputGroup style={{ height: '43px' }}>
-                                    {/* Icon trigger */}
-                                    <div style={{ position: 'relative' }}>
-                                        <InputGroup.Text
-                                            style={{ cursor: 'pointer', height: '43px' }}
-                                            onClick={() => setShowUserCard(prev => !prev)}
-                                        >
+                            {/* USER DETAILS */}
+                            <h6 className="text-muted fw-semibold mt-4 mb-2">User Details</h6>
+                            <Row>
+                                <Col md={6} className="mb-2">
+                                    <Form.Label>Created By</Form.Label>
+                                    <InputGroup>
+                                        <InputGroup.Text>
                                             <FeatherIcon icon="user" />
                                         </InputGroup.Text>
+                                        <Form.Control name="created_by" value={formData.created_by ?? '-'} disabled />
+                                    </InputGroup>
+                                </Col>
+                                <Col md={6} className="mb-2" style={{ position: 'relative' }}>
+                                    <Form.Label>Employee</Form.Label>
+                                    <InputGroup style={{ height: '43px' }}>
+                                        {/* Icon trigger */}
+                                        <div style={{ position: 'relative' }}>
+                                            <InputGroup.Text
+                                                style={{ cursor: 'pointer', height: '43px' }}
+                                                onClick={() => setShowUserCard(prev => !prev)}
+                                            >
+                                                <FeatherIcon icon="user" />
+                                            </InputGroup.Text>
 
-                                        {/* Floating Card */}
-                                        {showUserCard && formData.ticket_for && (() => {
-                                            const selectedUser = allUser.find(u => u.user_name === formData.ticket_for);
-                                            if (!selectedUser) return null;
+                                            {/* Floating Card */}
+                                            {showUserCard && formData.ticket_for && (() => {
+                                                const selectedUser = allUser.find(u => u.user_name === formData.ticket_for);
+                                                if (!selectedUser) return null;
 
-                                            return (
-                                                <div
-                                                    style={{
-                                                        position: 'absolute',
-                                                        top: '50px',
-                                                        left: 0,
-                                                        zIndex: 1000,
-                                                        minWidth: '220px',
-                                                        padding: '12px',
-                                                        border: '1px solid #ccc',
-                                                        borderRadius: '8px',
-                                                        backgroundColor: '#fff',
-                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                                        whiteSpace: 'nowrap'
-                                                    }}
-                                                >
-                                                    <div style={{ display: 'flex', marginBottom: '6px' }}><strong style={{ minWidth: '70px' }}>Position:</strong> {selectedUser.emp_position}</div>
-                                                    <div style={{ display: 'flex', marginBottom: '6px' }}><strong style={{ minWidth: '70px' }}>Email:</strong> {selectedUser.emp_email}</div>
-                                                    <div style={{ display: 'flex', marginBottom: '6px' }}><strong style={{ minWidth: '70px' }}>Phone:</strong> {selectedUser.emp_phone}</div>
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
+                                                return (
+                                                    <div
+                                                        style={{
+                                                            position: 'absolute',
+                                                            top: '50px',
+                                                            left: 0,
+                                                            zIndex: 1000,
+                                                            minWidth: '220px',
+                                                            padding: '12px',
+                                                            border: '1px solid #ccc',
+                                                            borderRadius: '8px',
+                                                            backgroundColor: '#fff',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                                            whiteSpace: 'nowrap'
+                                                        }}
+                                                    >
+                                                        <div style={{ display: 'flex', marginBottom: '6px' }}><strong style={{ minWidth: '70px' }}>Position:</strong> {selectedUser.emp_position}</div>
+                                                        <div style={{ display: 'flex', marginBottom: '6px' }}><strong style={{ minWidth: '70px' }}>Email:</strong> {selectedUser.emp_email}</div>
+                                                        <div style={{ display: 'flex', marginBottom: '6px' }}><strong style={{ minWidth: '70px' }}>Phone:</strong> {selectedUser.emp_phone}</div>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
 
-                                    {/* Employee Select */}
-                                    <div style={{ flex: 1 }}>
-                                        {/* <Select
+                                        {/* Employee Select */}
+                                        <div style={{ flex: 1 }}>
+                                            {/* <Select
                                             name="ticket_for"
                                             value={
                                                 allUser.find(u => u.user_name === formData.ticket_for)
@@ -1241,114 +1278,114 @@ export default function ViewHDTicket() {
                                             classNamePrefix="react-select"
                                         /> */}
 
-                                        <Select
-                                            name="ticket_for"
-                                            value={
-                                                allUser.find(u => u.user_name === formData.ticket_for)
-                                                    ? {
-                                                        value: formData.ticket_for,
-                                                        label: `${allUser.find(u => u.user_name === formData.ticket_for).emp_FirstName} ${allUser.find(u => u.user_name === formData.ticket_for).emp_LastName}`
-                                                    }
-                                                    : formData.ticket_for
-                                                        ? { value: formData.ticket_for, label: formData.ticket_for } // fallback if not in options
-                                                        : null
-                                            }
-                                            onChange={option => {
-                                                handleChange({
-                                                    target: {
-                                                        name: 'ticket_for',
-                                                        value: option ? option.value : ''
-                                                    }
-                                                });
-                                                setShowUserCard(false);
-                                            }}
-                                            options={allUser.map(user => ({
-                                                value: user.user_name,
-                                                label: `${user.emp_FirstName} ${user.emp_LastName}`
-                                            }))}
-                                            isDisabled={!isEditable}
-                                            isClearable
-                                            placeholder="Select Employee"
-                                            styles={customSelectStyles}
-                                            classNamePrefix="react-select"
-                                        />
+                                            <Select
+                                                name="ticket_for"
+                                                value={
+                                                    allUser.find(u => u.user_name === formData.ticket_for)
+                                                        ? {
+                                                            value: formData.ticket_for,
+                                                            label: `${allUser.find(u => u.user_name === formData.ticket_for).emp_FirstName} ${allUser.find(u => u.user_name === formData.ticket_for).emp_LastName}`
+                                                        }
+                                                        : formData.ticket_for
+                                                            ? { value: formData.ticket_for, label: formData.ticket_for } // fallback if not in options
+                                                            : null
+                                                }
+                                                onChange={option => {
+                                                    handleChange({
+                                                        target: {
+                                                            name: 'ticket_for',
+                                                            value: option ? option.value : ''
+                                                        }
+                                                    });
+                                                    setShowUserCard(false);
+                                                }}
+                                                options={allUser.map(user => ({
+                                                    value: user.user_name,
+                                                    label: `${user.emp_FirstName} ${user.emp_LastName}`
+                                                }))}
+                                                isDisabled={!isEditable}
+                                                isClearable
+                                                placeholder="Select Employee"
+                                                styles={customSelectStyles}
+                                                classNamePrefix="react-select"
+                                            />
 
-                                    </div>
-                                </InputGroup>
-                            </Col>
+                                        </div>
+                                    </InputGroup>
+                                </Col>
 
 
-                            <Col md={6} className="mb-2">
-                                <Form.Label>Department</Form.Label>
-                                <InputGroup>
-                                    <InputGroup.Text>
-                                        <FeatherIcon icon="briefcase" />
-                                    </InputGroup.Text>
-                                    <Form.Control value={ticketForData.emp_department ?? '-'} disabled />
-                                </InputGroup>
-                            </Col>
-                            <Col md={6} className="mb-2">
-                                <Form.Label>Location</Form.Label>
-                                <InputGroup>
-                                    <InputGroup.Text>
-                                        <FeatherIcon icon="globe" />
-                                    </InputGroup.Text>
-                                    <Form.Control value={location ?? ''} disabled />
-                                </InputGroup>
-                            </Col>
-                            {/* XXX */}
-                            <Col md={6} className="mb-2" style={{ position: 'relative' }}>
-                                <Form.Label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>Assigned To</span>
-                                    <span onClick={AddCollab} style={{ fontSize: '0.85rem', color: '#002E05', cursor: 'pointer' }}>
-                                        Add collaborators
-                                    </span>
-                                </Form.Label>
-
-                                <InputGroup style={{ height: '43px' }} >
-                                    <div style={{ position: 'relative' }}>
+                                <Col md={6} className="mb-2">
+                                    <Form.Label>Department</Form.Label>
+                                    <InputGroup>
                                         <InputGroup.Text>
-                                            <FeatherIcon icon="user" />
+                                            <FeatherIcon icon="briefcase" />
                                         </InputGroup.Text>
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <Select
+                                        <Form.Control value={ticketForData.emp_department ?? '-'} disabled />
+                                    </InputGroup>
+                                </Col>
+                                <Col md={6} className="mb-2">
+                                    <Form.Label>Location</Form.Label>
+                                    <InputGroup>
+                                        <InputGroup.Text>
+                                            <FeatherIcon icon="globe" />
+                                        </InputGroup.Text>
+                                        <Form.Control value={location ?? ''} disabled />
+                                    </InputGroup>
+                                </Col>
+                                {/* XXX */}
+                                <Col md={6} className="mb-2" style={{ position: 'relative' }}>
+                                    <Form.Label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>Assigned To</span>
+                                        <span onClick={AddCollab} style={{ fontSize: '0.85rem', color: '#002E05', cursor: 'pointer' }}>
+                                            Add collaborators
+                                        </span>
+                                    </Form.Label>
 
-                                            name="assigned_to"
-                                            placeholder="Select Employee"
-                                            // value={`${hdUser.emp_FirstName} ${hdUser.emp_LastName}`}
-                                            value={
-                                                allHDUser.find(u => u.user_name === formData.assigned_to)
-                                                    ? {
-                                                        value: formData.assigned_to,
-                                                        label: `${allHDUser.find(u => u.user_name === formData.assigned_to).emp_FirstName} ${allHDUser.find(u => u.user_name === formData.assigned_to).emp_LastName}`
-                                                    }
-                                                    : null
-                                            }
+                                    <InputGroup style={{ height: '43px' }} >
+                                        <div style={{ position: 'relative' }}>
+                                            <InputGroup.Text>
+                                                <FeatherIcon icon="user" />
+                                            </InputGroup.Text>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <Select
 
-                                            onChange={option => {
-                                                handleChange({
-                                                    target: {
-                                                        name: 'assigned_to',
-                                                        value: option ? option.value : ''
-                                                    }
-                                                })
-                                            }
-                                            }
-                                            options={allHDUser.map(u => ({
-                                                label: `${u.emp_FirstName} ${u.emp_LastName}`,
-                                                value: u.user_name,
-                                            }))}
-                                            isDisabled={!assignToState}
-                                            isClearable
-                                            styles={customSelectStyles}
-                                            classNamePrefix="react-select"
-                                        />
-                                    </div>
-                                </InputGroup>
+                                                name="assigned_to"
+                                                placeholder="Select Employee"
+                                                // value={`${hdUser.emp_FirstName} ${hdUser.emp_LastName}`}
+                                                value={
+                                                    allHDUser.find(u => u.user_name === formData.assigned_to)
+                                                        ? {
+                                                            value: formData.assigned_to,
+                                                            label: `${allHDUser.find(u => u.user_name === formData.assigned_to).emp_FirstName} ${allHDUser.find(u => u.user_name === formData.assigned_to).emp_LastName}`
+                                                        }
+                                                        : null
+                                                }
+
+                                                onChange={option => {
+                                                    handleChange({
+                                                        target: {
+                                                            name: 'assigned_to',
+                                                            value: option ? option.value : ''
+                                                        }
+                                                    })
+                                                }
+                                                }
+                                                options={allHDUser.map(u => ({
+                                                    label: `${u.emp_FirstName} ${u.emp_LastName}`,
+                                                    value: u.user_name,
+                                                }))}
+                                                isDisabled={!assignToState}
+                                                isClearable
+                                                styles={customSelectStyles}
+                                                classNamePrefix="react-select"
+                                            />
+                                        </div>
+                                    </InputGroup>
 
 
-                                {/* {hdUser?.emp_FirstName && hdUser?.emp_LastName ? (
+                                    {/* {hdUser?.emp_FirstName && hdUser?.emp_LastName ? (
                                     <InputGroup >
                                         <InputGroup.Text>
                                             <FeatherIcon icon="user" />
@@ -1401,330 +1438,297 @@ export default function ViewHDTicket() {
                                     </InputGroup>
                                 )} */}
 
-                            </Col>
-                            {/* Collaborators */}
-                            {collaboratorState && (
-                                <Col md={6} className="mb-2">
-                                    <Form.Label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span>Collaborators</span>
-                                        {
-                                            <span onClick={() => setCollaboratorState(false)} style={{ fontSize: '0.85rem', color: '#002E05', cursor: 'pointer' }}>
-                                                <FeatherIcon icon="x" />
-                                            </span>
-                                        }
-                                    </Form.Label>
-                                    <InputGroup>
-                                        <InputGroup.Text>
-                                            <FeatherIcon icon="users" />
-                                        </InputGroup.Text>
-                                        {collaboratorState ? (
-                                            <div style={{ flex: 1 }}>
-                                                <Select
+                                </Col>
+                                {/* Collaborators */}
+                                {collaboratorState && (
+                                    <Col md={6} className="mb-2">
+                                        <Form.Label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span>Collaborators</span>
+                                            {
+                                                <span onClick={() => setCollaboratorState(false)} style={{ fontSize: '0.85rem', color: '#002E05', cursor: 'pointer' }}>
+                                                    <FeatherIcon icon="x" />
+                                                </span>
+                                            }
+                                        </Form.Label>
+                                        <InputGroup>
+                                            <InputGroup.Text>
+                                                <FeatherIcon icon="users" />
+                                            </InputGroup.Text>
+                                            {collaboratorState ? (
+                                                <div style={{ flex: 1 }}>
+                                                    <Select
+                                                        name="assigned_collaborators"
+                                                        value={
+                                                            (
+                                                                Array.isArray(formData.assigned_collaborators)
+                                                                    ? formData.assigned_collaborators
+                                                                    : typeof formData.assigned_collaborators === 'string'
+                                                                        ? formData.assigned_collaborators.split(',')
+                                                                        : []
+                                                            )
+                                                                .filter(user_name => user_name.trim() !== formData.assigned_to)
+                                                                .map((username) => {
+                                                                    const user = allHDUser.find((u) => u.user_name === username.trim());
+                                                                    return user
+                                                                        ? { value: user.user_name, label: `${user.emp_FirstName} ${user.emp_LastName}` }
+                                                                        : null;
+                                                                })
+                                                                .filter(Boolean)
+                                                        }
+                                                        onChange={selectedOptions =>
+                                                            handleChange({
+                                                                target: {
+                                                                    name: 'assigned_collaborators',
+                                                                    value: selectedOptions ? selectedOptions.map(option => option.value) : []
+                                                                }
+                                                            })
+                                                        }
+                                                        options={allHDUser
+                                                            .filter(user => user.user_name !== formData.assigned_to)
+                                                            .map(user => ({
+                                                                value: user.user_name,
+                                                                label: user ? `${user.emp_FirstName} ${user.emp_LastName}` : ''
+                                                            }))}
+                                                        isMulti
+                                                        isDisabled={!isEditable}
+                                                        isClearable
+                                                        placeholder="Select Collaborators"
+                                                        styles={customSelectStyles}
+                                                        classNamePrefix="react-select"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <Form.Control
                                                     name="assigned_collaborators"
                                                     value={
                                                         (
                                                             Array.isArray(formData.assigned_collaborators)
                                                                 ? formData.assigned_collaborators
-                                                                : typeof formData.assigned_collaborators === 'string'
+                                                                : typeof formData.assigned_collaborators === 'string' && formData.assigned_collaborators.trim() !== ''
                                                                     ? formData.assigned_collaborators.split(',')
                                                                     : []
                                                         )
-                                                            .filter(user_name => user_name.trim() !== formData.assigned_to)
                                                             .map((username) => {
                                                                 const user = allHDUser.find((u) => u.user_name === username.trim());
-                                                                return user
-                                                                    ? { value: user.user_name, label: `${user.emp_FirstName} ${user.emp_LastName}` }
-                                                                    : null;
+                                                                return user ? `${user.emp_FirstName} ${user.emp_LastName}` : username;
                                                             })
-                                                            .filter(Boolean)
+                                                            .join(', ')
+
                                                     }
-                                                    onChange={selectedOptions =>
-                                                        handleChange({
-                                                            target: {
-                                                                name: 'assigned_collaborators',
-                                                                value: selectedOptions ? selectedOptions.map(option => option.value) : []
-                                                            }
-                                                        })
-                                                    }
-                                                    options={allHDUser
-                                                        .filter(user => user.user_name !== formData.assigned_to)
-                                                        .map(user => ({
-                                                            value: user.user_name,
-                                                            label: user ? `${user.emp_FirstName} ${user.emp_LastName}` : ''
-                                                        }))}
-                                                    isMulti
-                                                    isDisabled={!isEditable}
-                                                    isClearable
-                                                    placeholder="Select Collaborators"
-                                                    styles={customSelectStyles}
-                                                    classNamePrefix="react-select"
+                                                    disabled
+                                                    placeholder='NONE'
                                                 />
-                                            </div>
-                                        ) : (
-                                            <Form.Control
-                                                name="assigned_collaborators"
-                                                value={
-                                                    (
-                                                        Array.isArray(formData.assigned_collaborators)
-                                                            ? formData.assigned_collaborators
-                                                            : typeof formData.assigned_collaborators === 'string' && formData.assigned_collaborators.trim() !== ''
-                                                                ? formData.assigned_collaborators.split(',')
-                                                                : []
-                                                    )
-                                                        .map((username) => {
-                                                            const user = allHDUser.find((u) => u.user_name === username.trim());
-                                                            return user ? `${user.emp_FirstName} ${user.emp_LastName}` : username;
-                                                        })
-                                                        .join(', ')
-
-                                                }
-                                                disabled
-                                                placeholder='NONE'
-                                            />
-                                        )}
-                                    </InputGroup>
-                                </Col>
-                            )}
-
-                        </Row>
-
-                        {/* TICKET INFO */}
-                        <h6 className="text-muted fw-semibold mt-4 mb-2">Request Info</h6>
-                        <Row>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Ticket ID</Form.Label>
-                                <Form.Control
-                                    name="ticket_id"
-                                    value={formData.ticket_id ?? ''}
-                                    disabled
-                                />
-                            </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Ticket Subject</Form.Label>
-                                <Form.Control
-                                    name="ticket_subject"
-                                    value={formData.ticket_subject ?? ''}
-                                    onChange={handleChange}
-                                    disabled={!isEditable}
-                                />
-                            </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Ticket Type</Form.Label>
-                                <Form.Select
-                                    name="ticket_type"
-                                    value={formData.ticket_type ?? ''}
-                                    onChange={handleChange}
-                                    required
-                                    disabled={!isEditable}
-                                >
-                                    <option value='' hidden>-</option>
-                                    <option value="incident">Incident</option>
-                                    <option value="request">Request</option>
-                                    <option value="inquiry">Inquiry</option>
-                                </Form.Select>
-                            </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Status</Form.Label>
-                                <Form.Select
-                                    name="ticket_status"
-                                    value={formData.ticket_status ?? ''}
-                                    onChange={handleChange}
-                                    required
-                                    disabled={!isEditable}
-                                >
-                                    <option value="" hidden>-</option>
-                                    <option value="open" >Open</option>
-                                    <option value="assigned" hidden>Assigned</option>
-                                    <option value="in-progress">In Progress</option>
-                                    <option value="escalate">Escalate</option>
-                                    <option value="resolved">Resolve</option>
-                                    <option value="closed" hidden>Close</option>
-                                    <option value="re-opened" hidden>Re Open</option>
-                                </Form.Select>
-                            </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Urgency</Form.Label>
-                                <Form.Select
-                                    name="ticket_urgencyLevel"
-                                    value={formData.ticket_urgencyLevel ?? ''}
-                                    onChange={handleChange}
-                                    required
-                                    disabled={!isEditable}
-                                >
-                                    <option value="" hidden>-</option>
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                    <option value="critical">Critical</option>
-                                </Form.Select>
-                            </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Category</Form.Label>
-                                <Form.Select
-                                    name="ticket_category"
-                                    value={formData.ticket_category ?? ''}
-                                    onChange={handleChange}
-                                    required
-                                    disabled={!isEditable}
-                                >
-                                    <option value="" hidden>-</option>
-                                    <option value="hardware">Hardware</option>
-                                    <option value="network">Network</option>
-                                    <option value="software">Software</option>
-                                    <option value="system">System</option>
-                                </Form.Select>
-                            </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-2">
-                                <Form.Label>Sub Category</Form.Label>
-                                <Form.Select
-                                    name="ticket_SubCategory"
-                                    value={formData.ticket_SubCategory ?? ''}
-                                    onChange={handleChange}
-                                    disabled={!isEditable}
-                                    required
-                                >
-                                    <option value="">Select</option>
-                                    {subCategoryOptions[formData.ticket_type]?.[formData.ticket_category]?.map(
-                                        (subcat, idx) => (
-                                            <option key={idx} value={subcat}>
-                                                {subcat}
-                                            </option>
-                                        )
-                                    )}
-                                </Form.Select>
-                            </Form.Group>
-                            <Form.Group as={Col} md={6} className="mb-3">
-                                <Form.Label>Asset Tag</Form.Label>
-                                <Form.Control
-                                    name="asset_number"
-                                    value={formData.asset_number ?? ''}
-                                    disabled
-                                />
-                            </Form.Group>
-
-                            <Form.Group as={Col} md={12} className="mb-2">
-                                <Form.Label>Attachments</Form.Label>
-                                {renderAttachment()}
-                            </Form.Group>
-                        </Row>
-
-                        <h6 className="text-muted fw-semibold mt-4 mb-2">Description</h6>
-                        <Form.Group className="mb-3">
-                            <Form.Control
-                                as="textarea"
-                                rows={7}
-                                name="Description"
-                                value={formData.Description ?? ''}
-                                disabled
-                            />
-                        </Form.Group>
-                    </Col>
-
-                    {/* HELP DESK NOTES */}
-                    <Col lg={4}>
-                        <h6 className="text-muted fw-semibold mb-2">Helpdesk Notes</h6>
-                        <Card className="shadow-sm border-0 h-900">
-                            <Card.Body>
-                                <Form.Group className="mb-3">
-                                    <div
-                                        style={{
-                                            maxHeight: '600px',
-                                            overflowY: 'auto',
-                                            paddingRight: '5px',
-                                        }}
-                                    >
-                                        {allnotes && allnotes.length > 0 ? (
-                                            [...allnotes]
-                                                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                                                .map((note, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="mb-3 p-3 rounded-3 shadow-sm bg-body-tertiary border border-light-subtle"
-                                                    >
-                                                        <div
-                                                            className="text-dark"
-                                                            style={{
-                                                                fontSize: '0.95rem',
-                                                                whiteSpace: 'pre-wrap',
-                                                            }}
-                                                        >
-                                                            {note.note}
-                                                        </div>
-                                                        <div className="d-flex justify-content-between align-items-center mt-2">
-                                                            <small className="text-muted fst-italic">
-                                                                {notesofhduser[note.created_by] || note.created_by || 'Unknown'}
-                                                            </small>
-                                                            <small className="text-muted">
-                                                                {note.created_at
-                                                                    ? new Date(
-                                                                        note.created_at
-                                                                    ).toLocaleString()
-                                                                    : ''}
-                                                            </small>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                        ) : (
-                                            <div className="text-muted fst-italic">
-                                                No notes available.
-                                            </div>
-                                        )}
-                                    </div>
-                                </Form.Group>
-
-                                {hdnotesState && (
-                                    <>
-                                        <Form.Group>
-                                            <Form.Label className="fw-semibold text-muted">
-                                                Add a Note
-                                            </Form.Label>
-                                            {noteAlert && (
-                                                <Form.Label className="fw-semibold  ms-2 text-danger">
-                                                    Unable to save empty note
-                                                </Form.Label>
                                             )}
-                                            <Form.Control
-                                                as="textarea"
-                                                rows={5}
-                                                name="notes"
-                                                placeholder="Type your note here..."
-                                                value={notes || ''}
-                                                onChange={handleNoteChange}
-                                                disabled={!hdnotesState}
-                                                style={{ resize: 'none', fontSize: '0.95rem' }}
-                                            />
-                                        </Form.Group>
-
-
-                                    </>
+                                        </InputGroup>
+                                    </Col>
                                 )}
 
-                                {/* USER FEEDBACK */}
-                                <h6 className="text-muted fw-semibold mb-2 mt-2">User Feedback</h6>
+                            </Row>
 
-                                <Form.Group className="mb-2">
-                                    <div
-                                        style={{
-                                            maxHeight: '300px',
-                                            overflowY: 'auto',
-                                            paddingRight: '5px',
-                                        }}
+                            {/* TICKET INFO */}
+                            <h6 className="text-muted fw-semibold mt-4 mb-2">Request Info</h6>
+                            <Row>
+                                <Form.Group as={Col} md={6} className="mb-2">
+                                    <Form.Label>Ticket ID</Form.Label>
+                                    <Form.Control
+                                        name="ticket_id"
+                                        value={formData.ticket_id ?? ''}
+                                        disabled
+                                    />
+                                </Form.Group>
+                                <Form.Group as={Col} md={6} className="mb-2">
+                                    <Form.Label>Problem/Issue</Form.Label>
+                                    <Form.Control
+                                        name="ticket_subject"
+                                        value={formData.ticket_subject ?? ''}
+                                        onChange={handleChange}
+                                        disabled={!isEditable}
+                                    />
+                                </Form.Group>
+                                <Form.Group as={Col} md={6} className="mb-2" hidden>
+                                    <Form.Label>Ticket Type</Form.Label>
+                                    <Form.Select
+                                        name="ticket_type"
+                                        value={formData.ticket_type ?? ''}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={!isEditable}
                                     >
-                                        {allfeedback && allfeedback.length > 0 ? (
-                                            [...allfeedback]
-                                                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                                                .map((feedback, index) => {
-                                                    const scoreMap = {
-                                                        1: { label: 'Very Dissatisfied', color: '#e74c3c' },
-                                                        2: { label: 'Dissatisfied', color: '#e67e22' },
-                                                        3: { label: 'Neutral', color: '#f1c40f' },
-                                                        4: { label: 'Satisfied', color: '#2ecc71' },
-                                                        5: { label: 'Very Satisfied', color: '#27ae60' },
-                                                    };
+                                        <option value='' hidden>-</option>
+                                        <option value="incident">Incident</option>
+                                        <option value="request">Request</option>
+                                        <option value="inquiry">Inquiry</option>
+                                    </Form.Select>
+                                </Form.Group>
+                                <Form.Group as={Col} md={6} className="mb-2">
+                                    <Form.Label>Status</Form.Label>
+                                    <Form.Select
+                                        name="ticket_status"
+                                        value={formData.ticket_status ?? ''}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={!isEditable}
+                                    >
+                                        <option value="" hidden>-</option>
+                                        <option value="open" >Open</option>
+                                        <option value="assigned" hidden>Assigned</option>
+                                        <option value="in-progress">In Progress</option>
+                                        {/* <option value="escalate">Escalate</option> */}
+                                        <option value="resolved">Resolve</option>
+                                        <option value="closed" hidden>Close</option>
+                                        <option value="re-opened" hidden>Re Open</option>
+                                    </Form.Select>
+                                </Form.Group>
+                                <Form.Group as={Col} md={6} className="mb-2">
+                                    <Form.Label>Urgency</Form.Label>
+                                    <Form.Select
+                                        name="ticket_urgencyLevel"
+                                        value={formData.ticket_urgencyLevel ?? ''}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={!isEditable}
+                                    >
+                                        <option value="" hidden>-</option>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="critical">Critical</option>
+                                    </Form.Select>
+                                </Form.Group>
+                                <Form.Group as={Col} md={6} className="mb-2">
+                                    <Form.Label>Category</Form.Label>
+                                    <Form.Select
+                                        name="ticket_category"
+                                        value={formData.ticket_category ?? ''}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={!isEditable}
+                                    >
+                                        <option value="" hidden>-</option>
+                                        <option value="hardware">Hardware</option>
+                                        <option value="network">Network</option>
+                                        <option value="software">Software</option>
+                                        <option value="system">System</option>
+                                    </Form.Select>
+                                </Form.Group>
+                                <Form.Group as={Col} md={6} className="mb-2">
+                                    <Form.Label>Sub Category</Form.Label>
+                                    <Form.Select
+                                        name="ticket_SubCategory"
+                                        value={formData.ticket_SubCategory ?? ''}
+                                        onChange={handleChange}
+                                        disabled={!isEditable}
+                                        required
+                                    >
+                                        <option value="">Select</option>
+                                        {subCategoryOptions[formData.ticket_category]?.map(
+                                            (subcat, idx) => (
+                                                <option key={idx} value={subcat}>
+                                                    {subcat}
+                                                </option>
+                                            )
+                                        )}
+                                    </Form.Select>
+                                </Form.Group>
+                                <Form.Group as={Col} md={6} className="mb-3">
+                                    <Form.Label>Tag ID</Form.Label>
+                                    <CreatableSelect
+                                        name="tag_id"
+                                        options={options}
+                                        styles={customSelectStyles}
+                                        value={
+                                            options.find(opt => opt.value === formData.tag_id) ||
+                                            (formData.tag_id ? { value: formData.tag_id, label: formData.tag_id } : null)
+                                        }
+                                        onChange={(selectedOption) => {
+                                            handleChange({
+                                                target: {
+                                                    name: 'tag_id',
+                                                    value: selectedOption ? selectedOption.value : ''
+                                                }
+                                            });
 
-                                                    const scoreInfo = scoreMap[feedback.score] || { label: 'No rating', color: '#7f8c8d' };
 
-                                                    return (
+                                        }}
+                                        onCreateOption={(inputValue) => {
+                                            setAssets(prev => [...prev, { tag_id: inputValue, pms_category: 'Custom', is_active: "1" }]);
+                                            handleChange({
+                                                target: {
+                                                    name: 'tag_id',
+                                                    value: inputValue
+                                                }
+                                            });
+                                        }}
+                                        isClearable
+                                        isDisabled={!isEditable}
+                                        placeholder="Type or select..."
+                                        formatOptionLabel={(option, { context }) => (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    width: '100%',
+                                                }}
+                                            >
+                                                {/* Left: Tag ID */}
+                                                <span>{option.label}</span>
+
+                                                {/* Right: Category (only show for dropdown, not selected value) */}
+                                                {context === 'menu' && (
+                                                    <span
+                                                        style={{
+                                                            color: '#6c757d',
+                                                            fontSize: '0.9em',
+                                                            textAlign: 'right',
+                                                            flexShrink: 0,
+                                                            minWidth: '100px',
+                                                        }}
+                                                    >
+                                                        {option.category}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+
+                                    />
+                                </Form.Group>
+
+                                <Form.Group as={Col} md={12} className="mb-2">
+                                    <Form.Label>Attachments</Form.Label>
+                                    {renderAttachment()}
+                                </Form.Group>
+                            </Row>
+
+                            <h6 className="text-muted fw-semibold mt-4 mb-2">Description</h6>
+                            <Form.Group className="mb-3">
+                                <Form.Control
+                                    as="textarea"
+                                    rows={7}
+                                    name="Description"
+                                    value={formData.Description ?? ''}
+                                    disabled
+                                />
+                            </Form.Group>
+                        </Col>
+
+                        {/* HELP DESK NOTES */}
+                        <Col lg={4}>
+                            <h6 className="text-muted fw-semibold mb-2">Helpdesk Notes</h6>
+                            <Card className="shadow-sm border-0 h-900">
+                                <Card.Body>
+                                    <Form.Group className="mb-3">
+                                        <div
+                                            style={{
+                                                maxHeight: '600px',
+                                                overflowY: 'auto',
+                                                paddingRight: '5px',
+                                            }}
+                                        >
+                                            {allnotes && allnotes.length > 0 ? (
+                                                [...allnotes]
+                                                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                                                    .map((note, index) => (
                                                         <div
                                                             key={index}
                                                             className="mb-3 p-3 rounded-3 shadow-sm bg-body-tertiary border border-light-subtle"
@@ -1736,175 +1740,259 @@ export default function ViewHDTicket() {
                                                                     whiteSpace: 'pre-wrap',
                                                                 }}
                                                             >
-                                                                {feedback.review}
+                                                                {note.note}
                                                             </div>
-
-                                                            <div
-                                                                style={{
-                                                                    fontSize: '0.70rem',
-                                                                    color: scoreInfo.color,
-                                                                    fontWeight: '600',
-                                                                }}
-                                                            >
-                                                                {scoreInfo.label}
-                                                            </div>
-
                                                             <div className="d-flex justify-content-between align-items-center mt-2">
                                                                 <small className="text-muted fst-italic">
-                                                                    {feedbackuser[feedback.created_by] || feedback.created_by || 'Unknown'}
+                                                                    {notesofhduser[note.created_by] || note.created_by || 'Unknown'}
                                                                 </small>
                                                                 <small className="text-muted">
-                                                                    {feedback.created_at
-                                                                        ? new Date(feedback.created_at).toLocaleString()
+                                                                    {note.created_at
+                                                                        ? new Date(
+                                                                            note.created_at
+                                                                        ).toLocaleString()
                                                                         : ''}
                                                                 </small>
                                                             </div>
                                                         </div>
-                                                    );
-                                                })
-                                        ) : (
-                                            <div className="text-muted fst-italic">No notes available.</div>
-                                        )}
-                                    </div>
-                                </Form.Group>
+                                                    ))
+                                            ) : (
+                                                <div className="text-muted fst-italic">
+                                                    No notes available.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </Form.Group>
+
+                                    {hdnotesState && (
+                                        <>
+                                            <Form.Group>
+                                                <Form.Label className="fw-semibold text-muted">
+                                                    Add a Note
+                                                </Form.Label>
+                                                {noteAlert && (
+                                                    <Form.Label className="fw-semibold  ms-2 text-danger">
+                                                        Unable to save empty note
+                                                    </Form.Label>
+                                                )}
+                                                <Form.Control
+                                                    as="textarea"
+                                                    rows={5}
+                                                    name="notes"
+                                                    placeholder="Type your note here..."
+                                                    value={notes || ''}
+                                                    onChange={handleNoteChange}
+                                                    disabled={!hdnotesState}
+                                                    style={{ resize: 'none', fontSize: '0.95rem' }}
+                                                />
+                                            </Form.Group>
 
 
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
+                                        </>
+                                    )}
 
-                {/*HD Resolution Ticket */}
-                <Modal show={showCloseResolutionModal} onHide={() => setShowCloseResolutionModal(false)} centered>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Resolution: (Required)</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <Form.Group controlId="userResolution">
-                            <Form.Label>How were you able to resolve?</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                value={resolution}
-                                onChange={(e) => setResolution(e.target.value)}
-                                placeholder="Enter your troubleshooting steps here"
-                            />
-                        </Form.Group>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowCloseResolutionModal(false)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="primary"
-                            onClick={HandleResolution}
-                            disabled={resolution.trim() === ''}
-                        >
-                            Confirm
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
+                                    {/* USER FEEDBACK */}
+                                    <h6 className="text-muted fw-semibold mb-2 mt-2">User Feedback</h6>
 
-                <Modal show={lockModal} onHide={() => setLockModal(false)} centered>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Attention! </Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <Form.Group controlId="userResolution">
-                            <Form.Label>{lockError}</Form.Label>
-                        </Form.Group>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setLockModal(false)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="primary"
-                            onClick={() => setLockModal(false)}
-                        >
-                            Ok
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
+                                    <Form.Group className="mb-2">
+                                        <div
+                                            style={{
+                                                maxHeight: '300px',
+                                                overflowY: 'auto',
+                                                paddingRight: '5px',
+                                            }}
+                                        >
+                                            {allfeedback && allfeedback.length > 0 ? (
+                                                [...allfeedback]
+                                                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                                                    .map((feedback, index) => {
+                                                        const scoreMap = {
+                                                            1: { label: 'Very Dissatisfied', color: '#e74c3c' },
+                                                            2: { label: 'Dissatisfied', color: '#e67e22' },
+                                                            3: { label: 'Neutral', color: '#f1c40f' },
+                                                            4: { label: 'Satisfied', color: '#2ecc71' },
+                                                            5: { label: 'Very Satisfied', color: '#27ae60' },
+                                                        };
+
+                                                        const scoreInfo = scoreMap[feedback.score] || { label: 'No rating', color: '#7f8c8d' };
+
+                                                        return (
+                                                            <div
+                                                                key={index}
+                                                                className="mb-3 p-3 rounded-3 shadow-sm bg-body-tertiary border border-light-subtle"
+                                                            >
+                                                                <div
+                                                                    className="text-dark"
+                                                                    style={{
+                                                                        fontSize: '0.95rem',
+                                                                        whiteSpace: 'pre-wrap',
+                                                                    }}
+                                                                >
+                                                                    {feedback.review}
+                                                                </div>
+
+                                                                <div
+                                                                    style={{
+                                                                        fontSize: '0.70rem',
+                                                                        color: scoreInfo.color,
+                                                                        fontWeight: '600',
+                                                                    }}
+                                                                >
+                                                                    {scoreInfo.label}
+                                                                </div>
+
+                                                                <div className="d-flex justify-content-between align-items-center mt-2">
+                                                                    <small className="text-muted fst-italic">
+                                                                        {feedbackuser[feedback.created_by] || feedback.created_by || 'Unknown'}
+                                                                    </small>
+                                                                    <small className="text-muted">
+                                                                        {feedback.created_at
+                                                                            ? new Date(feedback.created_at).toLocaleString()
+                                                                            : ''}
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })
+                                            ) : (
+                                                <div className="text-muted fst-italic">No notes available.</div>
+                                            )}
+                                        </div>
+                                    </Form.Group>
 
 
-                <Modal show={archiveState} onHide={() => setArchiveState(false)} centered>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Archive</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <Form.Group controlId="userResolution">
-                            <Form.Label>Are you sure you want to archive this ticket?</Form.Label>
-                        </Form.Group>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setArchiveState(false)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="primary"
-                            onClick={() => Archive()}
-                        >
-                            Ok
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    </Row>
 
-                <Modal show={unarchiveState} onHide={() => setUnArchiveState(false)} centered>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Unarchive</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <Form.Group controlId="userResolution">
-                            <Form.Label>Are you sure you want to unarchive this ticket?</Form.Label>
-                        </Form.Group>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setUnArchiveState(false)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="primary"
-                            onClick={() => UnArchive()}
-                        >
-                            Ok
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
+                    {/*HD Resolution Ticket */}
+                    <Modal show={showCloseResolutionModal} onHide={() => setShowCloseResolutionModal(false)} centered>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Resolution: (Required)</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Form.Group controlId="userResolution">
+                                <Form.Label>How were you able to resolve?</Form.Label>
+                                <Form.Control
+                                    as="textarea"
+                                    rows={3}
+                                    value={resolution}
+                                    onChange={(e) => setResolution(e.target.value)}
+                                    placeholder="Enter your troubleshooting steps here"
+                                />
+                            </Form.Group>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={() => setShowCloseResolutionModal(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onClick={HandleResolution}
+                                disabled={resolution.trim() === ''}
+                            >
+                                Confirm
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
 
-                <Modal
-                    show={showModal}
-                    onHide={() => setShowModal(false)}
-                    size="lg" // smaller than xl
-                    centered
-                >
-                    <Modal.Header closeButton>
-                        <Modal.Title>{modalTitle}</Modal.Title>
-                    </Modal.Header>
+                    <Modal show={lockModal} onHide={() => setLockModal(false)} centered>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Attention! </Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Form.Group controlId="userResolution">
+                                <Form.Label>{lockError}</Form.Label>
+                            </Form.Group>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={() => setLockModal(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onClick={() => setLockModal(false)}
+                            >
+                                Ok
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
 
-                    <Modal.Body
-                        style={{
-                            maxHeight: "50vh", // responsive height limit
-                            overflowY: "auto", // scroll if content is long
-                            padding: "20px",
-                        }}
+
+                    <Modal show={archiveState} onHide={() => setArchiveState(false)} centered>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Archive</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Form.Group controlId="userResolution">
+                                <Form.Label>Are you sure you want to archive this ticket?</Form.Label>
+                            </Form.Group>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={() => setArchiveState(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onClick={() => Archive()}
+                            >
+                                Ok
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
+
+                    <Modal show={unarchiveState} onHide={() => setUnArchiveState(false)} centered>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Unarchive</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Form.Group controlId="userResolution">
+                                <Form.Label>Are you sure you want to unarchive this ticket?</Form.Label>
+                            </Form.Group>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={() => setUnArchiveState(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onClick={() => UnArchive()}
+                            >
+                                Ok
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
+
+                    <Modal
+                        show={showModal}
+                        onHide={() => setShowModal(false)}
+                        size="lg" // smaller than xl
+                        centered
                     >
-                        {modalContent}
-                    </Modal.Body>
+                        <Modal.Header closeButton>
+                            <Modal.Title>{modalTitle}</Modal.Title>
+                        </Modal.Header>
 
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowModal(false)}>
-                            Close
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
+                        <Modal.Body
+                            style={{
+                                maxHeight: "50vh", // responsive height limit
+                                overflowY: "auto", // scroll if content is long
+                                padding: "20px",
+                            }}
+                        >
+                            {modalContent}
+                        </Modal.Body>
 
-
-
-            </Container >
-
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={() => setShowModal(false)}>
+                                Close
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
+                </Container >
+            </AnimatedContent>
             {loading && (
-
                 <div
                     style={{
                         position: "fixed",

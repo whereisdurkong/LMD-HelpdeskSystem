@@ -1,3 +1,4 @@
+import BTN from "layouts/ReactBits/BTN";
 import { useEffect, useState } from "react";
 import { Card, Container, Row, Col, Spinner, Button } from "react-bootstrap";
 
@@ -39,9 +40,18 @@ export default function Profile() {
           backgroundColor: "#fffef5",
         }}
       >
-        <h2 className="text-center mb-4" style={{ fontWeight: "bold" }}>
-          My Profile
-        </h2>
+        <div className="d-flex justify-content-between align-items-center flex-wrap mb-4">
+          <h2 className="mb-0 text-center text-md-start" style={{ fontWeight: "bold" }}>
+            My Profile
+          </h2>
+          <BTN label={'Change Password'}
+            onClick={() => window.location.replace("/ticketsystem/edit-password")}
+            style={{ color: "#333" }}
+          />
+
+        </div>
+
+
         <hr />
 
         <div className="px-2">
@@ -85,21 +95,6 @@ export default function Profile() {
             </Col>
             <Col sm={8}>{userData.emp_position}</Col>
           </Row>
-        </div>
-
-        <div className="text-center mt-4">
-          <Button
-            variant="warning"
-            className="px-4 py-2 fw-semibold rounded-4 shadow-sm"
-            style={{
-              backgroundColor: "#ffcc00",
-              border: "none",
-              color: "#333",
-            }}
-            onClick={() => window.location.replace("/ticketsystem/edit-password")}
-          >
-            Change Password
-          </Button>
         </div>
       </Card>
     </Container>

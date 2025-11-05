@@ -8,6 +8,25 @@ import System from 'views/knowledgebase/system';
 import SystemArchive from 'views/knowledgebase/systemarchive';
 import ViewTicketLogs from 'views/tickets/viewticketlogs';
 import EditPassword from 'views/pages/editpassword';
+import AddComputer from 'views/assets/add-computer';
+import ViewComputers from 'views/assets/view-computers';
+import AddLaptop from 'views/assets/add-laptop';
+import AddPrinter from 'views/assets/add-printer';
+import ReviewComputer from 'views/assets/review-computer';
+import ReviewLaptop from 'views/assets/review-laptop';
+import ReviewPrinter from 'views/assets/review-printer';
+import ArchiveAssets from 'views/assets/archive-index';
+import ArchiveReviewComputer from 'views/assets/archive-review-computer';
+import ArchiveReviewLaptop from 'views/assets/archive-review-laptop';
+import ArchiveReviewPrinter from 'views/assets/archive-review-printer';
+import CreateTicketWalkthrough from 'views/tickets/createticket-user-walk';
+import CreatePMSUser from 'views/pms/createticket-pms-user';
+import PMS from 'views/pms/pms-index';
+import ViewPmsTicket from 'views/pms/viewpmsticket';
+import ViewHDPmsTicket from 'views/pms/viewpmshdticket';
+import PMSReport from 'views/pmsreports';
+import PMSbyDept from 'views/pmsreports/pmsbydept';
+import PMSbyHD from 'views/pmsreports/pmsbyhd';
 
 
 
@@ -35,12 +54,13 @@ const Network = lazy(() => import('views/knowledgebase/network'));
 const ANetwork = lazy(() => import('views/knowledgebase/networkarchive'));
 
 const Reports = lazy(() => import('views/report/reports'));
-const Test = lazy(() => import('views/report/test'));
+const Test = lazy(() => import('views/pmsreports/pmsbydept'));
 
 const Tickets = lazy(() => import('views/tickets'))
 
 const CreateTicket = lazy(() => import('views/tickets/createticket'))
 const CreateTicketUser = lazy(() => import('views/tickets/createticket-user'))
+
 const CreateTicketHD = lazy(() => import('views/tickets/createticket-hd'))
 
 const OpenTicket = lazy(() => import('views/tickets/openticket'))
@@ -84,8 +104,8 @@ const LoadingSpinner = (
 const withSpinner = (Component) => <Suspense fallback={LoadingSpinner}>{Component}</Suspense>;
 
 const RoleAccess = () => {
-
-  if (localStorage.getItem("user" === null)) {
+  console.log
+  if (localStorage.getItem("user") === null) {
     return <Navigate to="/" replace />
   } else {
     return <MainLayout />
@@ -185,8 +205,28 @@ const MainRoutes = {
       element: withSpinner(<CreateTicketUser />)
     },
     {
+      path: '/create-ticket-user-walkthrough',
+      element: withSpinner(<CreateTicketWalkthrough />)
+    },
+    {
       path: '/create-ticket-hd',
       element: withSpinner(<CreateTicketHD />)
+    },
+    {
+      path: '/pms',
+      element: withSpinner(<PMS />)
+    },
+    {
+      path: '/create-pms-user',
+      element: withSpinner(<CreatePMSUser />)
+    },
+    {
+      path: '/view-pms-user-ticket',
+      element: withSpinner(<ViewPmsTicket />)
+    },
+    {
+      path: '/view-pms-hd-ticket',
+      element: withSpinner(<ViewHDPmsTicket />)
     },
     {
       path: '/open-ticket',
@@ -196,6 +236,47 @@ const MainRoutes = {
       path: '/assets',
       element: withSpinner(<Assets />)
     },
+    {
+      path: '/archive-assets',
+      element: withSpinner(<ArchiveAssets />)
+    },
+    {
+      path: '/assets-add-computer',
+      element: withSpinner(<AddComputer />)
+    },
+    {
+      path: '/assets-computer',
+      element: withSpinner(<ReviewComputer />)
+    },
+    {
+      path: '/assets-add-laptop',
+      element: withSpinner(<AddLaptop />)
+    },
+    {
+      path: '/assets-laptop',
+      element: withSpinner(<ReviewLaptop />)
+    },
+    {
+      path: '/assets-add-printer',
+      element: withSpinner(<AddPrinter />)
+    },
+    {
+      path: '/assets-printer',
+      element: withSpinner(<ReviewPrinter />)
+    },
+    {
+      path: '/assets-archive-computer',
+      element: withSpinner(<ArchiveReviewComputer />)
+    },
+    {
+      path: '/assets-archive-laptop',
+      element: withSpinner(<ArchiveReviewLaptop />)
+    },
+    {
+      path: '/assets-archive-printer',
+      element: withSpinner(<ArchiveReviewPrinter />)
+    },
+
     {
       path: '/announcements',
       element: withSpinner(<Announcements />)
@@ -242,7 +323,7 @@ const MainRoutes = {
     },
     {
       path: '/test',
-      element: withSpinner(<Test />)
+      element: withSpinner(<PMSbyHD />)
     },
     {
       path: '/reports',
@@ -287,6 +368,10 @@ const MainRoutes = {
     {
       path: '/history',
       element: <History />
+    },
+    {
+      path: '/pmsreport',
+      element: <PMSReport />
     }
 
 

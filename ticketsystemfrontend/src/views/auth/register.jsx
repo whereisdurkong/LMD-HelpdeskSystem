@@ -17,6 +17,7 @@ import config from 'config';
 import Spinner from 'react-bootstrap/Spinner';
 
 import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
+import { Medium } from 'react-bootstrap-icons';
 
 export default function SignUp1() {
   const [firstname, setFirstName] = useState('');
@@ -82,8 +83,9 @@ export default function SignUp1() {
     setCurrentUser(empInfo?.user_name);
   })
 
-  // Register function
-  const Register = (e) => {
+
+
+  const Register = async (e) => {
     e.preventDefault();
 
     if (
@@ -177,7 +179,9 @@ export default function SignUp1() {
 
     setLoading(true);
 
-    axios.post(`${config.baseApi}/authentication/register`, {
+
+
+    await axios.post(`${config.baseApi}/authentication/register`, {
       emp_firstname: firstname,
       emp_lastname: lastname,
       user_name: username,
@@ -197,6 +201,26 @@ export default function SignUp1() {
           `${username.charAt(0).toUpperCase() +
           username.slice(1).toLowerCase()}` + ' successfully!'
         );
+
+        try {
+          if (tier === 'user') {
+            e.preventDefault();
+
+            axios.post(`${config.baseApi}/authentication/register-email`, {
+              user_name: username,
+              emp_email: email,
+              pass_word: password,
+              current_user: currentUser
+            })
+
+          }
+        } catch (err) {
+          console.log(err);
+          setError('An error occurred. Please try again.');
+          setLoading(false);
+          return;
+        }
+
         setFirstName('');
         setLastName('');
         setUserName('');
@@ -209,11 +233,9 @@ export default function SignUp1() {
         setLocation('')
         setDepartment('');
         setPosition('');
-        window.location.reload()
+
+        // window.location.reload()
         console.log(`User ${username} was successfully registered`)
-
-
-
       })
       .catch((err) => {
         if (err === 404) {
@@ -226,6 +248,7 @@ export default function SignUp1() {
 
       });
   };
+
 
   return (
     <div
@@ -509,3 +532,179 @@ export default function SignUp1() {
     </div>
   );
 }
+
+
+// ticket_subject: any random helpdesk concern
+
+// ticket_status: open
+// ticket_urgencyLevel: low or high or critical or medium 
+// ticket_type: request or incident or inquiry
+// ticket_category: Hardware, network, software, system
+// ticket_SubCategory: incident: {
+//   hardware: [
+//     "Desktop",
+//     "Laptop",
+//     "Monitor",
+//     "Printer",
+//     "Scanner",
+//     "Printer/Scanner Combo",
+//     "Peripherals (Keyboard, Mouse, Webcam, External Drive)",
+//     "Docking Station",
+//     "Projector",
+//     "Fax Machine",
+//     "Telephone",
+//     "Server Hardware",
+//     "UPS (Uninterruptible Power Supply)",
+//     "Cabling & Ports",
+//     "Others",
+//   ],
+//     network: [
+//       "Internet Connectivity",
+//       "Wi-Fi",
+//       "LAN (Local Area Network)",
+//       "WAN (Wide Area Network)",
+//       "Server Access",
+//       "Network Printer/Scanner",
+//       "VPN Connection",
+//       "Firewall",
+//       "Router/Switch Configuration",
+//       "MPLS",
+//       "ISP",
+//       "Network Security (Intrusion Detection/Prevention)",
+//       "Bandwidth Issues",
+//       "Others",
+//     ],
+//       software: [
+//         "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
+//         "Email (Setup, Creation, Error, Backup)",
+//         "Active Directory (User Creation, Login, Password)",
+//         "Zoom / Video Conferencing Tools",
+//         "FoxPro (Accounting System)",
+//         "GEMCOM",
+//         "SURPAC",
+//         "FTP (Access Creation, Change Password)",
+//         "PDF (Conversion, Reduce Size, Editing)",
+//         "Antivirus / Security Software",
+//         "Operating System (Windows, macOS, Linux)",
+//         "Cloud Services (OneDrive, Google Drive, Dropbox)",
+//         "Others",
+//       ],
+//         system: [
+//           "Oracle (PROD/BIPUB)",
+//           "System Updates & Patches",
+//           "Backup & Restore Tools",
+//           "CCTV Incident Report System",
+//           "Safety Accident Report System",
+//           "Compliance Registry System",
+//           "Information Management System (Comrel)",
+//           "Lepanto IT Help Desk System",
+//           "Others"
+//         ]
+// },
+// request: {
+//   hardware: [
+//     "New Laptop Request",
+//     "New Monitor Request",
+//     "Printer Installation",
+//     "Additional Peripherals",
+//     "Hardware Upgrade",
+//     "Others",
+//   ],
+//     network: [
+//       "New VPN Access",
+//       "Firewall Rule Request",
+//       "New Router/Switch Setup",
+//       "Bandwidth Upgrade",
+//       "ISP Request",
+//       "Others",
+//     ],
+//       software: [
+//         "New Software Installation",
+//         "License Renewal",
+//         "User Account Creation",
+//         "Database Access Request",
+//         "Cloud Storage Request",
+//         "Others",
+//       ],
+//         system: [
+//           "New Account",
+//           "Delete Account",
+//           "Edit Account",
+//           "Request Access",
+//           "Others"
+//         ]
+// },
+// inquiry: {
+//   hardware: ["Warranty Inquiry", "Specs Inquiry", "Others"],
+//     network: ["Network Policy Inquiry", "Coverage Inquiry", "Others"],
+//       software: ["Software Policy Inquiry", "Version Inquiry", "Others"],
+//         system: ["System Policy Inquiry", "Assistance", "Others"]
+// },
+
+// asset_number: random LMD - 7825
+// Description: any description with three sentence
+// created_at: new Date()
+// is_active: 1
+// assigned_location: lmd or corp
+
+// created_by: [martin
+// piper
+// pong
+// ruaa
+// majong
+// ilsa
+// durkong
+// johndoe
+// sarah
+// 12345
+// liam
+// sophia
+// noah
+// olivia
+// james
+// emma
+// lucas
+// ava
+// mason
+// ella
+// ethan
+// isabella
+// benjamin
+// mia
+// jacob
+// charlotte
+// william
+// amelia
+// henry
+// harper
+// alexander
+// evelyn
+// sebastian
+// abigail
+// jack
+// emily
+// logan
+// grace
+// aiden
+// scarlett
+// david
+// madison
+// joseph
+// victoria
+// samuel
+// hannah
+// daniel
+// natalie
+// anthony
+// chloe
+// elijah
+// zoe
+// matthew
+// layla
+// wyatt
+// penelope
+// dylan
+// luna
+// nathan]
+
+

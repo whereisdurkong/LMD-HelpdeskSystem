@@ -183,7 +183,7 @@ export default function AllTicketbyType({ filterType, showChart = true, location
                     <thead style={{ background: '#053b00ff', color: 'white' }}>
                         <tr>
                             <th>Ticket ID</th>
-                            <th>Subject</th>
+                            <th>Problem/Issue</th>
                             <th>Status</th>
                             <th>Type</th>
                             <th>Assigned To</th>

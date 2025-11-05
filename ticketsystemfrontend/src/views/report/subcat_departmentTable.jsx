@@ -445,9 +445,10 @@ const TicketSummaryTable = ({ filterType, location, onDataReady }) => {
 
     return (
         <div>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <div className="d-flex align-items-end gap-3 flex-wrap">
-                    <Form.Group style={{ maxWidth: "300px" }} className="mb-2">
+            <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
+                {/* Filters Section */}
+                <div className="d-flex flex-wrap align-items-end gap-3 w-100 w-md-auto">
+                    <Form.Group className="flex-grow-1" style={{ minWidth: "180px", maxWidth: "300px" }}>
                         <Form.Label>Filter by Category</Form.Label>
                         <Form.Select value={filter} onChange={e => setFilter(e.target.value)}>
                             <option value="ALL">All</option>
@@ -460,7 +461,7 @@ const TicketSummaryTable = ({ filterType, location, onDataReady }) => {
 
                     {filterType === "perMonth" && (
                         <>
-                            <Form.Group style={{ maxWidth: "200px" }} className="mb-2">
+                            <Form.Group className="flex-grow-1" style={{ minWidth: "150px", maxWidth: "200px" }}>
                                 <Form.Label>Month</Form.Label>
                                 <Form.Select value={month} onChange={e => setMonth(e.target.value)}>
                                     {months.map(m => (
@@ -471,7 +472,7 @@ const TicketSummaryTable = ({ filterType, location, onDataReady }) => {
                                 </Form.Select>
                             </Form.Group>
 
-                            <Form.Group style={{ maxWidth: "140px" }} className="mb-2">
+                            <Form.Group className="flex-grow-1" style={{ minWidth: "100px", maxWidth: "140px" }}>
                                 <Form.Label>Year</Form.Label>
                                 <Form.Select value={year} onChange={e => setYear(e.target.value)}>
                                     {possibleYears.length > 0
@@ -485,46 +486,67 @@ const TicketSummaryTable = ({ filterType, location, onDataReady }) => {
                     )}
                 </div>
 
-
-                <Button onClick={handleExportExcel}>Export to Excel</Button>
+                {/* Button Section */}
+                <div className="mt-2 mt-md-0">
+                    <Button
+                        onClick={handleExportExcel}
+                        className="w-100 w-md-auto"
+                        style={{ whiteSpace: "nowrap" }}
+                    >
+                        Export to Excel
+                    </Button>
+                </div>
             </div>
 
-            <Table striped bordered hover>
-                <thead>
-                    <tr>
-                        <th>Subcategory</th>
-                        {departments.map(dept => <th key={dept}>{dept}</th>)}
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style={{ fontWeight: "bold", backgroundColor: "#f1f1f1" }}>
-                        <td>Total</td>
-                        {departments.map(dept => {
-                            const deptTotal = filteredSubcategories.reduce((sum, subcat) => sum + (deptSubcatCount[dept]?.[subcat] || 0), 0);
-                            return <td key={`total-${dept}`}>{deptTotal}</td>;
-                        })}
-                        <td>{filteredSubcategories.reduce((grandTotal, subcat) => grandTotal + departments.reduce((s, dept) => s + (deptSubcatCount[dept]?.[subcat] || 0), 0), 0)}</td>
-                    </tr>
+            <div className="table-responsive">
+                <Table striped bordered hover>
+                    <thead>
+                        <tr>
+                            <th>Subcategory</th>
+                            <th>Total</th>
+                            {departments.map(dept => <th key={dept}>{dept}</th>)}
 
-                    {filteredSubcategories.map((subcat, idx) => {
-                        let rowTotal = 0;
-                        return (
-                            <tr key={`${subcat}-${idx}`}>
-                                <td>{subcat}</td>
-                                {departments.map(dept => {
-                                    const count = deptSubcatCount[dept]?.[subcat] || 0;
-                                    rowTotal += count;
-                                    return <td key={`${dept}-${subcat}`}>{count}</td>;
-                                })}
-                                <td>{rowTotal}</td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </Table>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style={{ fontWeight: "bold", backgroundColor: "#f1f1f1" }}>
+                            <td>Total</td>
+                            {departments.map(dept => {
+                                const deptTotal = filteredSubcategories.reduce((sum, subcat) => sum + (deptSubcatCount[dept]?.[subcat] || 0), 0);
+                                return <td key={`total-${dept}`}>{deptTotal}</td>;
+                            })}
+                            <td>
+                                {filteredSubcategories.reduce(
+                                    (grandTotal, subcat) =>
+                                        grandTotal +
+                                        departments.reduce((s, dept) => s + (deptSubcatCount[dept]?.[subcat] || 0), 0),
+                                    0
+                                )}
+                            </td>
+                        </tr>
+
+                        {filteredSubcategories.map((subcat, idx) => {
+                            let rowTotal = 0;
+                            return (
+                                <tr key={`${subcat}-${idx}`}>
+
+                                    <td>{subcat}</td>
+                                    <td>{rowTotal}</td>
+                                    {departments.map(dept => {
+                                        const count = deptSubcatCount[dept]?.[subcat] || 0;
+                                        rowTotal += count;
+                                        return <td key={`${dept}-${subcat}`}>{count}</td>;
+                                    })}
+
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </Table>
+            </div>
         </div>
     );
+
 };
 
 export default TicketSummaryTable;

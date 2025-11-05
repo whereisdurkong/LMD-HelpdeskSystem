@@ -22,9 +22,17 @@ export default function NavRight() {
   const [position, setPosition] = useState('');
   const [userData, setUserData] = useState([]);
   const [toFilter, setToFilter] = useState('');
+
   const [notificationCount, setNotificationCount] = useState(0);
   const [notifContent, setNotifContent] = useState([]);
   const [ticketIDS, setTicketIDS] = useState([]);
+
+  const [topmsFilter, setTopmsFilter] = useState('');
+  const [pmsnotificationCount, setPMSNotificationCount] = useState(0);
+  const [pmsnotifContent, setPMSNotifContent] = useState([]);
+
+  const [finale, setFinale] = useState(0)
+
   const navigate = useNavigate()
 
   // Load user data from localStorage
@@ -50,8 +58,11 @@ export default function NavRight() {
 
     if (userData.emp_tier === 'helpdesk') {
       setToFilter('assigned_to');
+      setTopmsFilter('assigned_to')
     } else if (userData.emp_tier === 'user') {
       setToFilter('ticket_for');
+      setTopmsFilter('pmsticket_for')
+      console.log('!!!!!!!!!!!!!!!!', userData)
     }
   }, [userData]);
 
@@ -62,20 +73,45 @@ export default function NavRight() {
     fetchNotifications(userData.user_name);
   }, [toFilter, userData]);
 
-
-
-
   const fetchNotifications = async (user_name) => {
     const user = JSON.parse(localStorage.getItem('user'));
     try {
       const response = await fetch(`${config.baseApi}/ticket/get-all-ticket`);
       const data = await response.json(); // all tikcets result
 
+      const pmsresponse = await fetch(`${config.baseApi}/pmsticket/get-all-pmsticket`);
+      const pmsdata = await pmsresponse.json(); // all tikcets result
+
+      const assignedpmsTickets = pmsdata.filter(
+        (pmsticket) => pmsticket[topmsFilter] === user_name); //all tikcet assigned under username
+
       const assignedTickets = data.filter(
         (ticket) => ticket[toFilter] === user_name); //all tikcet assigned under username
 
+      // ===============PMS===================
+      if (user.emp_tier === 'helpdesk') {
+
+        const notifiedPMSTickets = assignedpmsTickets.filter(
+          (ticket) => ticket.is_notifiedhd === '1'); //ticket that has is_notified === true
 
 
+        setPMSNotifContent(notifiedPMSTickets.map(ticket => ticket.pmsticket_id)); // <-- set as array
+
+        setPMSNotificationCount(notifiedPMSTickets.length);
+      }
+
+      else if (user.emp_tier === 'user') {
+        const notifiedPMSTickets = assignedpmsTickets.filter(
+          (ticket) => ticket.is_notified === '1'); //ticket that has is_notified === true
+
+        setPMSNotifContent(notifiedPMSTickets.map(ticket => ticket.pmsticket_id)); // <-- set as array
+
+        setPMSNotificationCount(notifiedPMSTickets.length);
+      }
+
+
+
+      // ====================Ticket================
       if (user.emp_tier === 'helpdesk') {
         const notifiedTickets = assignedTickets.filter(
           (ticket) => ticket.is_notifiedhd === true); //ticket that has is_notified === true
@@ -110,7 +146,16 @@ export default function NavRight() {
     fetchNotifications(userData.user_name);
 
     return () => clearInterval(interval); // clear on unmount
+
+
+
   }, [toFilter, userData]);
+
+  useEffect(() => {
+    const a = pmsnotificationCount + notificationCount
+    setFinale(a)
+    console.log(a)
+  }, [pmsnotificationCount, notificationCount])
 
 
 
@@ -142,21 +187,41 @@ export default function NavRight() {
     }
   }
 
+
+  const HandlePMSView = async (context) => {
+    const params = new URLSearchParams({ id: context })
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    if (userData.emp_tier === 'helpdesk') {
+
+      await axios.post(`${config.baseApi}/pmsticket/update-notified-false`, {
+        pmsticket_id: context,
+        user_id: user.user_id
+      }).then(window.location.replace(`/ticketsystem/view-pms-hd-ticket?${params.toString()}`))
+
+    } else if (userData.emp_tier === 'user') {
+      await axios.post(`${config.baseApi}/pmsticket/update-notified-false`, {
+        pmsticket_id: context,
+        user_id: user.user_id
+      }).then(window.location.replace(`/ticketsystem/view-pms-user-ticket?${params.toString()}`))
+    }
+  }
+
   return (
     <ListGroup as="ul" bsPrefix=" " className="list-unstyled">
       <ListGroup.Item as="li" bsPrefix=" " className="pc-h-item">
         <Dropdown>
           <Dropdown.Toggle as="a" variant="link" className="pc-head-link arrow-none me-0">
             <FeatherIcon icon="bell" />
-            {notificationCount > 0 && (
+            {finale > 0 && (
               <Badge bg="danger" pill style={{ position: 'absolute', top: 8, right: 8 }}>
-                {notificationCount}
+                {finale}
               </Badge>
             )}
           </Dropdown.Toggle>
           <Dropdown.Menu className="dropdown-menu-end pc-h-dropdown">
             <Dropdown.Item>
-              {notifContent.length === 0 ? (
+              {notifContent.length === 0 && pmsnotifContent === 0 ? (
                 'No new notifications'
               ) : (
                 <div style={{ fontSize: '15px', color: '#333' }}>
@@ -173,11 +238,26 @@ export default function NavRight() {
                       </span>
                     </div>
                   ))}
+                  {pmsnotifContent.map((content, index) => (
+                    <div key={index}
+                      style={{
+                        cursor: 'pointer',
+                        padding: '8px 0',
+                        borderBottom: '1px solid #eee'
+                      }}
+                    >
+                      <span className="text-muted" onClick={() => HandlePMSView(content)}>
+                        New Notification from PMS Ticket ID: {content}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
+
+
       </ListGroup.Item>
       <ListGroup.Item as="li" bsPrefix=" " className="pc-h-item">
         <Dropdown className="drp-user">

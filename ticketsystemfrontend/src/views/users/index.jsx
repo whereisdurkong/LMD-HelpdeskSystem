@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Container, Button } from 'react-bootstrap';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
@@ -8,7 +8,12 @@ import config from 'config';
 import UserLMD from './users-lmd'
 import UserCORP from './users-corp'
 
+import VariableProximity from 'layouts/ReactBits/VariableProximity.jsx'
+
+import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
+
 export default function Users() {
+    const containerRef = useRef(null);
     const [allUsers, setAllUsers] = useState([]);
 
     useEffect(() => {
@@ -49,51 +54,101 @@ export default function Users() {
             }}
         >
 
-
-
-            <div
-                style={{
-                    maxWidth: "1500px", // match your table width
-                    margin: "0 auto",
-                }}
+            <AnimatedContent
+                distance={100}
+                direction="vertical"
+                reverse={true}
+                duration={0.8}
+                ease="power3.out"
+                initialOpacity={0}
+                animateOpacity
+                scale={1.0}
+                threshold={0.1}
+                delay={0}
             >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }} >
-                    <div><h3>Users</h3></div>
-                    <Button onClick={HandleRegister}>+ Register</Button>
-                </div>
-                <Tabs
-                    defaultActiveKey="lmd"
-                    transition={false}
-                    id="justify-tab-example"
-                    justify
+
+                <div
                     style={{
-                        borderBottom: "2px solid #ddd",
+                        maxWidth: "1500px", // match your table width
+                        margin: "0 auto",
                     }}
                 >
-                    {/* LMD */}
-                    <Tab
-                        eventKey="lmd"
-                        title={
-                            <span style={{ color: "#5d3600ff", fontWeight: "bold" }}>
-                                LMD
-                            </span>
-                        }
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }} >
+                        <div><div ref={containerRef}>
+                            <VariableProximity
+                                label={'USERS'}
+                                className={'variable-proximity-demo'}
+                                style={{
+                                    fontSize: '2rem', // responsive font size
+                                    color: "#5d3600ff"
+                                }}
+                                fromFontVariationSettings="'wght' 800, 'opsz' 9"
+                                toFontVariationSettings="'wght' 2000, 'opsz' 30"
+                                containerRef={containerRef}
+                                radius={50}
+                                falloff="linear"
+                            />
+                        </div></div>
+                        <Button onClick={HandleRegister}>+ Register</Button>
+                    </div>
+                    <Tabs
+                        defaultActiveKey="lmd"
+                        transition={false}
+                        id="justify-tab-example"
+                        justify
+                        style={{
+                            borderBottom: "2px solid #ddd",
+                        }}
                     >
-                        <UserLMD />
-                    </Tab>
-                    {/* LMD */}
-                    <Tab
-                        eventKey="corp"
-                        title={
-                            <span style={{ color: "#5d3600ff", fontWeight: "bold" }}>
-                                CORP
-                            </span>
-                        }
-                    >
-                        <UserCORP />
-                    </Tab>
-                </Tabs>
-            </div>
+                        {/* LMD */}
+                        <Tab
+                            eventKey="lmd"
+                            title={
+                                <div ref={containerRef}>
+                                    <VariableProximity
+                                        label={'LMD'}
+                                        className={'variable-proximity-demo'}
+                                        style={{
+                                            fontSize: '1rem', // responsive font size
+                                            color: "#5d3600ff"
+                                        }}
+                                        fromFontVariationSettings="'wght' 800, 'opsz' 9"
+                                        toFontVariationSettings="'wght' 2000, 'opsz' 30"
+                                        containerRef={containerRef}
+                                        radius={50}
+                                        falloff="linear"
+                                    />
+                                </div>
+                            }
+                        >
+                            <UserLMD />
+                        </Tab>
+                        {/* LMD */}
+                        <Tab
+                            eventKey="corp"
+                            title={
+                                <div ref={containerRef}>
+                                    <VariableProximity
+                                        label={'CORP'}
+                                        className={'variable-proximity-demo'}
+                                        style={{
+                                            fontSize: '1rem', // responsive font size
+                                            color: "#5d3600ff"
+                                        }}
+                                        fromFontVariationSettings="'wght' 800, 'opsz' 9"
+                                        toFontVariationSettings="'wght' 2000, 'opsz' 30"
+                                        containerRef={containerRef}
+                                        radius={50}
+                                        falloff="linear"
+                                    />
+                                </div>
+                            }
+                        >
+                            <UserCORP />
+                        </Tab>
+                    </Tabs>
+                </div>
+            </AnimatedContent>
         </Container>
     );
 }

@@ -1,0 +1,63 @@
+.blob-splash-btn1 {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 10px 32px;
+    font-size: clamp(14px, 2vw, 16px);
+    /* scales with screen size */
+    font-weight: 500;
+    color: #8a7000;
+
+    width: 100%;
+    /* use 100% width in small screens */
+    max-width: 280px;
+    /* limit it from growing too large */
+    border: 2px solid #d6b72e;
+    border-radius: 15px;
+    background: #ffcf4b;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1),
+        color 0.8s ease-in-out;
+}
+
+@media (min-width: 768px) {
+    .blob-splash-btn1 {
+        width: auto;
+        /* shrink to fit on larger screens */
+    }
+}
+
+.blob-splash-btn1:hover {
+    transform: scale(1.03);
+}
+
+.blob-splash-bg1 {
+    position: absolute;
+    bottom: -50%;
+    right: -40%;
+    width: 250%;
+    height: 250%;
+    background: #ffbb00;
+    border-radius: 58% 42% 42% 58% / 50% 70% 30% 50%;
+    transform: scale(0);
+    transform-origin: bottom right;
+    transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+    z-index: 0;
+}
+
+.blob-splash-btn1:hover .blob-splash-bg1 {
+    transform: scale(1.2);
+}
+
+.blob-splash-label1 {
+    position: relative;
+    z-index: 1;
+    transition: color 0.2s ease;
+}
+
+.blob-splash-btn1:hover .blob-splash-label1 {
+    color: #573800;
+}

@@ -79,9 +79,9 @@ export default function Report() {
                     <thead style={{ background: '#053b00ff', color: 'white' }}>
                         <tr>
                             <th>ID</th>
-                            <th>Subject</th>
+                            <th>Problem/Issue</th>
                             <th>Status</th>
-                            <th>Type</th>
+                            {/* <th>Type</th> */}
                             <th>Assigned To</th>
                             <th>For</th>
                             <th>Created At</th>
@@ -96,7 +96,7 @@ export default function Report() {
                                     <td>{ticket.ticket_id}</td>
                                     <td>{ticket.ticket_subject}</td>
                                     <td>{ticket.ticket_status}</td>
-                                    <td>{ticket.ticket_type}</td>
+                                    {/* <td>{ticket.ticket_type}</td> */}
                                     <td>{ticket.assigned_to}</td>
                                     <td>{ticket.ticket_for}</td>
                                     <td>{new Date(ticket.created_at).toLocaleString()}</td>
@@ -361,43 +361,43 @@ export default function Report() {
             worksheet.addRow([]);
         };
 
-        if (!ticketTypeSummary && !subcatSummary && !ticketCategorySummary && !ticketUsersSummary && !filteredTickets.length) {
+        if (!subcatSummary && !ticketCategorySummary && !ticketUsersSummary && !filteredTickets.length) {
             alert("No data available to download");
             return;
         }
 
-        // ---- Tickets by Type ----
-        if (ticketTypeSummary) {
-            const summaryArray = Array.isArray(ticketTypeSummary) ? ticketTypeSummary : [ticketTypeSummary];
-            const headers = summaryArray[0]?.month
-                ? ["Month", "Incident", "Request", "Inquiry", "Total"]
-                : Object.keys(summaryArray[0] || {});
-            const rows = summaryArray.map(r =>
-                summaryArray[0]?.month
-                    ? [r.month, r.incident, r.request, r.inquiry, r.total]
-                    : headers.map(h => r[h] ?? "")
-            );
-            addTable("Tickets By Type Summary", headers, rows);
+        // // ---- Tickets by Type ----
+        // if (ticketTypeSummary) {
+        //     const summaryArray = Array.isArray(ticketTypeSummary) ? ticketTypeSummary : [ticketTypeSummary];
+        //     const headers = summaryArray[0]?.month
+        //         ? ["Month", "Incident", "Request", "Inquiry", "Total"]
+        //         : Object.keys(summaryArray[0] || {});
+        //     const rows = summaryArray.map(r =>
+        //         summaryArray[0]?.month
+        //             ? [r.month, r.incident, r.request, r.inquiry, r.total]
+        //             : headers.map(h => r[h] ?? "")
+        //     );
+        //     addTable("Tickets By Type Summary", headers, rows);
 
-            addTable("Incident Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
-                filteredTickets.filter(t => t.ticket_type === "incident").map(t => [
-                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
-                    t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
-                ])
-            );
-            addTable("Request Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
-                filteredTickets.filter(t => t.ticket_type === "request").map(t => [
-                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
-                    t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
-                ])
-            );
-            addTable("Inquiry Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
-                filteredTickets.filter(t => t.ticket_type === "inquiry").map(t => [
-                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
-                    t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
-                ])
-            );
-        }
+        //     addTable("Incident Tickets", ["ID", "Problem/Issue", "Status", "Type", "Assigned To", "For", "Created At"],
+        //         filteredTickets.filter(t => t.ticket_type === "incident").map(t => [
+        //             t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+        //             t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
+        //         ])
+        //     );
+        //     addTable("Request Tickets", ["ID", "Problem/Issue", "Status", "Type", "Assigned To", "For", "Created At"],
+        //         filteredTickets.filter(t => t.ticket_type === "request").map(t => [
+        //             t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+        //             t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
+        //         ])
+        //     );
+        //     addTable("Inquiry Tickets", ["ID", "Problem/Issue", "Status", "Type", "Assigned To", "For", "Created At"],
+        //         filteredTickets.filter(t => t.ticket_type === "inquiry").map(t => [
+        //             t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+        //             t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
+        //         ])
+        //     );
+        // }
 
         // ---- Subcategory Summary ----
         if (subcatSummary) {
@@ -433,27 +433,27 @@ export default function Report() {
             );
             addTable("Tickets By Category Summary", headers, rows);
 
-            addTable("Hardware Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+            addTable("Hardware Tickets", ["ID", "Problem/Issue", "Status", "Assigned To", "For", "Created At"],
                 filteredTickets.filter(t => t.ticket_category === "hardware").map(t => [
-                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.ticket_id, t.ticket_subject, t.ticket_status,
                     t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
                 ])
             );
-            addTable("Network Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+            addTable("Network Tickets", ["ID", "Problem/Issue", "Status", "Assigned To", "For", "Created At"],
                 filteredTickets.filter(t => t.ticket_category === "network").map(t => [
-                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.ticket_id, t.ticket_subject, t.ticket_status,
                     t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
                 ])
             );
-            addTable("Software Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+            addTable("Software Tickets", ["ID", "Problem/Issue", "Status", "Assigned To", "For", "Created At"],
                 filteredTickets.filter(t => t.ticket_category === "software").map(t => [
-                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.ticket_id, t.ticket_subject, t.ticket_status,
                     t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
                 ])
             );
-            addTable("System Tickets", ["ID", "Subject", "Status", "Type", "Assigned To", "For", "Created At"],
+            addTable("System Tickets", ["ID", "Problem/Issue", "Status", "Assigned To", "For", "Created At"],
                 filteredTickets.filter(t => t.ticket_category === "system").map(t => [
-                    t.ticket_id, t.ticket_subject, t.ticket_status, t.ticket_type,
+                    t.ticket_id, t.ticket_subject, t.ticket_status,
                     t.assigned_to || "-", t.ticket_for || "-", new Date(t.created_at).toLocaleString()
                 ])
             );
@@ -493,7 +493,7 @@ export default function Report() {
             <Row className="align-items-center g-3 mb-4">
                 {/* Left side - Title */}
                 <Col xs="auto">
-                    <h2 className="mb-0"><b>Reports</b></h2>
+                    <h2 className="mb-0"><b>Support Report Tickets</b></h2>
                 </Col>
 
                 {/* Filters */}
@@ -657,8 +657,8 @@ export default function Report() {
             </Row>
 
             {/* Other Charts */}
-            <Row className="g-3">
-                <Col xs={12} md={4}>
+            <Row className="g-2">
+                {/* <Col xs={12} md={4}>
                     <div
                         className="bento-item bento-users"
                         onClick={() =>
@@ -667,7 +667,7 @@ export default function Report() {
                                 <AllTicketbyType filterType={filterType} showChart={false} location={location} />)}>
                         <AllTicketbyType filterType={filterType} showChart={true} location={location} onDataReady={setTicketTypeSummary} />
                     </div>
-                </Col>
+                </Col> */}
 
                 <Col xs={12} md={4}>
                     <div
@@ -681,7 +681,7 @@ export default function Report() {
                     </div>
                 </Col>
 
-                <Col xs={12} md={4}>
+                <Col xs={12} md={8}>
                     <div
                         className="bento-item bento-users"
                         onClick={() =>

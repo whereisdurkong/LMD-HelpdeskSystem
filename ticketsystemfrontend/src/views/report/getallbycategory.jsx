@@ -211,9 +211,9 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                     <thead style={{ background: '#053b00ff', color: 'white' }}>
                         <tr>
                             <th>Ticket ID</th>
-                            <th>Subject</th>
+                            <th>Problem/Issue</th>
                             <th>Status</th>
-                            <th>Type</th>
+                            {/* <th>Type</th> */}
                             <th>Assigned To</th>
                             <th>For</th>
                         </tr>
@@ -227,7 +227,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                                 <td>{t.ticket_id}</td>
                                 <td>{t.ticket_subject}</td>
                                 <td>{t.ticket_status}</td>
-                                <td>{t.ticket_type}</td>
+                                {/* <td>{t.ticket_type}</td> */}
                                 <td>{t.assigned_to || "-"}</td>
                                 <td>{t.ticket_for || "-"}</td>
                             </tr>

@@ -28,7 +28,6 @@ export default function UserDashboard() {
                     `${config.baseApi}/announcements/get-all-anc`
                 );
                 const allAnc = res.data || [];
-
                 const activeAnc = allAnc.filter(anc => anc.is_active === true)
 
                 if (activeAnc.length > 0) {
@@ -67,8 +66,7 @@ export default function UserDashboard() {
                 textAlign: "center",
                 padding: "20px",
                 overflow: "hidden", // ensure background doesn’t overflow
-            }}
-        >
+            }}>
             {/* Squares as background */}
             <div
                 style={{
@@ -79,15 +77,13 @@ export default function UserDashboard() {
                     height: "100%",
                     zIndex: 0,
                     background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)'
-                }}
-            >
+                }}>
                 <Squares
                     speed={0.1}
                     squareSize={100}
                     direction="down"
                     borderColor="rgba(255, 229, 112, 0.37)"
                     hoverFillColor="#dbcc40ff"
-
                 />
             </div>
 
@@ -99,8 +95,7 @@ export default function UserDashboard() {
                         fontWeight: "bold",
                         marginBottom: "20px",
                         color: "#012500ff",
-                    }}
-                >
+                    }}>
                     Welcome, {allcaps}
                 </h1>
 
@@ -108,16 +103,11 @@ export default function UserDashboard() {
                     Create a ticket now so we can <br /> address your concern.
                 </p>
                 <Dashboardbtn onClick={handleCreate}>
-
                     Create a Ticket
-
                 </Dashboardbtn>
-
-
             </div>
 
-            {/* Fixed bottom-right card */}
-
+            {/* Annoucmenet */}
             {exitAnc && ancState && (
                 <Card
                     className="popup-card"
@@ -196,7 +186,7 @@ export default function UserDashboard() {
                         </div>
                     </div>
 
-                    {/* Content */}
+                    {/* Announcement*/}
                     <Card.Body style={{ backgroundColor: "white", padding: "10px" }}>
                         <Row className="align-items-center mb-2">
                             <Col>
@@ -237,19 +227,6 @@ export default function UserDashboard() {
                     </Card.Body>
                 </Card>
             )}
-
-            {/* Animation styles */}
-            <style>{`
-                @keyframes popup {
-                    0% { transform: scale(0.7); opacity: 0; }
-                    60% { transform: scale(1.05); opacity: 1; }
-                    100% { transform: scale(1); }
-                }
-
-                .popup-card {
-                    animation: popup 0.4s ease-out;
-                }
-            `}</style>
         </Container>
     );
 }

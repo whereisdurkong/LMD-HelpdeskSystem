@@ -24,14 +24,15 @@ export default function Software() {
     const [access, setAccess] = useState(false)
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    // Loading Component 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
     // Check user access
     useEffect(() => {
@@ -87,8 +88,8 @@ export default function Software() {
         }
     }, [showModal]);
 
+    //Arhcive function
     const handleArchive = async (id) => {
-
         try {
             setLoading(true)
             const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -105,6 +106,7 @@ export default function Software() {
 
     }
 
+    //Update Function
     const handleUpdate = async () => {
 
         if (newTitle === '') {
@@ -136,6 +138,7 @@ export default function Software() {
         }
     }
 
+    //Add Fucntion
     const handleSave = async () => {
         console.log("Saving Software:", newTitle, newContent);
 
@@ -170,6 +173,7 @@ export default function Software() {
         }
     };
 
+    //Format and styles function
     const handleContentChange = () => {
         setNewContent(contentRef.current.innerHTML);
     };
@@ -198,6 +202,7 @@ export default function Software() {
                 paddingBottom: '20px',
             }}
         >
+            {/* Alert Components */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -212,6 +217,7 @@ export default function Software() {
                 <Card className="p-4 shadow-lg" style={{ borderRadius: "20px", backgroundColor: "#fff" }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="fw-bold text-dark mb-0">Software Frequently Asked Questions</h2>
+                        {/* Buttons */}
                         {access && (
                             <div className="d-flex gap-2">
                                 <Button variant="primary" onClick={() => navigate('/softwarearchive')}>Archive</Button>
@@ -292,7 +298,7 @@ export default function Software() {
                 </Card>
             </Container>
 
-            {/* Modal */}
+            {/* Modal for Edit || Add*/}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
                 <Modal.Header >
                     <Modal.Title>{editMode ? 'Edit Software Troubleshooting Step' : 'Add Software Troubleshooting Step'}</Modal.Title>
@@ -358,6 +364,7 @@ export default function Software() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

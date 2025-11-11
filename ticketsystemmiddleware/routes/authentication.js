@@ -3,7 +3,7 @@ var bcrypt = require('bcrypt');
 const router = express.Router();
 var Sequelize = require('sequelize');
 const nodemailer = require("nodemailer");
-
+const { Op } = require('sequelize');
 require('dotenv').config();
 
 var knex = require("knex")({
@@ -178,14 +178,65 @@ router.post('/register', async function (req, res, next) {
 
     console.log(`User was registered ${user_name} by ${current_user}`);
     res.status(200).json({ message: "User registered successfully" });
+
+    //email
+    try {
+      if (emp_tier === 'user') {
+        console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        console.log(`Email function triggered for ${user_name} by ${current_user}, sending to ${emp_email}`);
+        const transporter = nodemailer.createTransport({
+          host: process.env.EMAIL_HOST,
+          secure: false,
+          auth: {
+            user: process.env.EMAIL,
+            pass: process.env.EMAIL_PASS
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        });
+        //Setting assigned HD username
+        var end = `Best regards,<br> Lepanto Helpdesk System`;
+        var privacy = '<br><p style="color:gray;font-size:12px">Privacy Notice: </p>' +
+          '<p style="color:gray;font-size:12px">The content of this email is intended for the person ' +
+          'or entity to which it is addressed only. This email may contain confidential information. If you are not the person ' +
+          'to whom this message is addressed, be aware that any use, reproduction, or distribution of this message is strictly ' +
+          'prohibited.</p>'
+        const username = user_name.charAt(0).toUpperCase() + user_name.slice(1).toLowerCase();
+
+        var body = `This is to inform you that your account has been created in the IT Helpdesk System. <br><br>`
+          + `You can access the Helpdesk System using the following link: <a href="192.168.4.246:3007/ticketsystem" style=color: #1a73e8; text-decoration: none;>Click Here</a> <br><br>`
+          + `Below are your account details: <br>`
+          + `Username: <b>${user_name}</b> <br>`
+          + `Temporary Password: <b>${pass_word}</b> <br><br>`
+          + `You are advised to change your password upon your first login. Click your name at the top right corner, select <b>Profile</b>, and then click the <b>Change Password</b> button.<br><br>`
+          + `If you have any questions or need further assistance, please do not hesitate to contact the IT Department.<br><br>`
+
+        var start = `Hello <b>${username}</b>, <br><br>`
+        var wholeEmail = start + body + end + privacy;
+
+        const mailOptions = {
+          from: process.env.EMAIL,
+          to: emp_email,
+          subject: 'Helpdesk System Account Created',
+          html: wholeEmail
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`Email sent to ${emp_email} regarding user creation by ${current_user}`);
+      }
+
+    } catch (err) {
+      console.log('Unable to send email at the moment: ', err)
+    }
   } catch (err) {
     return res.status(404).json({ msg: 'Unable to Register user!' + ` ${user_name}` })
 
   }
 });
 
+//Email registration
 router.post('/register-email', async function (req, res, next) {
-
   try {
     console.log('Triggered /register-email')
     const {
@@ -195,7 +246,7 @@ router.post('/register-email', async function (req, res, next) {
       current_user
     } = req.body
 
-    console.log(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Email function triggered for ${user_name} by ${current_user}, sending to ${emp_email}`);
+    console.log(`Email function triggered for ${user_name} by ${current_user}, sending to ${emp_email}`);
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       secure: false,
@@ -239,8 +290,6 @@ router.post('/register-email', async function (req, res, next) {
   } catch (err) {
     console.log('INTERNAL EROR: ', err)
   }
-
-
 })
 
 //Update a user
@@ -292,7 +341,7 @@ router.post('/update-user', async (req, res, next) => {
 
 })
 
-
+//Edit Password
 router.post('/edit-password', async (req, res) => {
   try {
     const { user_id, new_password } = req.body;
@@ -357,7 +406,7 @@ router.get('/get-by-id', async (req, res, next) => {
     console.log('GET BY USERNAME CONOSOLE: ', err)
   }
 })
-
+// Delete User function
 router.post('/delete-user', async (req, res, next) => {
   try {
     const {
@@ -382,8 +431,6 @@ router.post('/delete-user', async (req, res, next) => {
     console.log('DELETE USER CONOSOLE: ', err)
   }
 })
-
-const { Op } = require('sequelize');
 
 //Get all notes using their usernames
 router.get('/get-all-notes-usernames', async (req, res) => {
@@ -447,6 +494,7 @@ router.get('/get-all-notes', async (req, res) => {
   }
 })
 
+//get all pms notes
 router.get('/get-all-pmsnotes', async (req, res) => {
   try {
     const getAll = await knex('pmsnotes_master').select('*');
@@ -456,7 +504,5 @@ router.get('/get-all-pmsnotes', async (req, res) => {
     console.log('INTERNAL ERROR: ', err)
   }
 })
-
-
 
 module.exports = router;

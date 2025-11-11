@@ -19,17 +19,22 @@ export default function ArchiveAssets() {
     const navigate = useNavigate()
 
     useEffect(() => {
-        axios
-            .get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
-                const justUsers = res.data.filter(
-                    (user) => user.emp_tier === 'user'
-                );
-                setAllUsers(justUsers);
-            })
-            .catch((err) => {
-                console.error('Error fetching users:', err);
-            });
+        try {
+            axios
+                .get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
+                    const justUsers = res.data.filter(
+                        (user) => user.emp_tier === 'user'
+                    );
+                    setAllUsers(justUsers);
+                })
+                .catch((err) => {
+                    console.error('Error fetching users:', err);
+                });
+        } catch (err) {
+            console.log('Unable to get all users: ', err)
+        }
+
     }, []);
 
     return (
@@ -58,7 +63,7 @@ export default function ArchiveAssets() {
                         transition={false}
                         id="assets-tabs"
                         justify
-                        style={{ marginBottom: '0' }} // ✅ remove space
+                        style={{ marginBottom: '0' }} // remove space
                     >
                         {/* Desktop Tab */}
                         <Tab
@@ -69,7 +74,6 @@ export default function ArchiveAssets() {
                                 </span>
                             }
                         >
-                            {/* ✅ No margin on container */}
                             <div style={{ overflowX: 'auto', width: '100%', marginTop: '0' }}>
                                 <ArchiveViewComputers />
                             </div>

@@ -22,7 +22,6 @@ export default function ArchivePMSTicket() {
     const [currentPage, setCurrentPage] = useState(1);
     const ticketsPerPage = 10;
 
-
     const navigate = useNavigate();
 
     //Fetch user information from local storage
@@ -34,26 +33,36 @@ export default function ArchivePMSTicket() {
     //Fetch all tickets
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
-        axios.get(`${config.baseApi}/pmsticket/get-all-ticket`)
-            .then((res) => {
+        try {
+            axios.get(`${config.baseApi}/pmsticket/get-all-ticket`)
+                .then((res) => {
 
-                const archived = res.data.filter(ticket => ticket.is_active === false)
-                console.log(archived)
-                setAllTicket(archived);
-            });
+                    const archived = res.data.filter(ticket => ticket.is_active === false)
+                    console.log(archived)
+                    setAllTicket(archived);
+                });
 
-        if (user.emp_location) {
-            setEmpLocation(user.emp_location);
-            setFilterLocation(user.emp_location);   // auto-apply filter
+            if (user.emp_location) {
+                setEmpLocation(user.emp_location);
+                setFilterLocation(user.emp_location);   // auto-apply filter
+            }
+        } catch (err) {
+            console.log('Unable to fetch all ticket: ', err)
         }
+
     }, []);
 
     //Fetch all users
     useEffect(() => {
-        axios.get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
-                setAllUsers(res.data);
-            });
+        try {
+            axios.get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
+                    setAllUsers(res.data);
+                });
+        } catch (err) {
+            console.log('Unable to fetch all users: ', err)
+        }
+
     }, []);
 
     //Assigned to display tickets per role
@@ -103,6 +112,7 @@ export default function ArchivePMSTicket() {
         return matchesSearch && matchesStatus && matchesLocation && matchesDate;
     });
 
+    //Ascending to decending
     const sortedTickets = [...filteredTickets].sort((a, b) => {
         const dateA = new Date(a.created_at || a.date_created || a.date); // adjust based on your DB column
         const dateB = new Date(b.created_at || b.date_created || b.date);
@@ -114,7 +124,6 @@ export default function ArchivePMSTicket() {
     const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
     const currentTickets = sortedTickets.slice(indexOfFirstTicket, indexOfLastTicket);
     const totalPages = Math.ceil(sortedTickets.length / ticketsPerPage);
-
 
     //Design for Status
     const renderStatusBadge = (status) => {
@@ -156,40 +165,6 @@ export default function ArchivePMSTicket() {
         return <span style={style}>{label}</span>;
     };
 
-    //Design for Urgency Levels
-    const renderUrgencyBadge = (urgency) => {
-        const baseStyle = {
-            display: 'inline-block',
-            padding: '6px 12px',
-            borderRadius: '50px',
-            border: '0.1px solid',
-            color: 'white',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
-            textAlign: 'center',
-            minWidth: '60px',
-        };
-
-        let style = {};
-        let label = urgency;
-
-        switch (urgency?.toLowerCase()) {
-            case 'low':
-                style = { ...baseStyle, backgroundColor: '#003006ff', color: '#ffffffff' }; label = 'Low'; break;
-            case 'medium':
-                style = { ...baseStyle, backgroundColor: '#9e8600ff', color: '#ffffffff' }; label = 'Medium'; break;
-            case 'high':
-                style = { ...baseStyle, backgroundColor: '#720000ff', color: '#ffffffff' }; label = 'High'; break;
-            case 'critical':
-                style = { ...baseStyle, backgroundColor: '#fd0000ff', color: '#fefefeff' }; label = 'Critical'; break;
-            default:
-                style = { ...baseStyle, backgroundColor: '#6c757d' }; label = 'NONE'; break;
-        }
-
-        return <span style={style}>{label}</span>;
-    };
-
     //onClick view ticket 
     const HandleView = (ticket) => {
         const params = new URLSearchParams({ id: ticket.pmsticket_id });
@@ -203,14 +178,12 @@ export default function ArchivePMSTicket() {
     };
 
     return (
-
         <Container
             style={{
                 padding: '20px',
                 background: '#fff',
                 borderRadius: '12px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-
             }}
         >
             {/* Search and Filter */}
@@ -264,7 +237,6 @@ export default function ArchivePMSTicket() {
                         </Form.Select>
                     </Form.Group>
                 </div>
-
 
                 {/* Location Filter */}
                 <div style={{ flex: "0 1 160px" }}>
@@ -411,11 +383,10 @@ export default function ArchivePMSTicket() {
                             }}
                         >
                             <Card.Body>
-                                <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: 4 }}>#{ticket.ticket_id}</div>
-                                <div><strong>Problem/Issue:</strong> {ticket.ticket_subject}</div>
+                                <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: 4 }}>#{ticket.pmsticket_id}</div>
+                                <div><strong>Tag ID:</strong> {ticket.tag_id}</div>
                                 {/* <div><strong>Type:</strong> {ticket.ticket_type}</div> */}
-                                <div><strong>Status:</strong> {renderStatusBadge(ticket.ticket_status)}</div>
-                                <div><strong>Urgency:</strong> {renderUrgencyBadge(ticket.ticket_urgencyLevel)}</div>
+                                <div><strong>Status:</strong> {renderStatusBadge(ticket.pms_status)}</div>
                                 <div style={{ marginBottom: 4 }}><strong>Description:</strong> {ticket.Description}</div>
                                 <div style={{ marginTop: '8px', color: '#003006ff', fontWeight: 500 }}>View</div>
                             </Card.Body>

@@ -151,6 +151,7 @@ if (empTier === 'user' && (empRole === 'user' || empRole === 'admin')) {
   const pages = menuItems.items.find(item => item.id === 'pages');
   if (pages) {
     pages.children = pages.children.filter(child => child.id !== 'reports');
+    pages.children = pages.children.filter(child => child.id !== 'pmsreports');
   }
 }
 

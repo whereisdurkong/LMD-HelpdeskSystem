@@ -27,6 +27,7 @@ import ViewHDPmsTicket from 'views/pms/viewpmshdticket';
 import PMSReport from 'views/pmsreports';
 import PMSbyDept from 'views/pmsreports/pmsbydept';
 import PMSbyHD from 'views/pmsreports/pmsbyhd';
+import Maintenance from 'views/pages/maintenance';
 
 
 
@@ -118,7 +119,7 @@ const MainRoutes = {
   children: [
     {
       path: '/sample',
-      element: withSpinner(<ViewTicketLogs />)
+      element: withSpinner(<Maintenance />)
     },
     {
       path: '/sample1',

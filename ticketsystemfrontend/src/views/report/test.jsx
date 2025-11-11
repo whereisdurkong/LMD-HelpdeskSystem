@@ -669,7 +669,7 @@ export default function test() {
             </div>
 
 
-            {/* ✅ Clickable Open / Not Reviewed / Closed cards */}
+            {/* Clickable Open / Not Reviewed / Closed cards */}
             {/* <Row style={{ paddingBottom: '20px' }}>
                 <Col>
                     <div

@@ -2,24 +2,34 @@ import { useEffect, useState } from 'react';
 import { Table, Container, Button, Row, Col, Form, Pagination } from 'react-bootstrap';
 import axios from 'axios';
 import config from 'config';
+import { useNavigate } from 'react-router';
+
+
 
 export default function UsersLMD() {
     const [allUsers, setAllUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const ticketsPerPage = 10;
+    const navigate = useNavigate();
 
+    //Get all users
     useEffect(() => {
-        axios.get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
-                const justUsers = res.data.filter(user => user.emp_location === 'lmd');
-                setAllUsers(justUsers);
-            })
-            .catch((err) => {
-                console.error("Error fetching users:", err);
-            });
+        try {
+            axios.get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
+                    const justUsers = res.data.filter(user => user.emp_location === 'lmd');
+                    setAllUsers(justUsers);
+                })
+                .catch((err) => {
+                    console.error("Error fetching users:", err);
+                });
+        } catch (err) {
+            console.log('Unable to get all users: ', err)
+        }
     }, []);
 
+    //Setting users full name
     const getFullName = (user) => {
         if (!user.emp_FirstName || !user.emp_LastName) return '';
         const first = user.emp_FirstName.charAt(0).toUpperCase() + user.emp_FirstName.slice(1).toLowerCase();
@@ -27,11 +37,13 @@ export default function UsersLMD() {
         return `${first} ${last}`;
     };
 
+    //route user to view
     const HandleView = (user) => {
         const params = new URLSearchParams({ id: user.user_id })
-        window.location.replace(`/ticketsystem/users-view?${params.toString()}`)
+        navigate(`/users-view?${params.toString()}`)
     }
 
+    //filter
     const fiteredUsers = allUsers.filter((user) => {
         const matchedSearch = (
             user.emp_FirstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,6 +74,7 @@ export default function UsersLMD() {
             <Row className="align-items-center g-3 mb-4">
                 <Col >
                     <Form.Group controlId="search" style={{ width: '100%' }}>
+                        {/* Search */}
                         <Form.Control
                             type="text"
                             placeholder={" Search by Name, Email, Phone Number etc."}
@@ -116,6 +129,7 @@ export default function UsersLMD() {
                     )}
                 </tbody>
             </Table>
+            {/* Pagenation */}
             {totalPages > 1 && (
                 <div className="d-flex justify-content-center mt-4">
                     <Pagination>

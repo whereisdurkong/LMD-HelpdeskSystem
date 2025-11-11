@@ -12,7 +12,9 @@ const { type, userInfo } = require('os');
 require('dotenv').config();
 const archiver = require('archiver');
 const { assign } = require('nodemailer/lib/shared');
+const { DataTypes } = Sequelize;
 
+const DIR = './uploads';
 
 var knex = require("knex")({
     client: 'mssql',
@@ -34,10 +36,6 @@ var db = new Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSW
     dialect: "mssql",
     port: parseInt(process.env.APP_SERVER_PORT),
 });
-
-const DIR = './uploads';
-
-const { DataTypes } = Sequelize;
 
 const PMSTickets = db.define('pmsticket_master', {
     pmsticket_id: {
@@ -104,7 +102,6 @@ const PMSTickets = db.define('pmsticket_master', {
     tableName: 'pmsticket_master'
 })
 
-
 //Create a ticket function
 router.post('/create-ticket-user', async (req, res) => {
     const currentTimestamp = new Date();
@@ -116,8 +113,6 @@ router.post('/create-ticket-user', async (req, res) => {
             created_by,
             user_id
         } = req.body;
-
-
 
         // //Get the current user's information
         const empInfo = await knex('users_master').where('user_id', user_id).first();
@@ -147,6 +142,9 @@ router.post('/create-ticket-user', async (req, res) => {
             created_at: currentTimestamp,
             changes_made: `User ${created_by} submmited the ticket, Ticket ID: ${pmsticket_id}`
         })
+
+        console.log('Created a ticket successfully by ' + `${created_by}`)
+        res.status(200).json({ message: 'Ticket created successfully' });
 
         // //Email Function
         try {
@@ -232,15 +230,14 @@ router.post('/create-ticket-user', async (req, res) => {
             console.log('Unable to submit email: ', err);
         }
 
-        console.log('Created a ticket successfully by ' + `${created_by}`)
-        res.status(200).json({ message: 'Ticket created successfully' });
+
     } catch (err) {
         console.error('Error creating ticket:', err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-
+//GET PMS TICKET BY ID
 router.get('/pmsticket-by-id', async (req, res, next) => {
     try {
         const getById = await PMSTickets.findAll({
@@ -256,6 +253,7 @@ router.get('/pmsticket-by-id', async (req, res, next) => {
     }
 })
 
+//WHEN ACCEPTING A PMS TICKET
 router.post('/update-accept-pmsticket', async (req, res) => {
     const currentTimestamp = new Date()
 
@@ -299,7 +297,7 @@ router.post('/update-accept-pmsticket', async (req, res) => {
                 tag_id: ticketInfo.tag_id,
                 created_by: empInfo.user_name,
                 created_at: currentTimestamp,
-                changes_made: `${empInfo.user_name} accepted open ticket and was assigned ,Ticket ID: ${ticket_id}`
+                changes_made: `${empInfo.user_name} accepted open ticket and was assigned ,Ticket ID: ${pmsticket_id}`
             })
         }
         if (pms_status === 'resolved') {
@@ -308,7 +306,7 @@ router.post('/update-accept-pmsticket', async (req, res) => {
                 tag_id: ticketInfo.tag_id,
                 created_by: empInfo.user_name,
                 created_at: currentTimestamp,
-                changes_made: `${empInfo.user_name} accepted resolved ticket and was assigned, Ticket ID: ${ticket_id}`
+                changes_made: `${empInfo.user_name} accepted resolved ticket and was assigned, Ticket ID: ${pmsticket_id}`
             })
         }
         console.log(`Ticket ${pmsticket_id} was successfully accepted by ${empInfo.user_name}`)
@@ -318,7 +316,7 @@ router.post('/update-accept-pmsticket', async (req, res) => {
     }
 })
 
-
+//UPDATE PMS TICKET
 router.post('/update-pmsticket', async (req, res) => {
     console.log('WOORRRRRRRRRRRRRRRRRRRRKKKKKKKKINGGGGGGGGGGG')
     const currentTimestamp = new Date()
@@ -341,9 +339,6 @@ router.post('/update-pmsticket', async (req, res) => {
 
         const updateByInfo = await knex('users_master').where('user_id', updated_by).first();
 
-        const updateByInfo1 = await knex('pmsticket_master').where('pmsticket_id', pmsticket_id).first();
-
-
         if (pms_status === 'open') {
             await knex('pmsticket_master').where('pmsticket_id', pmsticket_id).update({
                 assigned_to: '',
@@ -360,7 +355,30 @@ router.post('/update-pmsticket', async (req, res) => {
             console.log(`Ticket ${pmsticket_id} assigned to ${assigned_to}`);
         }
 
+        // // Update the ticket in the database
+        await knex('pmsticket_master').where('pmsticket_id', pmsticket_id).update({
+            pms_status,
+            tag_id,
+            description,
+            assigned_location,
+            pmsticket_for,
 
+            updated_at: currentTimestamp,
+            updated_by: updateByInfo.user_name,
+        });
+        // Insert into ticket logs
+        await knex('pmsticket_logs').insert({
+            pmsticket_id,
+            tag_id,
+            created_by: updateByInfo.user_name,
+            created_at: currentTimestamp,
+            changes_made
+        });
+
+        console.log(`PMS Ticket ${pmsticket_id} was updated by ${updateByInfo.user_name} `)
+        res.status(200).json({ message: 'PMS Ticket updated successfully' });
+
+        //Email
         if (pms_status) {
             try {
                 const transporter = nodemailer.createTransport({
@@ -404,7 +422,7 @@ router.post('/update-pmsticket', async (req, res) => {
                         html: wholeEmail
                     }
                     await transporter.sendMail(mailOption);
-                    console.log(`Email sent to ${ticketForInfo.emp_email} regarding ticket update`);
+                    console.log(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Email sent to ${ticketForInfo.emp_email} regarding ticket update`);
                 }
 
                 if (pms_status === 'resolved') {
@@ -496,39 +514,17 @@ router.post('/update-pmsticket', async (req, res) => {
                     })
                 }
             } catch (err) {
-                console.log('INTERNAL ERROR: ', err)
+                console.log('Unable to send email /updateticket: ', err)
             }
         }
 
-        // // Update the ticket in the database
-        await knex('pmsticket_master').where('pmsticket_id', pmsticket_id).update({
-            pms_status,
-            tag_id,
-            description,
-            assigned_location,
-            pmsticket_for,
-
-            updated_at: currentTimestamp,
-            updated_by: updateByInfo.user_name,
-        });
-        // Insert into ticket logs
-        await knex('pmsticket_logs').insert({
-            pmsticket_id,
-            tag_id,
-            created_by: updateByInfo.user_name,
-            created_at: currentTimestamp,
-            changes_made
-        });
-
-        console.log(`PMS Ticket ${pmsticket_id} was updated by ${updateByInfo.user_name} `)
-        res.status(200).json({ message: 'PMS Ticket updated successfully' });
     } catch (err) {
         console.error('Error updating ticket:', err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-
+//GET ALL PMS TICKET
 router.get('/get-all-pmsticket', async (req, res) => {
     try {
         const alltickets = await knex('pmsticket_master').select('*');
@@ -540,6 +536,7 @@ router.get('/get-all-pmsticket', async (req, res) => {
     }
 })
 
+//RE-ASSIGNING THE TICKET 
 router.post('/update-ticket-assigned', async (req, res) => {
 
     try {
@@ -581,6 +578,7 @@ router.post('/update-ticket-assigned', async (req, res) => {
             changes_made: `${updateByInfo.user_name} assinged the ticket to ${assigned_to}`
         });
 
+        res.status(200).json({ message: 'Ticket updated successfully' });
         //Setting assigned HD username
         var end = `Best regards,<br> Lepanto Helpdesk System`;
         var privacy = '<br><p style="color:gray;font-size:12px">Privacy Notice: </p>' +
@@ -616,14 +614,14 @@ router.post('/update-ticket-assigned', async (req, res) => {
 
 
 
-        res.status(200).json({ message: 'Ticket updated successfully' });
+
 
     } catch (err) {
         console.log('INTERNAL ERROR: ', err)
     }
 })
 
-
+//GET ALL NOTES BY PM TICKET ID
 router.get('/get-all-notes/:pmsticket_id', async (req, res, next) => {
     try {
         const pmsticket_id = req.params.pmsticket_id;
@@ -668,7 +666,6 @@ router.post('/note-post', async (req, res, next) => {
         console.log('Internal Error: ', err)
     }
 })
-
 
 //Setting notify to true
 router.post('/notified-true', async (req, res) => {
@@ -720,6 +717,7 @@ router.post('/update-notified-false', async (req, res) => {
     }
 })
 
+//GET ALL FEEDBACK/REVIEW
 router.get('/get-all-feedback/:pmsticket_id', async (req, res) => {
     try {
         const pmsticket_id = req.params.pmsticket_id;
@@ -732,6 +730,7 @@ router.get('/get-all-feedback/:pmsticket_id', async (req, res) => {
     }
 });
 
+//GET ALL FEEDBACK
 router.get('/get-all-feedback', async (req, res) => {
     try {
         const getAll = await knex('pmsreview_master').select('*');
@@ -767,6 +766,7 @@ router.post('/feedback', async (req, res) => {
     }
 });
 
+//DELETE FEEDBACK/REVIEW IF IT WILL BE RE-FEEDBACK/REVIEW
 router.post('/feedback-delete-by-id', async (req, res) => {
     try {
         console.log('/feedback-by-id was triggered');
@@ -795,6 +795,7 @@ router.post('/feedback-delete-by-id', async (req, res) => {
     }
 })
 
+//ARCHIVE PMS-TICKET
 router.post('/archive-ticket', async (req, res) => {
     try {
         const currentTimestamp = new Date();
@@ -821,7 +822,7 @@ router.post('/archive-ticket', async (req, res) => {
     }
 })
 
-
+//UN-ARCHIVE PMS TICKET
 router.post('/un-archive-ticket', async (req, res) => {
     try {
         const currentTimestamp = new Date();
@@ -848,7 +849,7 @@ router.post('/un-archive-ticket', async (req, res) => {
     }
 });
 
-
+//GET ALL PMS TICKET
 router.get('/get-all-ticket', async (req, res) => {
     try {
         const alltickets = await knex('pmsticket_master').select('*');
@@ -859,7 +860,6 @@ router.get('/get-all-ticket', async (req, res) => {
         console.log('INTERNAL ERROR: ', err)
     }
 });
-
 
 // Lock or refresh lock
 router.post("/lock", async (req, res) => {
@@ -906,7 +906,7 @@ router.post("/unlock", async (req, res) => {
     }
 });
 
-
+//SEND A NOTIFICATION TO REVIEW
 router.post('/send-notification-review', async (req, res) => {
 
     try {
@@ -963,69 +963,98 @@ router.post('/send-notification-review', async (req, res) => {
     }
 });
 
+// router.post('/archive-ticket', async (req, res) => {
+//     try {
+//         const currentTimestamp = new Date();
+//         const {
+//             pmsticket_id,
+//             updated_by
+//         } = req.body;
+//         console.log('Triggered /archive-ticket', pmsticket_id, updated_by)
+//         await knex(' pmsticket_master').where({ pmsticket_id: pmsticket_id }).update({
+//             is_active: false,
+//             updated_by: updated_by
+//         });
 
-router.post('/archive-ticket', async (req, res) => {
-    try {
-        const currentTimestamp = new Date();
-        const {
-            pmsticket_id,
-            updated_by
-        } = req.body;
-        console.log('Triggered /archive-ticket', pmsticket_id, updated_by)
-        await knex(' pmsticket_master').where({ pmsticket_id: pmsticket_id }).update({
-            is_active: false,
-            updated_by: updated_by
-        });
+//         await knex(' pmsticket_logs').insert({
+//             pmsticket_id: pmsticket_id,
+//             created_by: updated_by,
+//             created_at: currentTimestamp,
+//             changes_made: `${updated_by} Archived this ticket`
+//         });
 
-        await knex(' pmsticket_logs').insert({
-            pmsticket_id: pmsticket_id,
-            created_by: updated_by,
-            created_at: currentTimestamp,
-            changes_made: `${updated_by} Archived this ticket`
-        });
+//         res.status(200).json({ message: 'Ticket archived successfully' });
+//     } catch (err) {
+//         console.log('INTERNAL ERROR: ', err)
+//     }
+// })
 
-        res.status(200).json({ message: 'Ticket archived successfully' });
-    } catch (err) {
-        console.log('INTERNAL ERROR: ', err)
-    }
+// router.post('/un-archive-ticket', async (req, res) => {
+//     try {
+//         const currentTimestamp = new Date();
+//         const {
+//             pmsticket_id,
+//             updated_by
+//         } = req.body;
+//         console.log('Triggered /archive-ticket', pmsticket_id, updated_by);
+
+//         await knex(' pmsticket_master').where({ pmsticket_id: pmsticket_id }).update({
+//             is_active: true,
+//             updated_by: updated_by
+//         });
+
+//         await knex(' pmsticket_logs').insert({
+//             pmsticket_id: pmsticket_id,
+//             created_by: updated_by,
+//             created_at: currentTimestamp,
+//             changes_made: `${updated_by} Un-Archived this ticket`
+//         });
+
+//         res.status(200).json({ message: 'Ticket un-archived successfully' });
+//     } catch (err) {
+//         console.log('INTERNAL ERROR: ', err)
+//     }
+// })
+
+const Logs = db.define('pmsticket_logs', {
+    pmsticket_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true
+    },
+    created_by: {
+        type: DataTypes.STRING,
+    },
+    changes_made: {
+        type: DataTypes.STRING,
+    },
+    tag_id: {
+        type: DataTypes.STRING,
+    },
+    created_at: {
+        type: DataTypes.STRING,
+    },
+}, {
+    freezeTableName: false,
+    timestamps: false,
+    createdAt: false,
+    updatedAt: false,
+    tableName: 'pmsticket_logs'
 })
 
-router.post('/un-archive-ticket', async (req, res) => {
+//GET PMS TICKET LOGS BY ID
+router.get('/pmsticket-logs', async (req, res) => {
     try {
-        const currentTimestamp = new Date();
-        const {
-            pmsticket_id,
-            updated_by
-        } = req.body;
-        console.log('Triggered /archive-ticket', pmsticket_id, updated_by);
+        console.log('/ticket-logs was triggered');
+        const getById = await Logs.findAll({
+            where: {
+                pmsticket_id: req.query.id
+            }
+        })
 
-        await knex(' pmsticket_master').where({ pmsticket_id: pmsticket_id }).update({
-            is_active: true,
-            updated_by: updated_by
-        });
-
-        await knex(' pmsticket_logs').insert({
-            pmsticket_id: pmsticket_id,
-            created_by: updated_by,
-            created_at: currentTimestamp,
-            changes_made: `${updated_by} Un-Archived this ticket`
-        });
-
-        res.status(200).json({ message: 'Ticket un-archived successfully' });
+        res.json(getById)
     } catch (err) {
-        console.log('INTERNAL ERROR: ', err)
+        console.log('INTERNAL ERROR:,', err)
     }
 })
-
-
-
-
-
-
-
-
-
-
-
 
 module.exports = router;

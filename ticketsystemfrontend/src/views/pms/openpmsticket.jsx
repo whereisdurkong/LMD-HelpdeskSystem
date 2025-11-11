@@ -35,6 +35,7 @@ export default function OpenPMSticket() {
 
     const navigate = useNavigate();
 
+    //Get user's details
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
         if (user) {
@@ -54,21 +55,21 @@ export default function OpenPMSticket() {
         }
     }, []);
 
+    //Get all open pms ticket
     useEffect(() => {
+        try {
+            axios.get(`${config.baseApi}/pmsticket/get-all-pmsticket`)
+                .then((res) => {
+                    const userTickets = res.data.filter(
+                        (pmsticket) => (pmsticket.pms_status === 'open') && pmsticket.is_active === true);
 
-
-        axios.get(`${config.baseApi}/pmsticket/get-all-pmsticket`)
-            .then((res) => {
-                const userTickets = res.data.filter(
-                    (pmsticket) => (pmsticket.pms_status === 'open') && pmsticket.is_active === true);
-
-                setAllTicket(userTickets);
-            })
-            .catch((err) => console.error("Error fetching tickets:", err));
-
-
+                    setAllTicket(userTickets);
+                })
+                .catch((err) => console.error("Error fetching tickets:", err));
+        } catch (err) {
+            console.log('Unable to get all pmsticket: ', err)
+        }
     }, [tierGroup]);
-
 
     //-------------------STATUS DESIGN----------------------//
     const renderStatusBadge = (status) => {
@@ -102,10 +103,6 @@ export default function OpenPMSticket() {
                 style = { ...baseStyle, backgroundColor: '#ffcb5aff', color: '#404040ff' };
                 label = 'Assigned';
                 break;
-            // case 'escalated':
-            //     style = { ...baseStyle, backgroundColor: '#ff7d7dff', color: '#404040ff' };
-            //     label = 'Escalated';
-            //     break;
             case 'resolved':
                 style = { ...baseStyle, backgroundColor: '#91c6ffff', color: '#404040ff' };
                 label = 'Resolved';
@@ -126,49 +123,7 @@ export default function OpenPMSticket() {
         return <span style={style}>{label}</span>;
     };
 
-    //--------------URGENCY DESGIN--------------------//
-    const renderUrgencyBadge = (urgency) => {
-        const baseStyle = {
-            display: 'inline-block',
-            padding: '6px 12px',
-            borderRadius: '50px',
-            border: '0.1px solid',
-            color: 'white',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
-            textAlign: 'center',
-            minWidth: '60px',
-        };
-
-        let style = {};
-        let label = urgency;
-
-        switch (urgency.toLowerCase()) {
-            case 'low':
-                style = { ...baseStyle, backgroundColor: '#003006ff', color: '#ffffffff' };
-                label = 'Low';
-                break;
-            case 'medium':
-                style = { ...baseStyle, backgroundColor: '#9e8600ff', color: '#ffffffff' };
-                label = 'Medium';
-                break;
-            case 'high':
-                style = { ...baseStyle, backgroundColor: '#720000ff', color: '#ffffffff' };
-                label = 'High';
-                break;
-            case 'critical':
-                style = { ...baseStyle, backgroundColor: '#fd0000ff', color: '#fefefeff' };
-                label = 'Critical';
-                break;
-            default:
-                style = { ...baseStyle, backgroundColor: '#6c757d' };
-                break;
-        }
-
-        return <span style={style}>{label}</span>;
-    };
-
+    //Filter tickets
     const filteredTickets = allticket.filter((ticket) => {
 
         const ticketDate = new Date(ticket.created_at || ticket.date_created || ticket.date);
@@ -193,6 +148,7 @@ export default function OpenPMSticket() {
         return matchesSearch && matchesLocation && matchesDate;
     });
 
+    //Ascending || Descending
     const sortedTickets = [...filteredTickets].sort((a, b) => {
         const dateA = new Date(a.created_at || a.date_created || a.date); // adjust based on your DB column
         const dateB = new Date(b.created_at || b.date_created || b.date);
@@ -205,11 +161,13 @@ export default function OpenPMSticket() {
     const currentTickets = sortedTickets.slice(indexOfFirstTicket, indexOfLastTicket);
     const totalPages = Math.ceil(sortedTickets.length / ticketsPerPage);
 
+    //Navigate to view ticket
     const HandleView = (ticket) => {
         const params = new URLSearchParams({ id: ticket.pmsticket_id })
         navigate(`/view-pms-hd-ticket?${params.toString()}`)
     }
 
+    //Status validation
     const handleStatusChange = async (ticket, newStatus) => {
         console.log(ticket, newStatus)
         const prevStat = ticket.pms_status
@@ -226,6 +184,7 @@ export default function OpenPMSticket() {
         }
     }
 
+    //Update pms ticket
     const handleUpdate = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const prevStat = selectedTicket.pms_status
@@ -265,6 +224,7 @@ export default function OpenPMSticket() {
 
             }}
         >
+            {/* Alert Component */}
             {error && (
                 <div
                     className="position-fixed start-50 l translate-middle-x"
@@ -298,10 +258,7 @@ export default function OpenPMSticket() {
                 delay={0}
             >
                 {/* Search and Filter */}
-                <div
-                    className="d-flex align-items-end gap-3 mb-4 flex-wrap"
-                    style={{ width: "100%" }}
-                >
+                <div className="d-flex align-items-end gap-3 mb-4 flex-wrap" style={{ width: "100%" }} >
                     {/* Search */}
                     <Form.Group controlId="search" style={{ flex: 2, minWidth: "250px" }}>
                         <Form.Label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>Search</Form.Label>
@@ -395,8 +352,6 @@ export default function OpenPMSticket() {
                     </Form.Group>
                 </div>
 
-
-
                 {/* Desktop Table */}
                 <div className="d-none d-md-block">
                     <table className="table mb-0 table-hover align-middle">
@@ -473,11 +428,9 @@ export default function OpenPMSticket() {
                                 }}
                             >
                                 <Card.Body>
-                                    <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: 4 }}>#{ticket.ticket_id}</div>
-                                    <div><strong>Problem/Issue:</strong> {ticket.ticket_subject}</div>
-                                    {/* <div><strong>Type:</strong> {ticket.ticket_type}</div> */}
+                                    <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: 4 }}>#{ticket.pms_id}</div>
+                                    <div><strong>Tag id:</strong> {ticket.tag_id}</div>
                                     <div><strong>Status:</strong> {renderStatusBadge(ticket.pms_status)}</div>
-
                                     <div style={{ marginBottom: 4 }}><strong>Description:</strong> {ticket.Description}</div>
                                     <div style={{ marginTop: '8px', color: '#003006ff', fontWeight: 500 }}>View</div>
                                 </Card.Body>
@@ -509,6 +462,8 @@ export default function OpenPMSticket() {
                     </div>
                 )}
             </AnimatedContent>
+
+            {/* Status Modal */}
             <Modal
                 show={showModal}
                 onHide={() => setShowModal(false)}
@@ -540,6 +495,7 @@ export default function OpenPMSticket() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

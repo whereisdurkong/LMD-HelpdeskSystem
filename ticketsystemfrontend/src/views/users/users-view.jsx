@@ -1,15 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import {
-    Card,
-    Row,
-    Col,
-    Button,
-    InputGroup,
-    Form,
-    Container,
-    Alert,
-    Modal
-} from 'react-bootstrap';
+import { Card, Row, Col, Button, InputGroup, Form, Container, Alert, Modal } from 'react-bootstrap';
 import axios from 'axios';
 import config from 'config';
 import FeatherIcon from 'feather-icons-react';
@@ -42,6 +32,8 @@ export default function UsersView() {
     const locationRef = useRef();
     const departmentRef = useRef();
     const positionRef = useRef();
+    const newPasswordRef = useRef();
+    const confirmPasswordRef = useRef();
 
     const [error, setError] = useState('');
     const [successful, setSuccessful] = useState('');
@@ -60,23 +52,23 @@ export default function UsersView() {
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
 
-    const newPasswordRef = useRef();
-    const confirmPasswordRef = useRef();
-
+    //All departments
     const departmentOptions = {
         lmd: ['MISD', 'HR', 'IOSD', 'SMED', 'Mill', 'IMD', 'PCES', 'MOG', 'Accounting', 'Expolartion', 'Assay'],
         corp: ['Legal', 'Accounting', 'Executive', 'HRAD', 'Treasury', 'MISD']
     };
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    //Loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
+    //Alert State 3s
     useEffect(() => {
         if (error || successful) {
             const timer = setTimeout(() => {
@@ -95,6 +87,7 @@ export default function UsersView() {
         }
     }, [error, successful, perror, psuccessful]);
 
+    //Get user details
     useEffect(() => {
         const current_user = JSON.parse(localStorage.getItem('user'));
         console.log(current_user.user_name)
@@ -126,6 +119,7 @@ export default function UsersView() {
         fetchUserInfo();
     }, [user_id]);
 
+    //Update user 
     const UpdateForm = async (e) => {
         e.preventDefault();
 
@@ -163,6 +157,7 @@ export default function UsersView() {
         }
     };
 
+    //Delete user
     const DeleteUser = async () => {
         const current_user = JSON.parse(localStorage.getItem('user'));
         try {
@@ -178,6 +173,7 @@ export default function UsersView() {
         }
     }
 
+    //Change Password function
     const handleChangePassword = async (e) => {
         e.preventDefault();
         if (!newPassword) {
@@ -213,7 +209,6 @@ export default function UsersView() {
 
     }
 
-
     return (
         <div
             className="auth-wrapper d-flex align-items-center justify-content-center min-vh-100"
@@ -245,6 +240,7 @@ export default function UsersView() {
                                         <div className="text-center">
                                             <h4 className="fw-bold">User Details</h4>
                                         </div>
+                                        {/* Buttons */}
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }}>
                                             <div title="Delete User" style={{ cursor: 'pointer', color: '#dc3545', alignItems: 'center', paddingRight: '10px' }} onClick={() => setShowDeleteModal(true)}>
                                                 <FeatherIcon icon="trash-2" />
@@ -255,8 +251,7 @@ export default function UsersView() {
                                         </div>
 
                                     </div>
-
-
+                                    {/* Alert components */}
                                     {error && (
                                         <div
                                             className="position-fixed start-50 l translate-middle-x"
@@ -411,6 +406,7 @@ export default function UsersView() {
                                                     </Form.Select>
                                                 </InputGroup>
                                             </Col>
+
                                             <Col xs={12} sm={6} className="mb-2">
                                                 <Form.Label>Department</Form.Label>
                                                 <InputGroup className="mb-3">
@@ -444,6 +440,7 @@ export default function UsersView() {
                                                 ref={positionRef}
                                             />
                                         </InputGroup>
+
                                         <Form.Label>Created At</Form.Label>
                                         <InputGroup className="mb-3">
                                             <InputGroup.Text>
@@ -469,6 +466,7 @@ export default function UsersView() {
 
             </AnimatedContent>
 
+            {/* Delete Modal */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Confirm Delete</Modal.Title>
@@ -486,6 +484,7 @@ export default function UsersView() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Change password modal */}
             <Modal show={showchangePassword} onHide={() => setShowChangePassword(false)} centered>
                 {perror && (
                     <div
@@ -572,9 +571,7 @@ export default function UsersView() {
                 </Modal.Footer>
             </Modal>
 
-
-
-
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

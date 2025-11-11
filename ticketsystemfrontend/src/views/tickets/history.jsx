@@ -20,8 +20,8 @@ export default function History() {
     const [currentPage, setCurrentPage] = useState(1);
     const ticketsPerPage = 10;
 
-
     const navigate = useNavigate();
+
     //Current user Data
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -29,6 +29,7 @@ export default function History() {
 
     }, []);
 
+    // get all history tickets
     useEffect(() => {
         if (!userData || !userData.user_name) return;
 
@@ -93,8 +94,7 @@ export default function History() {
         fetchData();
     }, [userData]);
 
-
-
+    //Filtered tickets
     const filteredTickets = toFilter.filter((ticket) => {
 
         const ticketDate = new Date(ticket.created_at || ticket.date_created || ticket.date);
@@ -119,6 +119,7 @@ export default function History() {
         return matchesSearch && matchesStatus && matchesDate;
     });
 
+    //filter ascending to desending
     const sortedTickets = [...filteredTickets].sort((a, b) => {
         const dateA = new Date(a.created_at || a.date_created || a.date); // adjust based on your DB column
         const dateB = new Date(b.created_at || b.date_created || b.date);
@@ -131,6 +132,7 @@ export default function History() {
     const currentTickets = sortedTickets.slice(indexOfFirstTicket, indexOfLastTicket);
     const totalPages = Math.ceil(sortedTickets.length / ticketsPerPage)
 
+    //Status design
     const renderStatusBadge = (status) => {
         const baseStyle = {
             display: 'inline-block',
@@ -170,6 +172,7 @@ export default function History() {
         return <span style={style}>{label}</span>;
     };
 
+    //Urgency Design
     const renderUrgencyBadge = (urgency) => {
         const baseStyle = {
             display: 'inline-block',
@@ -203,6 +206,7 @@ export default function History() {
         return <span style={style}>{label}</span>;
     };
 
+    //Navigate to review ticket
     const HandleView = (ticket) => {
         const params = new URLSearchParams({ id: ticket.ticket_id });
         const user = JSON.parse(localStorage.getItem('user'));
@@ -215,7 +219,6 @@ export default function History() {
     };
 
     return (
-
         <Container
             style={{
                 padding: '20px',
@@ -336,8 +339,6 @@ export default function History() {
                 </div>
             </div>
 
-
-
             {/* Desktop Table */}
             <div className="d-none d-md-block">
                 <table className="table mb-0 table-hover align-middle">
@@ -346,7 +347,6 @@ export default function History() {
                             <th>Ticket ID</th>
                             <th>Created At</th>
                             <th>Problem/Issue</th>
-                            {/* <th>Type</th> */}
                             <th>Assigned to</th>
                             <th>Collaborators</th>
                             <th>Description</th>

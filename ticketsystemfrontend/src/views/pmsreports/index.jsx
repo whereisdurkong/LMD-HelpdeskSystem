@@ -24,7 +24,7 @@ import AllTicketsByUser from "../report/allticketsbyuser";
 import FeatherIcon from "feather-icons-react";
 import PMSbyDept from "./pmsbydept";
 import PMSbyHD from "./pmsbyhd";
-
+import { useNavigate } from 'react-router';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function PMSReport() {
@@ -32,7 +32,7 @@ export default function PMSReport() {
     const [stats, setStats] = useState([]);
     const [allTickets, setAllTickets] = useState([]);
     const [filteredTickets, setFilteredTickets] = useState([]);
-
+    const navigate = useNavigate();
     const [location, setLocation] = useState('')
 
     // Modal states
@@ -52,12 +52,14 @@ export default function PMSReport() {
 
     const [locationFilteredTickets, setLocationFilteredTickets] = useState([]);
 
+    //Modal content
     const openModal = (title, content) => {
         setModalTitle(title);
         setModalContent(content);
         setShowModal(true);
     };
 
+    //Date Calculator
     const calcTAT = (start, end) => {
         const startDate = new Date(start);
         const endDate = new Date(end);
@@ -68,6 +70,7 @@ export default function PMSReport() {
         return { diffMs, text: `${diffDays}d ${diffHours}h ${diffMinutes}m` };
     };
 
+    // table modal
     const TicketsTable = ({ tickets }) => {
         const [currentPage, setCurrentPage] = useState(1);
         const itemsPerPage = 10;
@@ -97,7 +100,7 @@ export default function PMSReport() {
                             currentTickets.map(ticket => (
                                 <tr key={ticket.pmsticket_id}
                                     style={{ cursor: "pointer" }}
-                                    onClick={() => window.location.replace(`view-hd-ticket?id=${ticket.pmsticket_id}`)}>
+                                    onClick={() => navigate(`/view-pms-hd-ticket?id=${ticket.pmsticket_id}`)}>
                                     <td>{ticket.pmsticket_id}</td>
                                     <td>{ticket.tag_id}</td>
                                     <td>{ticket.pms_status}</td>
@@ -141,8 +144,6 @@ export default function PMSReport() {
         );
     };
 
-
-
     // Fetch tickets once
     useEffect(() => {
         const fetch = async () => {
@@ -160,6 +161,7 @@ export default function PMSReport() {
         fetch();
     }, []);
 
+    // Fetching pms ticket per site
     useEffect(() => {
         let filetered = [...allTickets];
         if (location === 'lmd') {
@@ -302,6 +304,7 @@ export default function PMSReport() {
         });
     }, [filterType, locationFilteredTickets]);
 
+    // Calculate total row
     const totalRow = stats.reduce(
         (totals, row) => {
             totals.total += row.total;
@@ -313,7 +316,7 @@ export default function PMSReport() {
         { total: 0, resolved: 0, closed: 0, open: 0 }
     );
 
-
+    // Excel Download function
     const handleDownloadExcel = async () => {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("All Reports");
@@ -481,10 +484,6 @@ export default function PMSReport() {
         saveAs(new Blob([buffer]), "Reports.xlsx");
     };
 
-
-
-
-
     return (
         <Container fluid className="pt-100 px-3 px-md-5"
             style={{
@@ -501,6 +500,7 @@ export default function PMSReport() {
 
                 {/* Filters */}
                 <Col className="d-flex justify-content-end gap-2">
+                    {/* Site Filter */}
                     <Form.Group controlId="status-filter-1">
                         <Form.Select
                             value={location}
@@ -513,6 +513,7 @@ export default function PMSReport() {
                         </Form.Select>
                     </Form.Group>
 
+                    {/* Status Filter */}
                     <Form.Group controlId="status-filter-2">
                         <Form.Select
                             value={filterType}
@@ -529,18 +530,16 @@ export default function PMSReport() {
                         </Form.Select>
                     </Form.Group>
 
-                    {/* Button aligned with filters */}
+                    {/* Download Excel Filter */}
                     <Button variant="success" onClick={handleDownloadExcel}>
                         Excel <FeatherIcon icon="download" />
                     </Button>
                 </Col>
             </Row>
 
-
-
-
-            {/* ✅ Clickable Open / Not Reviewed / Closed cards */}
+            {/* Clickable Open / Not Reviewed / Closed cards */}
             <Row style={{ paddingBottom: '20px' }}>
+                {/* Open  */}
                 <Col>
                     <div
                         className="bento-item-top"
@@ -559,6 +558,7 @@ export default function PMSReport() {
                         </div>
                     </div>
                 </Col>
+                {/* Not reviewed */}
                 <Col>
                     <div
                         className="bento-item-top"
@@ -576,6 +576,7 @@ export default function PMSReport() {
                         </div>
                     </div>
                 </Col>
+                {/* Closed */}
                 <Col>
                     <div
                         className="bento-item-top"
@@ -636,6 +637,7 @@ export default function PMSReport() {
                         </div>
                     </div>
                 </Col>
+                {/* ticket Summary */}
                 <Col>
                     <div className="bento-item bento-users"
                         onClick={() => openModal("Ticket Summary", <PMSbyDept showChart={false} filterType={filterType} location={location} onDataReady={setSubcatSummary} />)}>
@@ -673,7 +675,7 @@ export default function PMSReport() {
                         <AllTicketbyType filterType={filterType} showChart={true} location={location} onDataReady={setTicketTypeSummary} />
                     </div>
                 </Col> */}
-
+                {/* category  */}
                 <Col xs={12} md={4}>
                     <div
                         className="bento-item bento-users"

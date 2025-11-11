@@ -24,14 +24,15 @@ export default function SoftwareArchive() {
     const [access, setAccess] = useState(false)
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    //Loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
     // Check user access
     useEffect(() => {
@@ -79,8 +80,9 @@ export default function SoftwareArchive() {
         };
         fetchData();
     }, []);
-    const handleUnArchive = async (id) => {
 
+    //Un-Archive Component
+    const handleUnArchive = async (id) => {
         try {
             setLoading(true)
             const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -104,6 +106,7 @@ export default function SoftwareArchive() {
         }
     }, [showModal]);
 
+    // Delete Function
     const handleDelete = async (id) => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         if (window.confirm("Are you sure you want to delete ?")) {
@@ -120,6 +123,7 @@ export default function SoftwareArchive() {
         }
     }
 
+    //Update Function
     const handleUpdate = async () => {
 
         if (newTitle === '') {
@@ -151,6 +155,7 @@ export default function SoftwareArchive() {
         }
     }
 
+    //Add Function
     const handleSave = async () => {
         console.log("Saving Software:", newTitle, newContent);
         if (newTitle === '') {
@@ -184,6 +189,7 @@ export default function SoftwareArchive() {
         }
     };
 
+    //Format and style on the input field
     const handleContentChange = () => {
         setNewContent(contentRef.current.innerHTML);
     };
@@ -212,6 +218,7 @@ export default function SoftwareArchive() {
                 paddingBottom: '20px',
             }}
         >
+            {/* Alert Function */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -226,6 +233,7 @@ export default function SoftwareArchive() {
                 <Card className="p-4 shadow-lg" style={{ borderRadius: "20px", backgroundColor: "#fff" }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="fw-bold text-dark mb-0">Archived Software Questions</h2>
+                        {/* Button */}
                         {access && (
                             <div className="d-flex gap-2">
                                 <Button variant="primary" onClick={() => navigate('/software')}>Software</Button>
@@ -322,7 +330,7 @@ export default function SoftwareArchive() {
                 </Card>
             </Container>
 
-            {/* Modal */}
+            {/* Modal for Edit || Add */}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
                 <Modal.Header >
                     <Modal.Title>{editMode ? 'Edit Software Troubleshooting Step' : 'Add Software Troubleshooting Step'}</Modal.Title>
@@ -388,6 +396,7 @@ export default function SoftwareArchive() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

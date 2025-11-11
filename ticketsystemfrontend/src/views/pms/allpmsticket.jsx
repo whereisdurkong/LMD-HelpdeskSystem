@@ -42,7 +42,7 @@ export default function AllPMStickets() {
 
     const navigate = useNavigate();
 
-    //Alerts timeout
+    //Alerts state 3s
     useEffect(() => {
         if (error || successful) {
             const timer = setTimeout(() => {
@@ -62,26 +62,34 @@ export default function AllPMStickets() {
     //Fetch all tickets
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
-        axios.get(`${config.baseApi}/pmsticket/get-all-pmsticket`)
-            .then((res) => {
-                const activeTicket = res.data.filter((ticket) => ticket.is_active === true);
-                setAllTicket(activeTicket);
-
-            });
-
-        if (user.emp_location) {
-            setEmpLocation(user.emp_location);
-            setFilterLocation(user.emp_location);   // auto-apply filter
+        try {
+            axios.get(`${config.baseApi}/pmsticket/get-all-pmsticket`)
+                .then((res) => {
+                    const activeTicket = res.data.filter((ticket) => ticket.is_active === true);
+                    setAllTicket(activeTicket);
+                });
+            if (user.emp_location) {
+                setEmpLocation(user.emp_location);
+                setFilterLocation(user.emp_location);   // auto-apply filter
+            }
+        } catch (err) {
+            console.log('Unable to get all PMS tickets: ', err)
         }
+
     }, []);
 
     //Fetch all users
     useEffect(() => {
-        axios.get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
-                setAllUsers(res.data);
-            });
-        console.log(allticket)
+        try {
+            axios.get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
+                    setAllUsers(res.data);
+                });
+            console.log(allticket)
+        } catch (err) {
+            console.log('Unable to get all users: ', err)
+        }
+
 
     }, [allticket]);
 
@@ -137,6 +145,7 @@ export default function AllPMStickets() {
         return matchesSearch && matchesStatus && matchesLocation && matchesDate;
     });
 
+    //ascending to decending
     const sortedTickets = [...filteredTickets].sort((a, b) => {
         const dateA = new Date(a.created_at || a.date_created || a.date); // adjust based on your DB column
         const dateB = new Date(b.created_at || b.date_created || b.date);
@@ -144,7 +153,6 @@ export default function AllPMStickets() {
     });
 
     // Pagination calculations
-
     const indexOfLastTicket = currentPage * ticketsPerPage;
     const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
     const currentTickets = sortedTickets.slice(indexOfFirstTicket, indexOfLastTicket);
@@ -191,40 +199,6 @@ export default function AllPMStickets() {
         return <span style={style}>{label}</span>;
     };
 
-    //Design for Urgency Levels
-    const renderUrgencyBadge = (urgency) => {
-        const baseStyle = {
-            display: 'inline-block',
-            padding: '6px 12px',
-            borderRadius: '50px',
-            border: '0.1px solid',
-            color: 'white',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
-            textAlign: 'center',
-            minWidth: '60px',
-        };
-
-        let style = {};
-        let label = urgency;
-
-        switch (urgency?.toLowerCase()) {
-            case 'low':
-                style = { ...baseStyle, backgroundColor: '#003006ff', color: '#ffffffff' }; label = 'Low'; break;
-            case 'medium':
-                style = { ...baseStyle, backgroundColor: '#9e8600ff', color: '#ffffffff' }; label = 'Medium'; break;
-            case 'high':
-                style = { ...baseStyle, backgroundColor: '#720000ff', color: '#ffffffff' }; label = 'High'; break;
-            case 'critical':
-                style = { ...baseStyle, backgroundColor: '#fd0000ff', color: '#fefefeff' }; label = 'Critical'; break;
-            default:
-                style = { ...baseStyle, backgroundColor: '#6c757d' }; label = 'NONE'; break;
-        }
-
-        return <span style={style}>{label}</span>;
-    };
-
     //onClick view ticket 
     const HandleView = (ticket) => {
         const params = new URLSearchParams({ id: ticket.pmsticket_id });
@@ -237,6 +211,7 @@ export default function AllPMStickets() {
         }
     };
 
+    //PMS status validations
     const handleStatusChange = async (ticket, newStatus) => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const prevStat = ticket.pms_status;
@@ -314,7 +289,7 @@ export default function AllPMStickets() {
         }
     }
 
-
+    //Update PMS status 
     const handleUpdate = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const prevStat = selectedTicket.pms_status
@@ -424,6 +399,7 @@ export default function AllPMStickets() {
         }
     }
 
+    //PMS status resolved function
     const handleResolved = async (e) => {
         e.preventDefault();
         setShowModal(false)
@@ -461,9 +437,8 @@ export default function AllPMStickets() {
             console.log(err)
         }
     }
-    const empInfo = JSON.parse(localStorage.getItem('user'));
-    return (
 
+    return (
         <Container
             style={{
                 padding: '20px',
@@ -471,6 +446,7 @@ export default function AllPMStickets() {
                 borderRadius: '12px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
             }}>
+            {/* Alert Components */}
             {error && (
                 <div
                     className="position-fixed start-50 l translate-middle-x"
@@ -491,13 +467,11 @@ export default function AllPMStickets() {
                     </Alert>
                 </div>
             )}
+
             {/* Search and Filter */}
             {hdstate ? (
                 // Helpdesk View
-                <div
-                    className="d-flex flex-wrap align-items-end gap-3 mb-4"
-                    style={{ width: "100%" }}
-                >
+                <div className="d-flex flex-wrap align-items-end gap-3 mb-4" style={{ width: "100%" }}>
                     {/* Search */}
                     <div style={{ flex: "1 1 300px" }}>
                         <Form.Group controlId="search" style={{ width: "100%" }}>
@@ -655,6 +629,7 @@ export default function AllPMStickets() {
                 // User View
                 <Row className="align-items-center g-3 mb-4" >
                     <Col xs={12} md={8} lg={9}>
+                        {/* Search */}
                         <Form.Group controlId="search" style={{ width: '100%' }}>
                             <Form.Control
                                 type="text"
@@ -672,6 +647,7 @@ export default function AllPMStickets() {
                         </Form.Group>
                     </Col>
                     <Col xs={12} md={4} lg={3}>
+                        {/* Status Filter */}
                         <Form.Group controlId="status-filter" style={{ width: '100%' }}>
                             <Form.Select
                                 value={filterStatus}
@@ -695,7 +671,6 @@ export default function AllPMStickets() {
                             </Form.Select>
                         </Form.Group>
                     </Col>
-
                 </Row>
             )}
             {/* Desktop Table */}
@@ -706,7 +681,7 @@ export default function AllPMStickets() {
                             <th>PMS Ticket ID</th>
                             <th>Created At</th>
                             <th>Tag id</th>
-                            {/* <th>Type</th> */}
+
                             <th>Assigned To</th>
                             <th>Description</th>
                             <th>Status</th>
@@ -733,14 +708,12 @@ export default function AllPMStickets() {
                                         <td onClick={() => HandleView(ticket)}>{ticket.pmsticket_id}</td>
                                         <td onClick={() => HandleView(ticket)}>{ticket.created_at}</td>
                                         <td onClick={() => HandleView(ticket)}>{ticket.tag_id}</td>
-                                        {/* <td>{ticket.ticket_type === null || ticket.ticket_type === "" ? "NONE" : ticket.ticket_type}</td> */}
                                         <td onClick={() => HandleView(ticket)}>{ticket.assigned_to || '-'}</td>
                                         <td onClick={() => HandleView(ticket)} style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {ticket.description}
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                                {/* {renderStatusBadge(ticket.ticket_status)} */}
                                                 <Form.Select
                                                     value={ticket.pms_status || ''}
                                                     onChange={(e) => handleStatusChange(ticket, e.target.value)}
@@ -752,11 +725,6 @@ export default function AllPMStickets() {
                                                     ) : (
                                                         <option value="assigned">Accept</option>
                                                     )}
-
-
-
-
-
                                                     <option value="in-progress">In-Progress</option>
                                                     <option value="resolved">Resolved</option>
                                                     <option hidden value="re-opened">Re-Opened</option>
@@ -788,7 +756,9 @@ export default function AllPMStickets() {
                                     >
                                         <td>{ticket.pmsticket_id}</td>
                                         <td>{ticket.created_at}</td>
-                                        <td>{ticket.ticket_subject}</td>
+                                        <td onClick={() => HandleView(ticket)} style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {ticket.description}
+                                        </td>
                                         <td>{ticket.assigned_to}</td>
                                         <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {ticket.description}
@@ -821,11 +791,10 @@ export default function AllPMStickets() {
                             }}
                         >
                             <Card.Body>
-                                <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: 4 }}>#{ticket.ticket_id}</div>
-                                <div><strong>Problem/Issue:</strong> {ticket.ticket_subject}</div>
+                                <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: 4 }}>#{ticket.pmsticket_id}</div>
+                                <div><strong>Tag id:</strong> {ticket.tag_id}</div>
                                 {/* <div><strong>Type:</strong> {ticket.ticket_type}</div> */}
-                                <div><strong>Status:</strong> {renderStatusBadge(ticket.ticket_status)}</div>
-                                <div><strong>Urgency:</strong> {renderUrgencyBadge(ticket.ticket_urgencyLevel)}</div>
+                                <div><strong>Status:</strong> {renderStatusBadge(ticket.pms_status)}</div>
                                 <div style={{ marginBottom: 4 }}><strong>Description:</strong> {ticket.Description}</div>
                                 <div style={{ marginTop: '8px', color: '#003006ff', fontWeight: 500 }}>View</div>
                             </Card.Body>
@@ -857,9 +826,7 @@ export default function AllPMStickets() {
                 </div>
             )}
 
-
-
-            {/*HD Resolution Ticket */}
+            {/*HD Resolution Ticket Modal */}
             <Modal show={showCloseResolutionModal} onHide={() => setShowCloseResolutionModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Resolution: (required)</Modal.Title>
@@ -890,6 +857,7 @@ export default function AllPMStickets() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Ticket sttaus validation Modal */}
             <Modal
                 show={showModal}
                 onHide={() => setShowModal(false)}
@@ -921,9 +889,8 @@ export default function AllPMStickets() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading Component */}
             {loading && (
-
-
                 <div
                     style={{
                         position: "fixed",

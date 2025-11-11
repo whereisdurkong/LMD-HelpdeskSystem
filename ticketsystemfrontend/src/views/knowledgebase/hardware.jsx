@@ -26,14 +26,14 @@ export default function Hardware() {
     const [loading, setLoading] = useState(false);
 
     //Loading state 2s
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
     // Check user access
     useEffect(() => {
@@ -171,7 +171,7 @@ export default function Hardware() {
         }
     };
 
-
+    //INPUT ON CHANGE FUNCTIONS
     const handleContentChange = () => {
         setNewContent(contentRef.current.innerHTML);
     };
@@ -200,6 +200,7 @@ export default function Hardware() {
                 paddingBottom: '20px',
             }}
         >
+            {/* Alert Component */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -214,6 +215,7 @@ export default function Hardware() {
                 <Card className="p-4 shadow-lg" style={{ borderRadius: "20px", backgroundColor: "#fff" }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="fw-bold text-dark mb-0">Hardware Frequently Asked Questions</h2>
+                        {/* Buttons */}
                         {access && (
                             <div className="d-flex gap-2">
                                 <Button variant="primary" onClick={() => navigate('/hardwarearchive')}>Archive</Button>
@@ -283,8 +285,6 @@ export default function Hardware() {
                             ))
                         )}
                     </Accordion>
-
-
                     <hr className="my-4" />
                     <p className="text-muted text-center">
                         Have more questions? Email us at{" "}
@@ -360,6 +360,8 @@ export default function Hardware() {
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

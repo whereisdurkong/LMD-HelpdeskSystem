@@ -14,7 +14,7 @@ import {
     Legend,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
-
+import { useNavigate } from 'react-router';
 // Register chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -24,7 +24,9 @@ export default function AllTicketSCAT({ filterType, location, showChart = true, 
     const [monthlyScores, setMonthlyScores] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const navigate = useNavigate();
 
+    //Setting labels per score
     const getSatisfactionScale = (score) => {
         if (score === null) return "No Review";
         const s = Number(score);
@@ -36,6 +38,7 @@ export default function AllTicketSCAT({ filterType, location, showChart = true, 
         return "";
     };
 
+    //Seeting Color per score
     const getScoreColor = (score) => {
         if (score === null) return "#bdc3c7";
         const s = Number(score);
@@ -47,6 +50,7 @@ export default function AllTicketSCAT({ filterType, location, showChart = true, 
         return "#bdc3c7";
     };
 
+    //Fitler Function
     const isInFilter = (date) => {
         const d = new Date(date);
         const today = new Date();
@@ -80,6 +84,7 @@ export default function AllTicketSCAT({ filterType, location, showChart = true, 
         }
     };
 
+    //get All Feedback
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         console.log(filterType)
@@ -102,6 +107,7 @@ export default function AllTicketSCAT({ filterType, location, showChart = true, 
 
                 );
                 setFeedbacks(feedback);
+                console.log(feedback)
 
                 if (filterType === "perMonth") {
                     const monthlyData = Array.from({ length: 12 }, (_, i) => {
@@ -133,6 +139,7 @@ export default function AllTicketSCAT({ filterType, location, showChart = true, 
         fetchData();
     }, [filterType, helpdesk]);
 
+    //pagenation
     const totalPages = Math.ceil(feedbacks.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -140,6 +147,7 @@ export default function AllTicketSCAT({ filterType, location, showChart = true, 
 
     const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
+    //getting average scores
     const progressValue = avgScore ? (Number(avgScore) / 5) * 100 : 0;
     const scoreColor = getScoreColor(avgScore);
 
@@ -246,7 +254,7 @@ export default function AllTicketSCAT({ filterType, location, showChart = true, 
                                 currentItems.map((f) => (
                                     <tr key={f.review_id}
                                         style={{ cursor: "pointer" }}
-                                        onClick={() => window.location.replace(`view-hd-ticket?id=${f.ticket_id}`)}
+                                        onClick={() => navigate(`/view-hd-ticket?id=${f.ticket_id}`)}
                                     >
                                         <td>{f.ticket_id}</td>
                                         <td className="text-truncate" style={{ maxWidth: "150px" }}>

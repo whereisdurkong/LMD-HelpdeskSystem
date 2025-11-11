@@ -35,6 +35,9 @@ export default function ArchiveReviewPrinter() {
     const [description, setDescription] = useState('');
     const [originalData, setOriginalData] = useState({});
     const [changedFields, setChangedFields] = useState({});
+    const empInfo = JSON.parse(localStorage.getItem('user'));
+    const [lockModal, setLockModal] = useState(false)
+    const [lockError, setLockError] = useState('')
 
     const tagidRef = useRef();
     const deparmentRef = useRef();
@@ -46,20 +49,23 @@ export default function ArchiveReviewPrinter() {
     const [currentUser, setCurrentUser] = useState('');
     const [fullname, setFullName] = useState('');
 
+    //All Departments
     const departmentOptions = {
         lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
         corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
     };
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [loading]);
+    //Loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer);
+    //     }
+    // }, [loading]);
 
+    //Allert State 3s
     useEffect(() => {
         if (error || success) {
             const timer = setTimeout(() => {
@@ -113,18 +119,22 @@ export default function ArchiveReviewPrinter() {
     // Fetch all users
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/authentication/get-all-users`);
-            const data = res.data || [];
-            const allUser = data.filter(s => s.emp_tier === 'user');
+            try {
+                const res = await axios.get(`${config.baseApi}/authentication/get-all-users`);
+                const data = res.data || [];
+                const allUser = data.filter(s => s.emp_tier === 'user');
 
-            const allUsernames = allUser.map(u => {
-                const fname = u.emp_FirstName;
-                const lname = u.emp_LastName;
-                const first = fname.charAt(0).toUpperCase() + fname.slice(1).toLowerCase();
-                const last = lname.charAt(0).toUpperCase() + lname.slice(1).toLowerCase();
-                return first + ' ' + last;
-            });
-            setUserOptions(allUsernames);
+                const allUsernames = allUser.map(u => {
+                    const fname = u.emp_FirstName;
+                    const lname = u.emp_LastName;
+                    const first = fname.charAt(0).toUpperCase() + fname.slice(1).toLowerCase();
+                    const last = lname.charAt(0).toUpperCase() + lname.slice(1).toLowerCase();
+                    return first + ' ' + last;
+                });
+                setUserOptions(allUsernames);
+            } catch (err) {
+                console.log('Unable to get all users: ', err)
+            }
         };
         fetch();
     }, []);
@@ -177,28 +187,34 @@ export default function ArchiveReviewPrinter() {
         return changed;
     };
 
+    //Before update check lock
     const updateBTNChecker = async (e) => {
         e.preventDefault();
-        const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id } });
-        const asset = res.data;
+        try {
+            const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id } });
+            const asset = res.data;
 
+            if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
+                console.log('!!!!!!!!!!')
+                setError('Unable to update! Someone is working on this asset, please try again later.')
+                return
 
-        if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
-            console.log('!!!!!!!!!!')
-            setError('Unable to update! Someone is working on this asset, please try again later.')
-            return
-
-        } else if (asset.is_lock === "0" || asset.is_lock === null) {
-            console.log('????????????')
-            handleUpdate();
-            return;
-        } else {
-            console.log('????????????')
-            handleUpdate(e);
-            return;
+            } else if (asset.is_lock === "0" || asset.is_lock === null) {
+                console.log('????????????')
+                handleUpdate();
+                return;
+            } else {
+                console.log('????????????')
+                handleUpdate(e);
+                return;
+            }
+        } catch (err) {
+            console.log('Unable fetch printer details: ', err)
         }
+
     }
 
+    //Update Function
     const handleUpdate = async (e) => {
         e.preventDefault();
         setError('');
@@ -217,6 +233,7 @@ export default function ArchiveReviewPrinter() {
         const changeSummary = changeSentences.join(', ');
         console.log(`Changes made: ${changeSummary}`);
 
+        //check empty fields
         if (!tag_id || !ip_address || !location) {
             setLoading(false);
             setError('Please fill in all required fields.');
@@ -258,24 +275,30 @@ export default function ArchiveReviewPrinter() {
 
     };
 
+    //Before delete check lock
     const showDeleteModalChecker = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
-        const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id } });
-        const asset = res.data;
+        try {
+            const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id } });
+            const asset = res.data;
 
-        if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
-            console.log('!!!!!!!!!!')
-            setError('Unable to delete! Someone is working on this asset, please try again later.')
-            setShowDeleteModal(false)
-        } else if (asset.is_lock === "0" || asset.is_lock === null) {
-            console.log('????????????')
-            setShowDeleteModal(true)
-        } else {
-            console.log('????????????')
-            setShowDeleteModal(true)
+            if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
+                console.log('!!!!!!!!!!')
+                setError('Unable to delete! Someone is working on this asset, please try again later.')
+                setShowDeleteModal(false)
+            } else if (asset.is_lock === "0" || asset.is_lock === null) {
+                console.log('????????????')
+                setShowDeleteModal(true)
+            } else {
+                console.log('????????????')
+                setShowDeleteModal(true)
+            }
+        } catch (err) {
+            console.log('Unable fetch printer details: ', err)
         }
     }
 
+    //Delete Function
     const handleDelete = async () => {
         const current_user = JSON.parse(localStorage.getItem('user'));
 
@@ -288,7 +311,6 @@ export default function ArchiveReviewPrinter() {
             });
 
             setSuccess('Printer deleted successfully!');
-            setLoading(false);
             setShowDeleteModal(false);
             window.location.replace('/ticketsystem/assets');
         } catch (err) {
@@ -299,24 +321,30 @@ export default function ArchiveReviewPrinter() {
         }
     }
 
+    //Before archive check lock
     const showArhciveModalChecker = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
-        const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id } });
-        const asset = res.data;
+        try {
+            const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id } });
+            const asset = res.data;
 
-        if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
-            console.log('!!!!!!!!!!')
-            setError('Unable to archive! Someone is working on this asset, please try again later.')
-            setShowArchiveModal(false)
-        } else if (asset.is_lock === "0" || asset.is_lock === null) {
-            console.log('????????????')
-            setShowArchiveModal(true)
-        } else {
-            console.log('????????????')
-            setShowArchiveModal(true)
+            if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
+                console.log('!!!!!!!!!!')
+                setError('Unable to archive! Someone is working on this asset, please try again later.')
+                setShowArchiveModal(false)
+            } else if (asset.is_lock === "0" || asset.is_lock === null) {
+                console.log('????????????')
+                setShowArchiveModal(true)
+            } else {
+                console.log('????????????')
+                setShowArchiveModal(true)
+            }
+        } catch (err) {
+            console.log('unable to fetch printer details: ', err)
         }
     }
 
+    //Archive Function
     const handleArchive = async () => {
         const current_user = JSON.parse(localStorage.getItem('user'));
 
@@ -337,32 +365,34 @@ export default function ArchiveReviewPrinter() {
         }
     }
 
+    //Before logs check lock
     const HandleLogs = async () => {
-        const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id } });
-        const asset = res.data;
+        try {
+            const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id } });
+            const asset = res.data;
 
+            if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
+                console.log('!!!!!!!!!!')
+                setError('Unable to view! Someone is working on this asset, please try again later.')
 
-        if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
-            console.log('!!!!!!!!!!')
-            setError('Unable to view! Someone is working on this asset, please try again later.')
-
-        } else if (asset.is_lock === "0" || asset.is_lock === null) {
-            console.log('????????????')
-            setModalTitle('Pms Logs');
-            setModalContent(<AssetLogs pms_id={pms_id} />);
-            setShowModal(true)
-        } else {
-            console.log('????????????')
-            setModalTitle('Pms Logs');
-            setModalContent(<AssetLogs pms_id={pms_id} />);
-            setShowModal(true)
+            } else if (asset.is_lock === "0" || asset.is_lock === null) {
+                console.log('????????????')
+                setModalTitle('Pms Logs');
+                setModalContent(<AssetLogs pms_id={pms_id} />);
+                setShowModal(true)
+            } else {
+                console.log('????????????')
+                setModalTitle('Pms Logs');
+                setModalContent(<AssetLogs pms_id={pms_id} />);
+                setShowModal(true)
+            }
+        } catch (err) {
+            console.log('Unable to fetch printer details: ', err);
         }
+
 
     }
 
-    const empInfo = JSON.parse(localStorage.getItem('user'));
-    const [lockModal, setLockModal] = useState(false)
-    const [lockError, setLockError] = useState('')
     // Lock / unlock feature
     useEffect(() => {
         if (!pms_id || !empInfo?.user_name) return;
@@ -404,15 +434,20 @@ export default function ArchiveReviewPrinter() {
 
         // Periodically check the lock status (every 5 seconds)
         const interval = setInterval(async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id } });
-            const asset = res.data;
-            if (asset.is_lock === '1' && asset.lock_by !== currentUser) {
-                setLockModal(true);
-                setLockError(`${asset.lock_by} is currently reviewing this asset.`);
-            } else {
-                setLockModal(false);
-                setClose(true);
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id } });
+                const asset = res.data;
+                if (asset.is_lock === '1' && asset.lock_by !== currentUser) {
+                    setLockModal(true);
+                    setLockError(`${asset.lock_by} is currently reviewing this asset.`);
+                } else {
+                    setLockModal(false);
+                    setClose(true);
+                }
+            } catch (err) {
+                console.log('Unable to update lock: ', err)
             }
+
         }, 1000);
 
 
@@ -423,26 +458,34 @@ export default function ArchiveReviewPrinter() {
             axios.post(`${config.baseApi}/pms/unlock`, { pms_id: currentTicketId, lock_by: currentUser }).catch(() => { });
         };
     }, [pms_id, empInfo]);
+
+    //once page was open it will check if assets is lock or no
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id: pms_id } });
-            // const assets = res.data;
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-printer-by-id`, { params: { pms_id: pms_id } });
+                // const assets = res.data;
 
-            const assets = Array.isArray(res.data) ? res.data[0] : res.data;
+                const assets = Array.isArray(res.data) ? res.data[0] : res.data;
 
-            if (assets.is_lock === '0' || assets.lock_by === currentUser || assets.lock_by === null) {
-                setLockModal(false)
+                if (assets.is_lock === '0' || assets.lock_by === currentUser || assets.lock_by === null) {
+                    setLockModal(false)
+                }
+                else {
+                    console.log("LOCKED")
+                    setLockModal(true)
+                }
+            } catch (err) {
+                console.log('Unable to fetch printer details: ', err);
             }
-            else {
-                console.log("LOCKED")
-                setLockModal(true)
-            }
+
         }
         fetch();
     }, [])
 
     return (
         <Container fluid className="pt-100" style={{ background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)', minHeight: '100vh', paddingTop: '100px' }}>
+            {/* Alert Components */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -492,6 +535,7 @@ export default function ArchiveReviewPrinter() {
                                         view {tag_id} logs
                                     </h6>
                                 </div>
+                                {/* Buttons */}
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }}>
                                     <div
                                         title="Unarchive"
@@ -644,6 +688,7 @@ export default function ArchiveReviewPrinter() {
                 </Row>
             </AnimatedContent>
 
+            {/* Lock Modal */}
             <Modal show={lockModal} onHide={() => setLockModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Attention! </Modal.Title>
@@ -666,6 +711,7 @@ export default function ArchiveReviewPrinter() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Delete Modal */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Confirm Delete</Modal.Title>
@@ -683,6 +729,7 @@ export default function ArchiveReviewPrinter() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Archive Modal */}
             <Modal show={showArchiveModal} onHide={() => setShowArchiveModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Confirm Unarchive</Modal.Title>
@@ -700,12 +747,8 @@ export default function ArchiveReviewPrinter() {
                 </Modal.Footer>
             </Modal>
 
-            <Modal
-                show={showModal}
-                onHide={() => setShowModal(false)}
-                size="lg" // smaller than xl
-                centered
-            >
+            {/* Logs Modal */}
+            <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
                 <Modal.Header closeButton>
                     <Modal.Title>{modalTitle}</Modal.Title>
                 </Modal.Header>
@@ -727,23 +770,23 @@ export default function ArchiveReviewPrinter() {
                 </Modal.Footer>
             </Modal>
 
-            {
-                loading && (
-                    <div style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        width: "100vw",
-                        height: "100vh",
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        zIndex: 9999,
-                    }}>
-                        <Spinner animation="border" variant="light" />
-                    </div>
-                )
+            {/* loading component */}
+            {loading && (
+                <div style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 9999,
+                }}>
+                    <Spinner animation="border" variant="light" />
+                </div>
+            )
             }
         </Container >
     );

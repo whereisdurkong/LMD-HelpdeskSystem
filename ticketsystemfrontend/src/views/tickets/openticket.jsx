@@ -9,7 +9,6 @@ export default function Openticket() {
     const [userName, setUserName] = useState(null);
     const [tierGroup, setTiergroup] = useState('')
 
-    const [filterStatus, setFilterStatus] = useState('All');
     const [filterLocation, setFilterLocation] = useState('All');
     const [empLocation, setEmpLocation] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +33,7 @@ export default function Openticket() {
 
     const navigate = useNavigate();
 
+    //getting user roles
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
         if (user) {
@@ -53,21 +53,21 @@ export default function Openticket() {
         }
     }, []);
 
+    //Get all open tickets
     useEffect(() => {
-
-
-        axios.get(`${config.baseApi}/ticket/get-all-ticket`)
-            .then((res) => {
-                const userTickets = res.data.filter(
-                    (ticket) => (ticket.ticket_status === tierGroup || ticket.ticket_status === 'open') && ticket.is_active === true
-                );
-                setAllTicket(userTickets);
-            })
-            .catch((err) => console.error("Error fetching tickets:", err));
-
-
+        try {
+            axios.get(`${config.baseApi}/ticket/get-all-ticket`)
+                .then((res) => {
+                    const userTickets = res.data.filter(
+                        (ticket) => (ticket.ticket_status === tierGroup || ticket.ticket_status === 'open') && ticket.is_active === true
+                    );
+                    setAllTicket(userTickets);
+                })
+                .catch((err) => console.error("Error fetching tickets:", err));
+        } catch (err) {
+            console.log('Unable to get all tickets: ', err)
+        }
     }, [tierGroup]);
-
 
     //-------------------STATUS DESIGN----------------------//
     const renderStatusBadge = (status) => {
@@ -168,6 +168,7 @@ export default function Openticket() {
         return <span style={style}>{label}</span>;
     };
 
+    //Filter Ticket
     const filteredTickets = allticket.filter((ticket) => {
 
         const ticketDate = new Date(ticket.created_at || ticket.date_created || ticket.date);
@@ -194,6 +195,7 @@ export default function Openticket() {
         return matchesSearch && matchesLocation && matchesDate;
     });
 
+    //Sort ascending to descending
     const sortedTickets = [...filteredTickets].sort((a, b) => {
         const dateA = new Date(a.created_at || a.date_created || a.date); // adjust based on your DB column
         const dateB = new Date(b.created_at || b.date_created || b.date);
@@ -206,11 +208,13 @@ export default function Openticket() {
     const currentTickets = sortedTickets.slice(indexOfFirstTicket, indexOfLastTicket);
     const totalPages = Math.ceil(sortedTickets.length / ticketsPerPage);
 
+    //Navigate to view ticket
     const HandleView = (ticket) => {
         const params = new URLSearchParams({ id: ticket.ticket_id })
         navigate(`/view-hd-ticket?${params.toString()}`)
     }
 
+    //Handle status has changed
     const handleStatusChange = async (ticket, newStatus) => {
         console.log(ticket, newStatus)
         const prevStat = ticket.ticket_status
@@ -227,6 +231,7 @@ export default function Openticket() {
         }
     }
 
+    //Save Function
     const handleUpdate = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const prevStat = selectedTicket.ticket_status
@@ -256,7 +261,6 @@ export default function Openticket() {
     }
 
     return (
-
         <Container
             style={{
                 padding: '20px',
@@ -266,6 +270,7 @@ export default function Openticket() {
 
             }}
         >
+            {/* Alert Component */}
             {error && (
                 <div
                     className="position-fixed start-50 l translate-middle-x"
@@ -286,6 +291,7 @@ export default function Openticket() {
                     </Alert>
                 </div>
             )}
+
             {/* Search and Filter */}
             <div
                 className="d-flex align-items-end gap-3 mb-4 flex-wrap"
@@ -383,8 +389,6 @@ export default function Openticket() {
                     </Form.Select>
                 </Form.Group>
             </div>
-
-
 
             {/* Desktop Table */}
             <div className="d-none d-md-block">
@@ -498,6 +502,7 @@ export default function Openticket() {
                 </div>
             )}
 
+            {/* Chnge status Modal */}
             <Modal
                 show={showModal}
                 onHide={() => setShowModal(false)}
@@ -529,6 +534,7 @@ export default function Openticket() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

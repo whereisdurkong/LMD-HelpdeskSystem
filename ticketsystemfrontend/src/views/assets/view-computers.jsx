@@ -16,20 +16,25 @@ export default function ViewComputers() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
+    //Get all desktop/computer
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-computers`);
-            const data = res.data || [];
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-computers`);
+                const data = res.data || [];
 
 
-            const allactive = data.filter(e => Number(e.is_active) === 1);
-            setAllpc(allactive);
+                const allactive = data.filter(e => Number(e.is_active) === 1);
+                setAllpc(allactive);
 
-            const lmd = data.filter((pc) => pc.assigned_location === "lmd" && pc.pms_category === "desktop" && pc.is_active === 1);
-            setLmdpc(lmd);
+                const lmd = data.filter((pc) => pc.assigned_location === "lmd" && pc.pms_category === "desktop" && pc.is_active === 1);
+                setLmdpc(lmd);
 
-            const corp = data.filter((pc) => pc.assigned_location === "corp" && pc.pms_category === "desktop" && pc.is_active === 1);
-            setCorppc(corp);
+                const corp = data.filter((pc) => pc.assigned_location === "corp" && pc.pms_category === "desktop" && pc.is_active === 1);
+                setCorppc(corp);
+            } catch (err) {
+                console.log('Unable to get all desktops: ', err)
+            }
         };
         fetch();
     }, []);
@@ -42,7 +47,7 @@ export default function ViewComputers() {
                 ? lmdpc
                 : corppc;
 
-    // 🔍 Filter data based on search input
+    // Filter data based on search input
     const filteredPCs = displayedPCs.filter((pc) => {
         const search = searchTerm.toLowerCase();
         return (
@@ -65,9 +70,10 @@ export default function ViewComputers() {
         setCurrentPage(1);
     }, [filterStatus, searchTerm]);
 
+    //Navigate to review
     const HandleView = (pc) => {
         const params = new URLSearchParams({ id: pc.pms_id })
-        window.location.replace(`/ticketsystem/assets-computer?${params.toString()}`)
+        navigate(`/assets-computer?${params.toString()}`)
     }
 
     return (

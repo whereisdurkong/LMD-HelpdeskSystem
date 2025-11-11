@@ -33,7 +33,7 @@ export default function Myticket() {
     const [resolution, setResolution] = useState('');
 
     const navigate = useNavigate();
-
+    const empInfo = JSON.parse(localStorage.getItem('user'));
 
     //User Information from local storage
     useEffect(() => {
@@ -44,9 +44,6 @@ export default function Myticket() {
         }
     }, []);
 
-
-    const [accesshd, setAccessHD] = useState(false)
-
     //Get All Tickets Assigned on User
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
@@ -54,25 +51,30 @@ export default function Myticket() {
         if (!userName) return;
 
         const fetch = async () => {
-            axios.get(`${config.baseApi}/ticket/get-all-ticket`)
-                .then((res) => {
-                    if (user.emp_tier === 'user') {
-                        const userTickets = res.data.filter(
-                            (ticket) => ticket.ticket_for === userName && ticket.is_active === true &&
-                                (ticket.is_reviewed === false || ticket.is_reviewed === null)
-                        );
-                        setAllTicket(userTickets);
-                    } else if (user.emp_tier === 'helpdesk') {
-                        const userTickets = res.data.filter(
-                            (ticket) =>
-                                ticket.assigned_to === userName && ticket.is_active === true &&
-                                (ticket.is_reviewed === false || ticket.is_reviewed === null)
-                        );
-                        setAllTicket(userTickets);
-                    }
-                })
-                .catch((err) => console.error("Error fetching tickets:", err));
+            try {
+                axios.get(`${config.baseApi}/ticket/get-all-ticket`)
+                    .then((res) => {
+                        if (user.emp_tier === 'user') {
+                            const userTickets = res.data.filter(
+                                (ticket) => ticket.ticket_for === userName && ticket.is_active === true &&
+                                    (ticket.is_reviewed === false || ticket.is_reviewed === null)
+                            );
+                            setAllTicket(userTickets);
+                        } else if (user.emp_tier === 'helpdesk') {
+                            const userTickets = res.data.filter(
+                                (ticket) =>
+                                    ticket.assigned_to === userName && ticket.is_active === true &&
+                                    (ticket.is_reviewed === false || ticket.is_reviewed === null)
+                            );
+                            setAllTicket(userTickets);
+                        }
+                    })
+                    .catch((err) => console.error("Error fetching tickets:", err));
+            } catch (err) {
+                console.log('UNable to get all tickets: ', err)
+            }
         }
+
         fetch()
 
     }, [userName]);
@@ -200,7 +202,7 @@ export default function Myticket() {
         return matchesSearch && matchesStatus && matchesDate;
     });
 
-
+    //Sort Ascending || Descending
     const sortedTickets = [...filteredTickets].sort((a, b) => {
         const dateA = new Date(a.created_at || a.date_created || a.date); // adjust based on your DB column
         const dateB = new Date(b.created_at || b.date_created || b.date);
@@ -225,8 +227,7 @@ export default function Myticket() {
         }
     }
 
-
-
+    //Changes Function
     const handleStatusChange = async (ticket, newStatus) => {
         console.log(ticket, newStatus)
         const prevStat = ticket.ticket_status
@@ -253,6 +254,7 @@ export default function Myticket() {
         }
     }
 
+    //Save Function
     const handleUpdate = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const prevStat = selectedTicket.ticket_status
@@ -299,6 +301,7 @@ export default function Myticket() {
         }
     }
 
+    //Reolved Function
     const handleResolved = async (e) => {
         e.preventDefault();
         setShowModal(false)
@@ -335,10 +338,6 @@ export default function Myticket() {
         }
     }
 
-    const [hdaccess, setHDAccess] = useState(false);
-    const empInfo = JSON.parse(localStorage.getItem('user'));
-
-
     return (
         <Container
             style={{
@@ -347,16 +346,18 @@ export default function Myticket() {
                 borderRadius: '12px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
             }}
-        >{error && (
-            <div
-                className="position-fixed start-50 l translate-middle-x"
-                style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}
-            >
-                <Alert variant="danger" onClose={() => setError('')} dismissible>
-                    {error}
-                </Alert>
-            </div>
-        )}
+        >
+            {/* Alert Component */}
+            {error && (
+                <div
+                    className="position-fixed start-50 l translate-middle-x"
+                    style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}
+                >
+                    <Alert variant="danger" onClose={() => setError('')} dismissible>
+                        {error}
+                    </Alert>
+                </div>
+            )}
             {successful && (
                 <div
                     className="position-fixed start-50 l translate-middle-x"
@@ -367,6 +368,7 @@ export default function Myticket() {
                     </Alert>
                 </div>
             )}
+
             <AnimatedContent
                 distance={100}
                 direction="vertical"
@@ -381,6 +383,7 @@ export default function Myticket() {
             >
                 {/* Search, Status, Sort, and Date Range — Single Row */}
                 <Row className="align-items-center g-2 mb-3 flex-wrap">
+
                     {/* Search Input */}
                     <Col xs={12} md={4} lg={4}>
                         <Form.Group controlId="search" style={{ width: '100%' }}>
@@ -444,8 +447,6 @@ export default function Myticket() {
                         </Form.Group>
                     </Col>
 
-
-
                     {/* Date Range */}
                     <Col xs={12} md={4} lg={4}>
                         <div className="d-flex align-items-center gap-2 w-100">
@@ -498,6 +499,7 @@ export default function Myticket() {
                             </Form.Group>
                         </div>
                     </Col>
+
                     {/* Sort Filter */}
                     <Col xs={12} md={2} lg={2}>
                         <Form.Group controlId="sort-filter" style={{ width: '100%' }}>
@@ -715,6 +717,7 @@ export default function Myticket() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Change Status Modal */}
             <Modal
                 show={showModal}
                 onHide={() => setShowModal(false)}
@@ -746,9 +749,8 @@ export default function Myticket() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading Component */}
             {loading && (
-
-
                 <div
                     style={{
                         position: "fixed",

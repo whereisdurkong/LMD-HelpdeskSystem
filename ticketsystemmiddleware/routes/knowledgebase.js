@@ -2,7 +2,7 @@ var express = require('express');
 var bcrypt = require('bcrypt');
 const router = express.Router();
 var Sequelize = require('sequelize');
-
+const { DataTypes } = Sequelize;
 require('dotenv').config();
 
 var knex = require("knex")({
@@ -26,8 +26,7 @@ var db = new Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSW
     port: parseInt(process.env.APP_SERVER_PORT),
 });
 
-const { DataTypes } = Sequelize;
-
+//Add Knowledgebase
 router.post('/add-knowledgebase', async (req, res) => {
     try {
         const {
@@ -57,6 +56,7 @@ router.post('/add-knowledgebase', async (req, res) => {
     }
 })
 
+//Get all Knowledgebase
 router.get('/all-knowledgebase', async (req, res) => {
     try {
         const knowledgebase = await knex('knowledgebase_master').select('*');
@@ -68,6 +68,7 @@ router.get('/all-knowledgebase', async (req, res) => {
     }
 })
 
+//Update Knowledgebase
 router.post('/update-knowledgebase', async (req, res) => {
     try {
         const {
@@ -97,6 +98,7 @@ router.post('/update-knowledgebase', async (req, res) => {
 
 })
 
+//Archive  Knowledgebase
 router.post('/archive-knowledgebase', async (req, res) => {
     try {
         const { kb_id, updated_by } = req.body;
@@ -114,6 +116,8 @@ router.post('/archive-knowledgebase', async (req, res) => {
         console.error('Error archiving knowledgebase:', err);
     }
 })
+
+//Un-Archive Knowledgebase
 router.post('/un-archive-knowledgebase', async (req, res) => {
     try {
         const { kb_id, updated_by } = req.body;
@@ -132,6 +136,7 @@ router.post('/un-archive-knowledgebase', async (req, res) => {
     }
 })
 
+//Delete Knowledgebase
 router.post('/delete-knowledgebase', async (req, res) => {
     try {
         const { kb_id, updated_by } = req.body;

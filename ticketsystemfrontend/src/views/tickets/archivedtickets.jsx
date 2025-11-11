@@ -22,7 +22,6 @@ export default function ArchivedTickets() {
     const [currentPage, setCurrentPage] = useState(1);
     const ticketsPerPage = 10;
 
-
     const navigate = useNavigate();
 
     //Fetch user information from local storage
@@ -33,27 +32,36 @@ export default function ArchivedTickets() {
 
     //Fetch all tickets
     useEffect(() => {
-        const user = JSON.parse(localStorage.getItem('user'));
-        axios.get(`${config.baseApi}/ticket/get-all-ticket`)
-            .then((res) => {
+        try {
+            const user = JSON.parse(localStorage.getItem('user'));
+            axios.get(`${config.baseApi}/ticket/get-all-ticket`)
+                .then((res) => {
 
-                const archived = res.data.filter(ticket => ticket.is_active === false)
-                console.log(archived)
-                setAllTicket(archived);
-            });
+                    const archived = res.data.filter(ticket => ticket.is_active === false)
+                    console.log(archived)
+                    setAllTicket(archived);
+                });
 
-        if (user.emp_location) {
-            setEmpLocation(user.emp_location);
-            setFilterLocation(user.emp_location);   // auto-apply filter
+            if (user.emp_location) {
+                setEmpLocation(user.emp_location);
+                setFilterLocation(user.emp_location);   // auto-apply filter
+            }
+        } catch (err) {
+            console.log('Unable to get all archive: ', err);
         }
+
     }, []);
 
     //Fetch all users
     useEffect(() => {
-        axios.get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
-                setAllUsers(res.data);
-            });
+        try {
+            axios.get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
+                    setAllUsers(res.data);
+                });
+        } catch (err) {
+            console.log('Unable to get all users: ', err)
+        }
     }, []);
 
     //Assigned to display tickets per role
@@ -106,6 +114,7 @@ export default function ArchivedTickets() {
         return matchesSearch && matchesStatus && matchesLocation && matchesDate;
     });
 
+    //Ascending and desending 
     const sortedTickets = [...filteredTickets].sort((a, b) => {
         const dateA = new Date(a.created_at || a.date_created || a.date); // adjust based on your DB column
         const dateB = new Date(b.created_at || b.date_created || b.date);
@@ -206,7 +215,6 @@ export default function ArchivedTickets() {
     };
 
     return (
-
         <Container
             style={{
                 padding: '20px',
@@ -267,7 +275,6 @@ export default function ArchivedTickets() {
                         </Form.Select>
                     </Form.Group>
                 </div>
-
 
                 {/* Location Filter */}
                 <div style={{ flex: "0 1 160px" }}>
@@ -348,8 +355,6 @@ export default function ArchivedTickets() {
                     </Form.Group>
                 </div>
             </div>
-
-
 
             {/* Desktop Table */}
             <div className="d-none d-md-block" >

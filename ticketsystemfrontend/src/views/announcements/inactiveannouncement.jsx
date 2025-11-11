@@ -3,14 +3,14 @@ import { Table, Container, Button, Card, Form, Row, Col, Alert } from 'react-boo
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import axios from 'axios';
 import config from 'config';
-
+import { useNavigate } from 'react-router';
 import Spinner from 'react-bootstrap/Spinner';
 
 export default function InActiveAnnouncement() {
     const [announcementText, setAnnouncementText] = useState('');
     const [announcementsList, setAnnouncementsList] = useState([]);
     const [fullname, setFullname] = useState({});
-
+    const navigate = useNavigate();
     const [showCard, setShowCard] = useState(false);
     const [ancId, setAncId] = useState(null);
 
@@ -32,14 +32,14 @@ export default function InActiveAnnouncement() {
     const totalPages = Math.ceil(announcementsList.length / announcementsPerPage);
 
     //loading time out after 2s
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
     //Fetch all announcements
     useEffect(() => {
@@ -93,9 +93,9 @@ export default function InActiveAnnouncement() {
             console.log('Unable to update announcement:', err);
             setLoading(false)
             setError("Failed to update announcement.");
+            return;
         }
     };
-
 
     //Delete Announcement
     const handleDelete = async (announcementId) => {
@@ -117,12 +117,14 @@ export default function InActiveAnnouncement() {
             console.error("Error deleting announcement:", error);
             setLoading(false)
             setError("Failed to delete announcement.");
+            return;
         }
     }
 
+    //Navigate to the main announcement page
     const HandleAnnouncements = () => {
         setLoading(true)
-        window.location.replace('/ticketsystem/announcements');
+        navigate('/announcements');
     }
 
     return (
@@ -136,6 +138,7 @@ export default function InActiveAnnouncement() {
                 paddingBottom: '20px'
             }}
         >
+            {/* Alert */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -238,7 +241,7 @@ export default function InActiveAnnouncement() {
                 )}
 
 
-
+                {/* Pagenation */}
                 {totalPages > 1 && (
                     <div className="d-flex justify-content-center mt-3">
                         <Button
@@ -265,6 +268,7 @@ export default function InActiveAnnouncement() {
                     </div>
                 )}
             </div>
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

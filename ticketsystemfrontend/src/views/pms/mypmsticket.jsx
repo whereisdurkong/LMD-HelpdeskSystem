@@ -34,7 +34,7 @@ export default function MyPmsTicket() {
     const [resolution, setResolution] = useState('');
 
     const navigate = useNavigate();
-
+    const empInfo = JSON.parse(localStorage.getItem('user'));
 
     //User Information from local storage
     useEffect(() => {
@@ -45,9 +45,6 @@ export default function MyPmsTicket() {
         }
     }, []);
 
-
-    const [accesshd, setAccessHD] = useState(false)
-
     //Get All Tickets Assigned on User
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
@@ -55,26 +52,30 @@ export default function MyPmsTicket() {
         if (!userName) return;
 
         const fetch = async () => {
-            const a = await axios.get(`${config.baseApi}/pmsticket/get-all-pmsticket`)
+            try {
+                await axios.get(`${config.baseApi}/pmsticket/get-all-pmsticket`)
+                    .then((res) => {
+                        if (user.emp_tier === 'user') {
+                            const userTickets = res.data.filter(
+                                (pmsticket) => pmsticket.pmsticket_for === userName && pmsticket.is_active === true &&
+                                    (pmsticket.is_reviewed === false || pmsticket.is_reviewed === null)
+                            );
+                            console.log(userTickets)
+                            setAllTicket(userTickets);
+                        } else if (user.emp_tier === 'helpdesk') {
+                            const userTickets = res.data.filter(
+                                (ticket) =>
+                                    ticket.assigned_to === userName && ticket.is_active === true &&
+                                    (ticket.is_reviewed === false || ticket.is_reviewed === null)
+                            );
+                            setAllTicket(userTickets);
+                        }
+                    })
+                    .catch((err) => console.error("Error fetching tickets:", err));
+            } catch (err) {
+                console.log('Unable to fetch all pmsticket: ', err)
+            }
 
-                .then((res) => {
-                    if (user.emp_tier === 'user') {
-                        const userTickets = res.data.filter(
-                            (pmsticket) => pmsticket.pmsticket_for === userName && pmsticket.is_active === true &&
-                                (pmsticket.is_reviewed === false || pmsticket.is_reviewed === null)
-                        );
-                        console.log(userTickets)
-                        setAllTicket(userTickets);
-                    } else if (user.emp_tier === 'helpdesk') {
-                        const userTickets = res.data.filter(
-                            (ticket) =>
-                                ticket.assigned_to === userName && ticket.is_active === true &&
-                                (ticket.is_reviewed === false || ticket.is_reviewed === null)
-                        );
-                        setAllTicket(userTickets);
-                    }
-                })
-                .catch((err) => console.error("Error fetching tickets:", err));
         }
         fetch()
 
@@ -135,7 +136,6 @@ export default function MyPmsTicket() {
         return <span style={style}>{label}</span>;
     };
 
-
     // Filter Function
     const filteredTickets = allticket.filter((ticket) => {
         const ticketDate = new Date(ticket.created_at);
@@ -159,7 +159,7 @@ export default function MyPmsTicket() {
         return matchesSearch && matchesStatus && matchesDate;
     });
 
-
+    //Ascending || descending 
     const sortedTickets = [...filteredTickets].sort((a, b) => {
         const dateA = new Date(a.created_at || a.date_created || a.date); // adjust based on your DB column
         const dateB = new Date(b.created_at || b.date_created || b.date);
@@ -184,8 +184,7 @@ export default function MyPmsTicket() {
         }
     }
 
-
-
+    //Handle Status Change Function
     const handleStatusChange = async (ticket, newStatus) => {
         console.log(ticket, newStatus)
         const prevStat = ticket.pms_status
@@ -212,6 +211,7 @@ export default function MyPmsTicket() {
         }
     }
 
+    //Update pms ticket function
     const handleUpdate = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const prevStat = selectedTicket.pms_status
@@ -258,6 +258,7 @@ export default function MyPmsTicket() {
         }
     }
 
+    //Handle when resolved
     const handleResolved = async (e) => {
         e.preventDefault();
         setShowModal(false)
@@ -295,9 +296,6 @@ export default function MyPmsTicket() {
         }
     }
 
-    const empInfo = JSON.parse(localStorage.getItem('user'));
-
-
     return (
         <Container
             style={{
@@ -307,9 +305,7 @@ export default function MyPmsTicket() {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
             }}
         >
-
-
-
+            {/* Alert Component */}
             {error && (
                 <div
                     className="position-fixed start-50 l translate-middle-x"
@@ -408,8 +404,6 @@ export default function MyPmsTicket() {
                         </Form.Group>
                     </Col>
 
-
-
                     {/* Date Range */}
                     <Col xs={12} md={4} lg={4}>
                         <div className="d-flex align-items-center gap-2 w-100">
@@ -462,6 +456,7 @@ export default function MyPmsTicket() {
                             </Form.Group>
                         </div>
                     </Col>
+
                     {/* Sort Filter */}
                     <Col xs={12} md={2} lg={2}>
                         <Form.Group controlId="sort-filter" style={{ width: '100%' }}>
@@ -500,8 +495,6 @@ export default function MyPmsTicket() {
                                 <th>PMS Ticket ID</th>
                                 <th>Created at</th>
                                 <th>Tag ID</th>
-                                {/* <th>Type</th> */}
-
                                 <th>Assigned to</th>
                                 <th>Description</th>
                                 <th>Status</th>
@@ -679,6 +672,7 @@ export default function MyPmsTicket() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Status modal Validation */}
             <Modal
                 show={showModal}
                 onHide={() => setShowModal(false)}
@@ -710,6 +704,7 @@ export default function MyPmsTicket() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{
@@ -728,8 +723,6 @@ export default function MyPmsTicket() {
                     <Spinner animation="border" variant="light" />
                 </div>
             )}
-
-
         </Container>
     )
 }

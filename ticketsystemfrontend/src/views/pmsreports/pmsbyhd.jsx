@@ -12,15 +12,15 @@ import {
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
 import { Pagination } from "react-bootstrap";
-
+import { useNavigate } from 'react-router';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function PMSbyHD({ filterType, showChart = true, onDataReady, location }) {
     const [alluser, setAllUser] = useState([]);
     const [chartData, setChartData] = useState(null);
     const [userTickets, setUserTickets] = useState({});
-
-    const [currentPage, setCurrentPage] = useState({}); // <-- holds pagination state for each user
+    const navigate = useNavigate();
+    const [currentPage, setCurrentPage] = useState({});
     const itemsPerPage = 5;
 
     // ---- date filter
@@ -83,14 +83,14 @@ export default function PMSbyHD({ filterType, showChart = true, onDataReady, loc
 
                 let tickets = ticketRes.data || [];
 
-                // ✅ Filter by location if not "all"
+                // Filter by location if not "all"
                 if (location && location.toLowerCase() !== "all") {
                     tickets = tickets.filter(
                         t => t.assigned_location?.toLowerCase() === location.toLowerCase()
                     );
                 }
 
-                // ✅ Then apply the date filter
+                // Then apply the date filter
                 const allTickets = tickets.filter(t => isInFilter(t.created_at));
                 const notes = noteRes.data || [];
 
@@ -181,6 +181,7 @@ export default function PMSbyHD({ filterType, showChart = true, onDataReady, loc
         if (alluser.length) fetchData();
     }, [alluser, filterType, showChart, location]);
 
+
     const handlePageChange = (username, page) => {
         setCurrentPage(prev => ({ ...prev, [username]: page }));
     };
@@ -238,7 +239,7 @@ export default function PMSbyHD({ filterType, showChart = true, onDataReady, loc
                                 {currentTickets.map(t => (
                                     <tr key={t.ticket_id}
                                         style={{ cursor: "pointer" }}
-                                        onClick={() => window.location.replace(`view-hd-ticket?id=${t.ticket_id}`)}>
+                                        onClick={() => navigate(`/view-pms-hd-ticket?id=${t.pmsticket_id}`)}>
                                         <td>{t.pmsticket_id}</td>
                                         <td>{t.tag_id}</td>
                                         <td>{t.pms_status}</td>

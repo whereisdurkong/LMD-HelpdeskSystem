@@ -7,7 +7,6 @@ import { PencilSquare, Trash3Fill, Archive } from 'react-bootstrap-icons';
 import Spinner from 'react-bootstrap/Spinner';
 
 export default function HardwareArchive() {
-    const [loaded] = useState(true);
     const navigate = useNavigate();
     const [showModal, setShowModal] = useState(false);
     const [kbID, setKbID] = useState("");
@@ -24,7 +23,7 @@ export default function HardwareArchive() {
     const [access, setAccess] = useState(false)
     const [loading, setLoading] = useState(false);
 
-
+    //Loading states 2s
     useEffect(() => {
         if (loading === true) {
             const timer = setTimeout(() => {
@@ -37,7 +36,6 @@ export default function HardwareArchive() {
     // Check user access
     useEffect(() => {
         const userInfo = JSON.parse(localStorage.getItem("user"));
-
         if (userInfo.emp_tier === 'helpdesk') {
             setAccess(true)
         } else if (userInfo.emp_tier === 'user') {
@@ -80,6 +78,8 @@ export default function HardwareArchive() {
         };
         fetchData();
     }, []);
+
+    //un-archive function
     const handleUnArchive = async (id) => {
         setLoading(true)
 
@@ -106,6 +106,7 @@ export default function HardwareArchive() {
         }
     }, [showModal]);
 
+    //Delete function
     const handleDelete = async (id) => {
 
         const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -123,6 +124,7 @@ export default function HardwareArchive() {
         }
     }
 
+    //Update function
     const handleUpdate = async () => {
 
         if (newTitle === '') {
@@ -154,6 +156,7 @@ export default function HardwareArchive() {
         }
     }
 
+    //Add Function
     const handleSave = async () => {
         console.log("Saving Hardware:", newTitle, newContent);
         if (newTitle === '') {
@@ -187,6 +190,7 @@ export default function HardwareArchive() {
         }
     };
 
+    //input field styles/format
     const handleContentChange = () => {
         setNewContent(contentRef.current.innerHTML);
     };
@@ -215,6 +219,7 @@ export default function HardwareArchive() {
                 paddingBottom: '20px',
             }}
         >
+            {/* Alert Component */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -225,10 +230,12 @@ export default function HardwareArchive() {
                     <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>
                 </div>
             )}
+
             <Container>
                 <Card className="p-4 shadow-lg" style={{ borderRadius: "20px", backgroundColor: "#fff" }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="fw-bold text-dark mb-0">Archived Hardware Questions</h2>
+                        {/* Buttons */}
                         {access && (
                             <div className="d-flex gap-2">
                                 <Button variant="primary" onClick={() => navigate('/hardware')}>Hardware</Button>
@@ -244,7 +251,6 @@ export default function HardwareArchive() {
                                 No archived hardware articles found
                             </div>
                         ) : (
-
                             faqData.map((faq, index) => (
                                 <Accordion.Item eventKey={index.toString()} key={index}>
                                     <Accordion.Header>{faq.question}</Accordion.Header>
@@ -327,6 +333,7 @@ export default function HardwareArchive() {
             </Container>
 
             {/* Modal */}
+            {/* Modal for edit / add */}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
                 <Modal.Header >
                     <Modal.Title>{editMode ? 'Edit Hardware Troubleshooting Step' : 'Add Hardware Troubleshooting Step'}</Modal.Title>
@@ -391,6 +398,7 @@ export default function HardwareArchive() {
                     </Button>
                 </Modal.Footer>
             </Modal>
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

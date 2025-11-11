@@ -18,14 +18,16 @@ import AllPMStickets from './allpmsticket';
 import HistoryPMSTicket from './historypmsticket';
 import ArchivePMSTicket from './archivedpmsticket';
 import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
-
+import { useNavigate } from 'react-router';
 
 import VariableProximity from 'layouts/ReactBits/VariableProximity.jsx'
 export default function PMS() {
     const containerRef = useRef(null);
     const [adminaccess, setadminAccess] = useState(false);
     const [hdaccess, sethdAccess] = useState(false);
+    const navigate = useNavigate();
 
+    //Setting access
     useEffect(() => {
         const userInfo = JSON.parse(localStorage.getItem('user'));
         if (userInfo.emp_tier === 'helpdesk') {
@@ -34,6 +36,11 @@ export default function PMS() {
             setadminAccess(true)
         }
     }, [])
+    // navigate to create a user
+    const handleView = () => {
+        navigate('/create-pms-user');
+    }
+
     return (
         <Container
             fluid
@@ -44,8 +51,6 @@ export default function PMS() {
                 paddingTop: '100px',
             }}
         >
-
-
             {/* Outer Center Wrapper */}
             <div
                 style={{
@@ -55,22 +60,30 @@ export default function PMS() {
             >
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }} >
-                    <div><div ref={containerRef}>
-                        <VariableProximity
-                            label={'Preventive Maintenance Schedule Tickets'}
-                            className={'variable-proximity-demo'}
-                            style={{
+                    <div>
+                        <div ref={containerRef}>
+                            {/* <VariableProximity
+                                label={'Preventive Maintenance Schedule Tickets'}
+                                className={'variable-proximity-demo'}
+                                style={{
+                                    fontSize: '2rem', // responsive font size
+                                    color: "#5d3600ff"
+                                }}
+                                fromFontVariationSettings="'wght' 800, 'opsz' 9"
+                                toFontVariationSettings="'wght' 2000, 'opsz' 30"
+                                containerRef={containerRef}
+                                radius={50}
+                                falloff="linear"
+                            /> */}
+                            <h3 style={{
                                 fontSize: '2rem', // responsive font size
                                 color: "#5d3600ff"
                             }}
-                            fromFontVariationSettings="'wght' 800, 'opsz' 9"
-                            toFontVariationSettings="'wght' 2000, 'opsz' 30"
-                            containerRef={containerRef}
-                            radius={50}
-                            falloff="linear"
-                        />
-                    </div></div>
-                    <Button onClick={() => '#s'}>+ Create Ticket</Button>
+                            ><b>Preventive Maintenance Schedule Tickets</b>
+                            </h3>
+                        </div>
+                    </div>
+                    <Button onClick={handleView}>+ Create Ticket</Button>
                 </div>
                 <Tabs
                     defaultActiveKey="my"

@@ -22,18 +22,23 @@ export default function Assets() {
     const [allUsers, setAllUsers] = useState([]);
     const navigate = useNavigate()
 
+    //Fetch all users
     useEffect(() => {
-        axios
-            .get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
-                const justUsers = res.data.filter(
-                    (user) => user.emp_tier === 'user'
-                );
-                setAllUsers(justUsers);
-            })
-            .catch((err) => {
-                console.error('Error fetching users:', err);
-            });
+        try {
+            axios.get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
+                    const justUsers = res.data.filter(
+                        (user) => user.emp_tier === 'user'
+                    );
+                    setAllUsers(justUsers);
+                })
+                .catch((err) => {
+                    console.error('Error fetching users:', err);
+                });
+        } catch (err) {
+            console.log('Unable to fetch all users: ', err)
+        }
+
     }, []);
 
     return (
@@ -66,21 +71,29 @@ export default function Assets() {
                                 gap: '10px',
                             }}
                         >
-                            <div><div ref={containerRef}>
-                                <VariableProximity
-                                    label={'Assets'}
-                                    className={'variable-proximity-demo'}
-                                    style={{
-                                        fontSize: '2rem', // responsive font size
-                                        color: "#5d3600ff"
-                                    }}
-                                    fromFontVariationSettings="'wght' 800, 'opsz' 9"
-                                    toFontVariationSettings="'wght' 2000, 'opsz' 30"
-                                    containerRef={containerRef}
-                                    radius={50}
-                                    falloff="linear"
-                                />
-                            </div></div>
+                            <div>
+                                {/* <div ref={containerRef}>
+                                    <VariableProximity
+                                        label={'Assets'}
+                                        className={'variable-proximity-demo'}
+                                        style={{
+                                            fontSize: '2rem', // responsive font size
+                                            color: "#5d3600ff"
+                                        }}
+                                        fromFontVariationSettings="'wght' 800, 'opsz' 9"
+                                        toFontVariationSettings="'wght' 2000, 'opsz' 30"
+                                        containerRef={containerRef}
+                                        radius={50}
+                                        falloff="linear"
+                                    />
+                                </div> */}
+                                <h3 style={{
+                                    fontSize: '2rem', // responsive font size
+                                    color: "#5d3600ff"
+                                }}
+                                ><b>Assets</b>
+                                </h3>
+                            </div>
                             <Button
                                 onClick={() => navigate('/archive-assets')}
                             ><FeatherIcon icon="archive" />
@@ -95,7 +108,7 @@ export default function Assets() {
                             transition={false}
                             id="assets-tabs"
                             justify
-                            style={{ marginBottom: '0' }} // ✅ remove space
+                            style={{ marginBottom: '0' }} // remove space
                         >
                             {/* Desktop Tab */}
                             <Tab
@@ -118,7 +131,7 @@ export default function Assets() {
                                     </div>
                                 }
                             >
-                                {/* ✅ No margin on container */}
+                                {/* No margin on container */}
                                 <div style={{ overflowX: 'auto', width: '100%', marginTop: '0' }}>
                                     <ViewComputers />
                                 </div>

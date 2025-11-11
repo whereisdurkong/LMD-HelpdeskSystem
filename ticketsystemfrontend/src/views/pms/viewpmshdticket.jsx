@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 
 import CreatableSelect from 'react-select/creatable';
 import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
+import ViewPMSTicketLogs from './viewpmsticketlogs';
 
 export default function ViewHDPmsTicket() {
     const [formData, setFormData] = useState({});
@@ -57,6 +58,9 @@ export default function ViewHDPmsTicket() {
     const [unarchiveState, setUnArchiveState] = useState(false)
     const [archiveTextState, setArchiveTextState] = useState(false)
 
+    const [archBTN1, setArchBTN1] = useState(false);
+    const [archBTN2, setArchBTN2] = useState(false);
+
     // Modal states
     const [showModal, setShowModal] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
@@ -64,8 +68,11 @@ export default function ViewHDPmsTicket() {
 
     const [assets, setAssets] = useState([]);
 
-    const navigate = useNavigate();
+    const empInfo = JSON.parse(localStorage.getItem('user'));
+    const [lockModal, setLockModal] = useState(false)
+    const [lockError, setLockError] = useState('')
 
+    //dropdown design
     const customSelectStyles = {
         container: (provided) => ({
             ...provided,
@@ -104,6 +111,7 @@ export default function ViewHDPmsTicket() {
         }),
     };
 
+    //status validation
     useEffect(() => {
         if (formData.pms_status === 'open') {
             setAssignedToState(true)
@@ -112,16 +120,17 @@ export default function ViewHDPmsTicket() {
         }
     }, [formData.pms_status])
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    // //Loading Component 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
-    //Alerts timeout
+    //Alerts timeout 3s
     useEffect(() => {
         if (error || successful) {
             const timer = setTimeout(() => {
@@ -271,7 +280,6 @@ export default function ViewHDPmsTicket() {
 
     }, [formData.pmsticket_for, formData.assigned_to, formData.pms_status, ticketForData.emp_location]);
 
-
     //Get the ticket 
     useEffect(() => {
         const fetchData = async () => {
@@ -300,10 +308,6 @@ export default function ViewHDPmsTicket() {
         fetchData();
     }, [pmsticket_id]);
 
-    const [archBTN1, setArchBTN1] = useState(false);
-    const [archBTN2, setArchBTN2] = useState(false);
-
-
     //Archive Checker
     useEffect(() => {
         if (formData.is_active === false || formData.is_active === '0') {
@@ -324,17 +328,21 @@ export default function ViewHDPmsTicket() {
 
     //get all users hd/users
     useEffect(() => {
-        axios.get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
-                const justUsers = res.data.filter(user => user.emp_tier === 'user');
-                setAllUser(justUsers);
+        try {
+            axios.get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
+                    const justUsers = res.data.filter(user => user.emp_tier === 'user');
+                    setAllUser(justUsers);
 
-                const allHD = res.data.filter(hd => hd.emp_tier === 'helpdesk');
-                setAllHDUser(allHD);
-            })
-            .catch((err) => {
-                console.error("Error fetching users:", err);
-            });
+                    const allHD = res.data.filter(hd => hd.emp_tier === 'helpdesk');
+                    setAllHDUser(allHD);
+                })
+                .catch((err) => {
+                    console.error("Error fetching users:", err);
+                });
+        } catch (err) {
+            console.log('Unable to get all users: ', err)
+        }
     }, [])
 
     //asset options
@@ -361,15 +369,13 @@ export default function ViewHDPmsTicket() {
         }
         fetch();
     }, [formData])
-    // const options = assets.map(asset => ({ value: asset, label: asset }));
+
+    //Assets dropdown format
     const options = assets.map(asset => ({
         value: asset.tag_id,
         label: asset.tag_id,
         category: asset.pms_category
     }));
-
-
-
 
     // handle text area change
     const handleNoteChange = (e) => {
@@ -408,7 +414,6 @@ export default function ViewHDPmsTicket() {
             console.error('Error notifying review:', err);
         }
     }
-
 
     //Accept ticket function
     const HandleAcceptButton = async () => {
@@ -482,8 +487,7 @@ export default function ViewHDPmsTicket() {
 
     // }
 
-
-
+    //Handle Change function
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => {
@@ -497,12 +501,7 @@ export default function ViewHDPmsTicket() {
         });
     };
 
-
-
     // // Lock/unlock function
-    const empInfo = JSON.parse(localStorage.getItem('user'));
-    const [lockModal, setLockModal] = useState(false)
-    const [lockError, setLockError] = useState('')
     useEffect(() => {
         const { user_name } = empInfo || {};
         const currentUser = user_name;
@@ -553,18 +552,19 @@ export default function ViewHDPmsTicket() {
         };
     }, [pmsticket_id, empInfo]);
 
-
-
     // Refresh lock if form has changes
     useEffect(() => {
-
         const interval = setInterval(() => {
             if (hasChanges) {
+                try {
+                    axios.post(`${config.baseApi}/pmsticket/lock`, {
+                        pmsticket_id,
+                        locked_by: empInfo.user_name,
+                    });
+                } catch (err) {
+                    console.log('Unable to update lock: ', err)
+                }
 
-                axios.post(`${config.baseApi}/pmsticket/lock`, {
-                    pmsticket_id,
-                    locked_by: empInfo.user_name,
-                });
             }
         }, 10000); // refresh lock every 10s
 
@@ -572,28 +572,32 @@ export default function ViewHDPmsTicket() {
 
     }, [hasChanges, pmsticket_id, empInfo.user_name]);
 
-
+    // ONe page open it will check lock
     useEffect(() => {
         const fetch = async () => {
-            const fetchticket = await axios.get(`${config.baseApi}/pmsticket/pmsticket-by-id`, {
-                params: { id: pmsticket_id }
-            });
-            const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
-            console.log(ticket)
-            if (ticket.is_locked === '0' || ticket.locked_by === empInfo.user_name || ticket.locked_by === null) {
+            try {
+                const fetchticket = await axios.get(`${config.baseApi}/pmsticket/pmsticket-by-id`, {
+                    params: { id: pmsticket_id }
+                });
+                const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
+                console.log(ticket)
+                if (ticket.is_locked === '0' || ticket.locked_by === empInfo.user_name || ticket.locked_by === null) {
 
-                setLockModal(false)
-            } else {
-                setLockModal(true)
-                setIsEditable(false)
+                    setLockModal(false)
+                } else {
+                    setLockModal(true)
+                    setIsEditable(false)
+                }
+            } catch (err) {
+                console.log('Unable to fetch ticket details: ', err)
             }
-
         }
         fetch();
 
 
     }, [isEditable])
 
+    //Resolved checker
     const handleChecker = async () => {
         if (formData.pms_status === 'resolved') {
             setShowCloseResolutionModal(true)
@@ -602,6 +606,7 @@ export default function ViewHDPmsTicket() {
         )
     }
 
+    //Resolution function
     const HandleResolution = async (e) => {
         e.preventDefault();
 
@@ -628,11 +633,11 @@ export default function ViewHDPmsTicket() {
 
     }
 
-    const [newLocation, setNewLocation] = useState('')
-
+    //Save function
     const handleSave = async () => {
         try {
             const empInfo = JSON.parse(localStorage.getItem('user'));
+
 
             setLoading(true);
             const fetchticket = await axios.get(`${config.baseApi}/pmsticket/pmsticket-by-id`, {
@@ -641,14 +646,16 @@ export default function ViewHDPmsTicket() {
             const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
             //Check if someone is working on this ticket
             if (ticket.is_locked === '0' || ticket.locked_by === empInfo.user_name || ticket.locked_by === null) {
-                if (formData.pms_status === 'in-progress') {
 
+                if (formData.pms_status === 'in-progress') {
                     if (!formData.pms_status) {
                         setLoading(false)
                         setError('Unable to save empty fields! Please try again!');
                         return;
                     }
                 }
+
+
 
                 //Check changes
                 const changedFields = [];
@@ -752,12 +759,11 @@ export default function ViewHDPmsTicket() {
                 //     window.location.reload()
                 // }
 
-                setLoading(true);
+
                 await axios.post(`${config.baseApi}/pmsticket/notified-true`, {
                     pmsticket_id: pmsticket_id,
                     user_id: empInfo.user_id
                 })
-
 
                 await axios.post(`${config.baseApi}/pmsticket/update-pmsticket`, {
                     pmsticket_id: formData.pmsticket_id,
@@ -771,9 +777,6 @@ export default function ViewHDPmsTicket() {
                     assigned_to_UserId: hdUser.user_id,
                     assigned_to: formData.assigned_to,
                 });
-
-
-
 
                 setSuccessful('Ticket updated successfully.');
                 setOriginalData(formData);
@@ -824,37 +827,42 @@ export default function ViewHDPmsTicket() {
         }
     };
 
-
-
-
+    //Arhcive Function
     const Archive = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
-        const fetchticket = await axios.get(`${config.baseApi}/pmsticket/pmsticket-by-id`, {
-            params: { id: pmsticket_id }
-        });
-        const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
-        if (ticket.is_locked === '0' || ticket.locked_by === empInfo.user_name || ticket.locked_by === null) {
+        try {
+            const fetchticket = await axios.get(`${config.baseApi}/pmsticket/pmsticket-by-id`, {
+                params: { id: pmsticket_id }
+            });
+            const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
+            if (ticket.is_locked === '0' || ticket.locked_by === empInfo.user_name || ticket.locked_by === null) {
 
-            try {
-                setLoading(true)
-                await axios.post(`${config.baseApi}/pmsticket/archive-ticket`, {
-                    pmsticket_id: pmsticket_id,
-                    updated_by: empInfo.user_name
-                })
-                console.log('Ticket archived successfully');
-                setSuccessful('Ticket archived successfully');
-                window.location.reload();
+                try {
+                    setLoading(true)
+                    await axios.post(`${config.baseApi}/pmsticket/archive-ticket`, {
+                        pmsticket_id: pmsticket_id,
+                        updated_by: empInfo.user_name
+                    })
+                    console.log('Ticket archived successfully');
+                    setSuccessful('Ticket archived successfully');
+                    window.location.reload();
 
-            } catch (err) {
-                console.log(err)
+                } catch (err) {
+                    console.log(err)
+                }
+            } else if (ticket.is_locked === '1' || ticket.locked_by !== empInfo.user_name) {
+                setLoading(false)
+                setError(`${ticket.locked_by} is currently working on this ticket`);
+                return;
             }
-        } else if (ticket.is_locked === '1' || ticket.locked_by !== empInfo.user_name) {
-            setLoading(false)
-            setError(`${ticket.locked_by} is currently working on this ticket`);
-            return;
+        } catch (err) {
+            console.log('Error: ', err)
         }
 
+
     }
+
+    //Un-archive Function
     const UnArchive = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         console.log('Working');
@@ -873,13 +881,12 @@ export default function ViewHDPmsTicket() {
         }
     }
 
+    //Ticket Logs view 
     const HandleView = () => {
         setModalTitle("Ticket Logs");
-        setModalContent(<ViewTicketLogs pmsticket_id={pmsticket_id} />);
+        setModalContent(<ViewPMSTicketLogs pmsticket_id={pmsticket_id} />);
         setShowModal(true);
     };
-
-
 
     return (
         <Container
@@ -891,6 +898,7 @@ export default function ViewHDPmsTicket() {
                 paddingTop: '100px',
             }}
         >
+            {/* Alert Component */}
             {successful && (
                 <div
                     className="position-fixed start-50 l translate-middle-x"
@@ -947,6 +955,7 @@ export default function ViewHDPmsTicket() {
                                                 view ticket logs
                                             </h7>
                                         </Col>
+                                        {/* Archive text */}
                                         {archiveTextState && (
                                             <Col xs="auto">
                                                 <h4 className="fw-bold text-secondary mb-0">(archived)</h4>
@@ -955,6 +964,7 @@ export default function ViewHDPmsTicket() {
                                     </Row>
 
                                     <div className="d-flex gap-2">
+                                        {/* Arhcive button */}
                                         {archBTN1 && (
                                             <Button
                                                 variant="primary"
@@ -966,6 +976,8 @@ export default function ViewHDPmsTicket() {
                                                 <FeatherIcon icon="archive" />
                                             </Button>
                                         )}
+
+                                        {/* Un-Arhcive button */}
                                         {archBTN2 && (
                                             <Button
                                                 variant="primary"
@@ -977,6 +989,8 @@ export default function ViewHDPmsTicket() {
                                                 <FeatherIcon icon="airplay" />
                                             </Button>
                                         )}
+
+                                        {/* Notify Button */}
                                         {notifyReview && (
                                             <Button
                                                 variant="primary"
@@ -987,6 +1001,8 @@ export default function ViewHDPmsTicket() {
                                                 <FeatherIcon icon="bell" />
                                             </Button>
                                         )}
+
+                                        {/* Accept Button */}
                                         {showAcceptButton && (
                                             <Button
                                                 variant="primary"
@@ -997,6 +1013,8 @@ export default function ViewHDPmsTicket() {
                                                 Accept
                                             </Button>
                                         )}
+
+                                        {/* Save Hcnages Button */}
                                         {hasChanges && (
                                             <Button
                                                 variant="primary"
@@ -1026,42 +1044,6 @@ export default function ViewHDPmsTicket() {
                                         disabled
                                     />
                                 </Form.Group>
-                                <Form.Group as={Col} md={6} className="mb-2" hidden>
-                                    <Form.Label>Updated at</Form.Label>
-                                    <Form.Control
-                                        name="updated_at"
-                                        value={
-                                            formData.updated_at
-                                                ? new Date(formData.updated_at).toLocaleString()
-                                                : '-'
-                                        }
-                                        disabled
-                                    />
-                                </Form.Group>
-                                <Form.Group as={Col} md={6} className="mb-2" hidden>
-                                    <Form.Label>Responded at</Form.Label>
-                                    <Form.Control
-                                        name="responded_at"
-                                        value={
-                                            formData.responded_at
-                                                ? new Date(formData.responded_at).toLocaleString()
-                                                : '-'
-                                        }
-                                        disabled
-                                    />
-                                </Form.Group>
-                                <Form.Group as={Col} md={6} className="mb-2" hidden>
-                                    <Form.Label>Resolved at</Form.Label>
-                                    <Form.Control
-                                        name="resolved_at"
-                                        value={
-                                            formData.resolved_at
-                                                ? new Date(formData.resolved_at).toLocaleString()
-                                                : '-'
-                                        }
-                                        disabled
-                                    />
-                                </Form.Group>
                             </Row>
 
                             {/* USER DETAILS */}
@@ -1076,6 +1058,7 @@ export default function ViewHDPmsTicket() {
                                         <Form.Control name="created_by" value={formData.created_by ?? '-'} disabled />
                                     </InputGroup>
                                 </Col>
+
                                 <Col md={6} className="mb-2" style={{ position: 'relative' }}>
                                     <Form.Label>Employee</Form.Label>
                                     <InputGroup style={{ height: '43px' }}>
@@ -1155,7 +1138,6 @@ export default function ViewHDPmsTicket() {
                                     </InputGroup>
                                 </Col>
 
-
                                 <Col md={6} className="mb-2">
                                     <Form.Label>Department</Form.Label>
                                     <InputGroup>
@@ -1165,6 +1147,7 @@ export default function ViewHDPmsTicket() {
                                         <Form.Control value={ticketForData.emp_department ?? '-'} disabled />
                                     </InputGroup>
                                 </Col>
+
                                 <Col md={6} className="mb-2">
                                     <Form.Label>Location</Form.Label>
                                     <InputGroup>
@@ -1178,9 +1161,7 @@ export default function ViewHDPmsTicket() {
                                 <Col md={6} className="mb-2" style={{ position: 'relative' }}>
                                     <Form.Label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <span>Assigned To</span>
-
                                     </Form.Label>
-
                                     <InputGroup style={{ height: '43px' }} >
                                         <div style={{ position: 'relative' }}>
                                             <InputGroup.Text>
@@ -1223,8 +1204,6 @@ export default function ViewHDPmsTicket() {
                                         </div>
                                     </InputGroup>
                                 </Col>
-
-
                             </Row>
 
                             {/* TICKET INFO */}
@@ -1319,7 +1298,6 @@ export default function ViewHDPmsTicket() {
                                                 )}
                                             </div>
                                         )}
-
                                     />
                                 </Form.Group>
 
@@ -1388,13 +1366,14 @@ export default function ViewHDPmsTicket() {
                                             )}
                                         </div>
                                     </Form.Group>
-
+                                    {/* HD NOTE INPUT FIELD */}
                                     {hdnotesState && (
                                         <>
                                             <Form.Group>
                                                 <Form.Label className="fw-semibold text-muted">
                                                     Add a Note
                                                 </Form.Label>
+                                                {/* Notes empty validation */}
                                                 {noteAlert && (
                                                     <Form.Label className="fw-semibold  ms-2 text-danger">
                                                         Unable to save empty note
@@ -1522,6 +1501,7 @@ export default function ViewHDPmsTicket() {
                         </Modal.Footer>
                     </Modal>
 
+                    {/* Lock MOdal */}
                     <Modal show={lockModal} onHide={() => setLockModal(false)} centered>
                         <Modal.Header closeButton>
                             <Modal.Title>Attention! </Modal.Title>
@@ -1544,7 +1524,7 @@ export default function ViewHDPmsTicket() {
                         </Modal.Footer>
                     </Modal>
 
-
+                    {/* Arhcive Modal */}
                     <Modal show={archiveState} onHide={() => setArchiveState(false)} centered>
                         <Modal.Header closeButton>
                             <Modal.Title>Archive</Modal.Title>
@@ -1567,6 +1547,7 @@ export default function ViewHDPmsTicket() {
                         </Modal.Footer>
                     </Modal>
 
+                    {/* Unarchive MOdal */}
                     <Modal show={unarchiveState} onHide={() => setUnArchiveState(false)} centered>
                         <Modal.Header closeButton>
                             <Modal.Title>Unarchive</Modal.Title>
@@ -1589,6 +1570,7 @@ export default function ViewHDPmsTicket() {
                         </Modal.Footer>
                     </Modal>
 
+                    {/* Logs Modal */}
                     <Modal
                         show={showModal}
                         onHide={() => setShowModal(false)}
@@ -1615,8 +1597,11 @@ export default function ViewHDPmsTicket() {
                             </Button>
                         </Modal.Footer>
                     </Modal>
+
                 </Container >
             </AnimatedContent>
+
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

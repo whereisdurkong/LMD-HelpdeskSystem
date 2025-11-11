@@ -37,12 +37,9 @@ export default function Alltickets() {
     const [showCloseResolutionModal, setShowCloseResolutionModal] = useState(false);
     const [resolution, setResolution] = useState('');
 
-    const [openState, setOpenState] = useState(false);
-
-
     const navigate = useNavigate();
 
-    //Alerts timeout
+    //Alerts timeout 3s
     useEffect(() => {
         if (error || successful) {
             const timer = setTimeout(() => {
@@ -61,26 +58,34 @@ export default function Alltickets() {
 
     //Fetch all tickets
     useEffect(() => {
-        const user = JSON.parse(localStorage.getItem('user'));
-        axios.get(`${config.baseApi}/ticket/get-all-ticket`)
-            .then((res) => {
-                const activeTicket = res.data.filter((ticket) => ticket.is_active === true);
-                setAllTicket(activeTicket);
+        try {
+            const user = JSON.parse(localStorage.getItem('user'));
+            axios.get(`${config.baseApi}/ticket/get-all-ticket`)
+                .then((res) => {
+                    const activeTicket = res.data.filter((ticket) => ticket.is_active === true);
+                    setAllTicket(activeTicket);
 
-            });
+                });
 
-        if (user.emp_location) {
-            setEmpLocation(user.emp_location);
-            setFilterLocation(user.emp_location);   // auto-apply filter
+            if (user.emp_location) {
+                setEmpLocation(user.emp_location);
+                setFilterLocation(user.emp_location);   // auto-apply filter
+            }
+        } catch (err) {
+            console.log('Unable to get all tickets: ', err)
         }
     }, []);
 
     //Fetch all users
     useEffect(() => {
-        axios.get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
-                setAllUsers(res.data);
-            });
+        try {
+            axios.get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
+                    setAllUsers(res.data);
+                });
+        } catch (err) {
+            console.log('Unable to get all users: ', err)
+        }
     }, []);
 
     //Assigned to display tickets per role
@@ -144,12 +149,10 @@ export default function Alltickets() {
     });
 
     // Pagination calculations
-
     const indexOfLastTicket = currentPage * ticketsPerPage;
     const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
     const currentTickets = sortedTickets.slice(indexOfFirstTicket, indexOfLastTicket);
     const totalPages = Math.ceil(sortedTickets.length / ticketsPerPage);
-
 
     //Design for Status
     const renderStatusBadge = (status) => {
@@ -237,6 +240,7 @@ export default function Alltickets() {
         }
     };
 
+    //Status Changes
     const handleStatusChange = async (ticket, newStatus) => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const prevStat = ticket.ticket_status;
@@ -318,7 +322,7 @@ export default function Alltickets() {
         }
     }
 
-
+    // Update Function
     const handleUpdate = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const prevStat = selectedTicket.ticket_status
@@ -428,10 +432,10 @@ export default function Alltickets() {
         }
     }
 
+    // Resolution Function
     const handleResolved = async (e) => {
         e.preventDefault();
         setShowModal(false)
-
 
         const empInfo = JSON.parse(localStorage.getItem('user'));
         try {
@@ -465,9 +469,8 @@ export default function Alltickets() {
             console.log(err)
         }
     }
-    const empInfo = JSON.parse(localStorage.getItem('user'));
-    return (
 
+    return (
         <Container
             style={{
                 padding: '20px',
@@ -475,6 +478,7 @@ export default function Alltickets() {
                 borderRadius: '12px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
             }}>
+            {/* Alert Component */}
             {error && (
                 <div
                     className="position-fixed start-50 l translate-middle-x"
@@ -710,7 +714,6 @@ export default function Alltickets() {
                             <th>Ticket ID</th>
                             <th>Created At</th>
                             <th>Problem/Issue</th>
-                            {/* <th>Type</th> */}
                             <th>Assigned To</th>
                             <th>Description</th>
                             <th>Status</th>
@@ -730,21 +733,18 @@ export default function Alltickets() {
                                 currentTickets.map((ticket, index) => (
                                     <tr
                                         key={index}
-
                                         style={{ cursor: 'pointer', transition: 'background 0.2s' }}
                                         className="table-row-hover"
                                     >
                                         <td onClick={() => HandleView(ticket)}>{ticket.ticket_id}</td>
                                         <td onClick={() => HandleView(ticket)}>{ticket.created_at}</td>
                                         <td onClick={() => HandleView(ticket)}>{ticket.ticket_subject}</td>
-                                        {/* <td>{ticket.ticket_type === null || ticket.ticket_type === "" ? "NONE" : ticket.ticket_type}</td> */}
                                         <td onClick={() => HandleView(ticket)}>{ticket.assigned_to || '-'}</td>
                                         <td onClick={() => HandleView(ticket)} style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {ticket.Description}
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                                {/* {renderStatusBadge(ticket.ticket_status)} */}
                                                 <Form.Select
                                                     value={ticket.ticket_status || ''}
                                                     onChange={(e) => handleStatusChange(ticket, e.target.value)}
@@ -756,11 +756,6 @@ export default function Alltickets() {
                                                     ) : (
                                                         <option value="assigned">Accept</option>
                                                     )}
-
-
-
-
-
                                                     <option value="in-progress">In-Progress</option>
                                                     <option value="resolved">Resolved</option>
                                                     <option hidden value="re-opened">Re-Opened</option>
@@ -861,8 +856,6 @@ export default function Alltickets() {
                 </div>
             )}
 
-
-
             {/*HD Resolution Ticket */}
             <Modal show={showCloseResolutionModal} onHide={() => setShowCloseResolutionModal(false)} centered>
                 <Modal.Header closeButton>
@@ -894,6 +887,7 @@ export default function Alltickets() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Logs MOdal */}
             <Modal
                 show={showModal}
                 onHide={() => setShowModal(false)}
@@ -925,9 +919,8 @@ export default function Alltickets() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading COmponent */}
             {loading && (
-
-
                 <div
                     style={{
                         position: "fixed",
@@ -947,8 +940,6 @@ export default function Alltickets() {
 
             )}
         </Container>
-
-
 
     )
 }

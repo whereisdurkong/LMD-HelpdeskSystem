@@ -1,9 +1,10 @@
+//This was supposed to be assets
 var express = require('express');
 var bcrypt = require('bcrypt');
 const router = express.Router();
 var Sequelize = require('sequelize');
 const nodemailer = require("nodemailer");
-
+const { DataTypes } = Sequelize;
 require('dotenv').config();
 
 var knex = require("knex")({
@@ -26,7 +27,7 @@ var db = new Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSW
     dialect: "mssql",
     port: parseInt(process.env.APP_SERVER_PORT),
 });
-const { DataTypes } = Sequelize;
+
 const Assets = db.define('users_master', {
     pms_id: {
         type: DataTypes.INTEGER,
@@ -113,6 +114,7 @@ const Assets = db.define('users_master', {
     tableName: 'pms_master'
 })
 
+//Get All PMS/Assets
 router.get('/get-all-pms', async (req, res) => {
     try {
         const fetch = await knex('pms_master').select('*');
@@ -124,6 +126,7 @@ router.get('/get-all-pms', async (req, res) => {
     }
 })
 
+//Archive PMS/Assets
 router.post('/archive-device', async (req, res) => {
     try {
         const { pms_id, updated_by } = req.body;
@@ -139,7 +142,7 @@ router.post('/archive-device', async (req, res) => {
     }
 
 })
-
+//Un-Archive PMS/Assets
 router.post('/un-archive-device', async (req, res) => {
     try {
         const { pms_id, updated_by } = req.body;
@@ -183,6 +186,7 @@ const Logs = db.define('pms_logs', {
     tableName: 'pms_logs'
 })
 
+//Get PMS/Assets Logs by ID
 router.get('/get-logs', async (req, res) => {
     try {
         console.log('/get-logs for pms was triggred');
@@ -197,10 +201,7 @@ router.get('/get-logs', async (req, res) => {
     }
 })
 
-
-
-
-
+//Add Computer /Desktop
 router.post('/add-computer', async (req, res) => {
     try {
         const currentTimestamp = new Date();
@@ -261,6 +262,7 @@ router.post('/add-computer', async (req, res) => {
 
 })
 
+//Get All Computer/Desktop
 router.get('/get-computers', async (req, res) => {
     try {
         const all = await knex('pms_master').select('*').where('pms_category', 'desktop');
@@ -272,6 +274,7 @@ router.get('/get-computers', async (req, res) => {
     }
 })
 
+//Get Computer/Desktop by ID
 router.get('/get-computer-by-id', async (req, res) => {
     try {
         console.log('Triggered /get-computer-by-id');
@@ -288,6 +291,7 @@ router.get('/get-computer-by-id', async (req, res) => {
     }
 })
 
+//Update Computer/Desktop
 router.post('/update-computer', async (req, res) => {
     try {
         const currentTimestamp = new Date()
@@ -343,6 +347,7 @@ router.post('/update-computer', async (req, res) => {
     }
 })
 
+//Delete a Computer/Desktop
 router.post('/delete-computer', async (req, res) => {
 
     const { pms_id, tag_id, created_by } = req.body
@@ -365,6 +370,7 @@ router.post('/delete-computer', async (req, res) => {
     }
 })
 
+//Add a Laptop
 router.post('/add-laptop', async (req, res) => {
     try {
         const currentTimestamp = new Date();
@@ -425,6 +431,7 @@ router.post('/add-laptop', async (req, res) => {
 
 });
 
+//Get all Laptop
 router.get('/get-laptop', async (req, res) => {
     try {
         const all = await knex('pms_master').select('*').where('pms_category', 'laptop');
@@ -436,6 +443,7 @@ router.get('/get-laptop', async (req, res) => {
     }
 });
 
+//Get all Laptop by ID
 router.get('/get-laptop-by-id', async (req, res) => {
     try {
         console.log('Triggered /get-laptop-by-id');
@@ -452,6 +460,7 @@ router.get('/get-laptop-by-id', async (req, res) => {
     }
 })
 
+//Update Laptop 
 router.post('/update-laptop', async (req, res) => {
     try {
         const currentTimestamp = new Date()
@@ -505,7 +514,7 @@ router.post('/update-laptop', async (req, res) => {
     }
 })
 
-
+//Add a Printer
 router.post('/add-printer', async (req, res) => {
     try {
         const currentTimestamp = new Date();
@@ -558,6 +567,7 @@ router.post('/add-printer', async (req, res) => {
 
 });
 
+//Get all Printer
 router.get('/get-printer', async (req, res) => {
     try {
         const all = await knex('pms_master').select('*').where('pms_category', 'printer');
@@ -569,6 +579,7 @@ router.get('/get-printer', async (req, res) => {
     }
 });
 
+//Get Printer by ID
 router.get('/get-printer-by-id', async (req, res) => {
     try {
         console.log('Triggered /get-printer-by-id');
@@ -584,6 +595,7 @@ router.get('/get-printer-by-id', async (req, res) => {
     }
 })
 
+//Update Printer
 router.post('/update-printer', async (req, res) => {
     try {
         const currentTimestamp = new Date()
@@ -631,6 +643,7 @@ router.post('/update-printer', async (req, res) => {
     }
 })
 
+//PMS LOCK FUNCTION
 router.post("/lock", async (req, res) => {
     try {
         const { pms_id, lock_by } = req.body;
@@ -658,7 +671,7 @@ router.post("/lock", async (req, res) => {
     }
 });
 
-
+//PMS UNLOCK FUNCTION
 router.post("/unlock", async (req, res) => {
     try {
         const { pms_id, lock_by } = req.body;
@@ -682,7 +695,5 @@ router.post("/unlock", async (req, res) => {
         res.status(500).json({ success: false, message: "Server error" });
     }
 });
-
-
 
 module.exports = router;

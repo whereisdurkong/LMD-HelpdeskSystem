@@ -21,6 +21,7 @@ export default function LocationTicketsChart({ filterType, showChart = true }) {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
+    //Get All tickets
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -28,7 +29,7 @@ export default function LocationTicketsChart({ filterType, showChart = true }) {
                 let tickets = res.data || [];
                 const today = new Date();
 
-                // ✅ Filter tickets
+                // Filter tickets
                 tickets = tickets.filter(ticket => {
                     const ticketDate = new Date(ticket.created_at);
                     switch (filterType) {
@@ -63,7 +64,7 @@ export default function LocationTicketsChart({ filterType, showChart = true }) {
                     }
                 });
 
-                // ✅ Group tickets per site
+                // Group tickets per site
                 const grouped = tickets.reduce((acc, t) => {
                     const site = t.assigned_location?.trim() || "Unknown";
                     if (!acc[site]) acc[site] = [];
@@ -72,7 +73,7 @@ export default function LocationTicketsChart({ filterType, showChart = true }) {
                 }, {});
                 setTicketsBySite(grouped);
 
-                // ✅ Build chart data
+                // Build chart data
                 if (showChart) {
                     let labels = [];
                     let datasets = [];
@@ -119,7 +120,7 @@ export default function LocationTicketsChart({ filterType, showChart = true }) {
         fetchData();
     }, [filterType, showChart]);
 
-    // ✅ Table renderer with title + pagination inline
+    // Table renderer with title + pagination Mmodal
     const renderTable = (site, rows) => {
         const totalPages = Math.ceil(rows.length / itemsPerPage);
         const indexOfLastItem = currentPage * itemsPerPage;

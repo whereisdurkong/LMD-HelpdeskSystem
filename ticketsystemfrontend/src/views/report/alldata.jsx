@@ -5,7 +5,7 @@ import config from "config";
 export default function AllData() {
     const [stats, setStats] = useState([]);
 
-    // Helper: calculate difference between two dates
+    // calculate dates
     const calcTAT = (start, end) => {
         const startDate = new Date(start);
         const endDate = new Date(end);
@@ -16,6 +16,7 @@ export default function AllData() {
         return { diffMs, text: `${diffDays}d ${diffHours}h ${diffMinutes}m` };
     };
 
+    //Get All tickets
     useEffect(() => {
         const fetch = async () => {
             try {

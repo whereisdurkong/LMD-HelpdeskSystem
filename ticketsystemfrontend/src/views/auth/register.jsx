@@ -51,20 +51,24 @@ export default function SignUp1() {
   const departmentRef = useRef();
   const positionRef = useRef();
 
+  // All Departments
   const departmentOptions = {
     lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
     corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
   };
 
+  //Email domain pattern
+  const lepantoEmailPattern = /^[a-zA-Z0-9._%+-]+@lepantomining\.com$/;
+
   //loading state 2s
-  useEffect(() => {
-    if (loading) {
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 2000);
-      return () => clearTimeout(timer)
-    }
-  }, [loading])
+  // useEffect(() => {
+  //   if (loading) {
+  //     const timer = setTimeout(() => {
+  //       setLoading(false);
+  //     }, 2000);
+  //     return () => clearTimeout(timer)
+  //   }
+  // }, [loading])
 
   // Clear error and success messages after 3 seconds
   useEffect(() => {
@@ -83,11 +87,11 @@ export default function SignUp1() {
     setCurrentUser(empInfo?.user_name);
   })
 
-
-
+  // Register Function
   const Register = async (e) => {
     e.preventDefault();
 
+    //Empty Fields Validation
     if (
       !firstname.trim() &&
       !lastname.trim() &&
@@ -124,13 +128,11 @@ export default function SignUp1() {
       emailRef.current.focus();
       return;
     }
-    const lepantoEmailPattern = /^[a-zA-Z0-9._%+-]+@lepantomining\.com$/;
     if (!lepantoEmailPattern.test(email)) {
       setError('Email must end with @lepantomining.com');
       emailRef.current.focus();
       return;
     }
-
     if (!password) {
       setError('Password is required!');
       passwordRef.current.focus();
@@ -176,10 +178,7 @@ export default function SignUp1() {
       positionRef.current.focus();
       return;
     }
-
     setLoading(true);
-
-
 
     await axios.post(`${config.baseApi}/authentication/register`, {
       emp_firstname: firstname,
@@ -202,24 +201,24 @@ export default function SignUp1() {
           username.slice(1).toLowerCase()}` + ' successfully!'
         );
 
-        try {
-          if (tier === 'user') {
-            e.preventDefault();
+        // try {
+        //   if (tier === 'user') {
+        //     e.preventDefault();
 
-            axios.post(`${config.baseApi}/authentication/register-email`, {
-              user_name: username,
-              emp_email: email,
-              pass_word: password,
-              current_user: currentUser
-            })
+        //     axios.post(`${config.baseApi}/authentication/register-email`, {
+        //       user_name: username,
+        //       emp_email: email,
+        //       pass_word: password,
+        //       current_user: currentUser
+        //     })
 
-          }
-        } catch (err) {
-          console.log(err);
-          setError('An error occurred. Please try again.');
-          setLoading(false);
-          return;
-        }
+        //   }
+        // } catch (err) {
+        //   console.log(err);
+        //   setError('An error occurred. Please try again.');
+        //   setLoading(false);
+        //   return;
+        // }
 
         setFirstName('');
         setLastName('');
@@ -234,21 +233,22 @@ export default function SignUp1() {
         setDepartment('');
         setPosition('');
 
-        // window.location.reload()
+        window.location.reload()
         console.log(`User ${username} was successfully registered`)
       })
       .catch((err) => {
         if (err === 404) {
+          setLoading(false)
           setError('Unable to register user! Please try again.');
           console.log(`Unable to register ${username}` + err)
         } else {
+          setLoading(false)
           setError('Unable to register user! Please try again.');
           console.log(`Unable to register ${username}` + err)
         }
 
       });
   };
-
 
   return (
     <div
@@ -280,7 +280,7 @@ export default function SignUp1() {
                   <div className="text-center mb-4">
                     <h4 className="fw-bold">Create an Account</h4>
                   </div>
-
+                  {/* Alert Component */}
                   {error && (
                     <div
                       className="position-fixed start-50 l translate-middle-x"
@@ -432,7 +432,6 @@ export default function SignUp1() {
                       </Col>
                     </Row>
 
-
                     <Form.Label>Role</Form.Label>
                     <InputGroup className="mb-3">
                       <InputGroup.Text>
@@ -511,6 +510,8 @@ export default function SignUp1() {
           </Row>
         </Container>
       </AnimatedContent>
+
+      {/* Loading Component */}
       {loading && (
         <div
           style={{

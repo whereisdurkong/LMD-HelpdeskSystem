@@ -22,6 +22,7 @@ import AllTicketSCAT from "views/report/allticketSCAT";
 import GetAllByCategoryOwn from "views/report/getallbycategoryown";
 import AllDataOwn from "views/report/alldataown";
 import AnimatedContent from "layouts/ReactBits/AnimatedContent";
+import { useNavigate } from 'react-router';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -29,7 +30,7 @@ export default function HDDashboard() {
     const [filterType, setFilterType] = useState("all");
     const [selectUserState, setSelectUserState] = useState(false)
     const [stats, setStats] = useState([]);
-
+    const navigate = useNavigate();
     const [getAllHD, setGetAllHD] = useState([]);
     const [selectedHD, setSelectedHD] = useState("")
 
@@ -57,7 +58,7 @@ export default function HDDashboard() {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = ownTicket.slice(indexOfFirstItem, indexOfLastItem);
 
-    //Modal
+    //Modal Content setter
     const openModal = (title, content) => {
         setModalTitle(title);
         setModalContent(content);
@@ -135,7 +136,6 @@ export default function HDDashboard() {
                             <th>ID</th>
                             <th>Problem / Issue</th>
                             <th>Status</th>
-                            {/* <th>Type</th> */}
                             <th>Assigned To</th>
                             <th>For</th>
                             <th>Created At</th>
@@ -147,12 +147,11 @@ export default function HDDashboard() {
                                 <tr
                                     key={ticket.ticket_id}
                                     style={{ cursor: "pointer" }}
-                                    onClick={() => window.location.replace(`view-hd-ticket?id=${ticket.ticket_id}`)}
+                                    onClick={() => navigate(`/view-hd-ticket?id=${ticket.ticket_id}`)}
                                 >
                                     <td>{ticket.ticket_id}</td>
                                     <td>{ticket.ticket_subject}</td>
                                     <td>{ticket.ticket_status}</td>
-                                    {/* <td>{ticket.ticket_type}</td> */}
                                     <td>{ticket.assigned_to}</td>
                                     <td>{ticket.ticket_for}</td>
                                     <td>{new Date(ticket.created_at).toLocaleString()}</td>
@@ -192,10 +191,11 @@ export default function HDDashboard() {
         );
     };
 
-
+    // Filter || setting data for tables
     useEffect(() => {
         if (!allTickets.length) return;
 
+        // Date Filter
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfWeek = new Date(now);
@@ -297,34 +297,8 @@ export default function HDDashboard() {
 
         setStats(result);
 
-        // Chart counts
-        const incidentCount = filtered.filter(i => i.ticket_type === 'incident').length;
-        const requestCount = filtered.filter(r => r.ticket_type === 'request').length;
-        const inquiryCount = filtered.filter(q => q.ticket_type === 'inquiry').length;
 
-        setChartData({
-            labels: ['Incident', 'Request', 'Inquiry'],
-            datasets: [
-                {
-                    label: 'Number of Tickets',
-                    data: [incidentCount, requestCount, inquiryCount],
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.5)',
-                        'rgba(54, 162, 235, 0.5)',
-                        'rgba(255, 206, 86, 0.5)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)'
-                    ],
-                    borderWidth: 1
-                }
-            ]
-        });
     }, [filterType, allTickets, selectedHD]);
-
-
 
     return (
         <Container fluid className="pt-100 px-3 px-md-5"
@@ -354,6 +328,7 @@ export default function HDDashboard() {
 
                     <Col xs={12} md={8} lg={9}>
                         <div className="d-flex justify-content-md-end flex-wrap gap-3">
+                            {/* Date Filter */}
                             <Form.Group controlId="filterType1">
                                 <Form.Select
                                     value={filterType}
@@ -369,6 +344,7 @@ export default function HDDashboard() {
                                     <option value="perYear">Per Year</option>
                                 </Form.Select>
                             </Form.Group>
+                            {/* All Helpdesk Users Option */}
                             {selectUserState && (
                                 <Form.Group controlId="selectUser">
                                     <Form.Select
@@ -392,6 +368,7 @@ export default function HDDashboard() {
 
                 {/* Clickable Open / Not Reviewed / Closed cards */}
                 <Row style={{ paddingBottom: '20px' }}>
+                    {/* All Tickets */}
                     <Col>
                         <div
                             className="bento-item-top"
@@ -410,6 +387,7 @@ export default function HDDashboard() {
                             </div>
                         </div>
                     </Col>
+                    {/* Not-reviewed */}
                     <Col>
                         <div
                             className="bento-item-top"
@@ -429,6 +407,7 @@ export default function HDDashboard() {
                             </div>
                         </div>
                     </Col>
+                    {/* Open */}
                     <Col>
                         <div
                             className="bento-item-top"
@@ -468,7 +447,7 @@ export default function HDDashboard() {
                                             currentItems.map(e => (
                                                 <tr key={e.ticket_id}
                                                     style={{ cursor: "pointer" }}
-                                                    onClick={() => window.location.replace(`view-hd-ticket?id=${e.ticket_id}`)}
+                                                    onClick={() => navigate(`/view-hd-ticket?id=${e.ticket_id}`)}
                                                 >
                                                     <td>{e.ticket_id}</td>
                                                     <td>{e.ticket_subject}</td>
@@ -520,6 +499,7 @@ export default function HDDashboard() {
                         </div>
                     </Col>
 
+                    {/* CSAT */}
                     <Col>
                         <div
                             className="bento-item-header"
@@ -527,9 +507,7 @@ export default function HDDashboard() {
                                 openModal(
                                     "Ticket Summary",
                                     <AllTicketSCAT filterType={filterType} showChart={false} helpdesk={selectedHD} />
-                                )
-                            }
-                        >
+                                )}>
                             <div
                                 style={{
                                     background: "#004e0dff",
@@ -555,8 +533,8 @@ export default function HDDashboard() {
 
                 </Row>
 
-                {/* Other Charts */}
                 <Row className="g-2">
+                    {/* Ticket Completion Rate */}
                     <Col xs={12} md={4}>
                         <div
                             className="bento-item-header"
@@ -604,6 +582,7 @@ export default function HDDashboard() {
                     </div>
                 </Col> */}
 
+                    {/* BY CATEGORY */}
                     <Col xs={12} md={8}>
                         <div
                             className="bento-item bento-users"
@@ -617,8 +596,6 @@ export default function HDDashboard() {
                             <GetAllByCategoryOwn filterType={filterType} showChart={true} helpdesk={selectedHD} />
                         </div>
                     </Col>
-
-
                 </Row>
 
                 {/* Modal */}

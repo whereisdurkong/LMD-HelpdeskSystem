@@ -12,7 +12,9 @@ const { type, userInfo } = require('os');
 require('dotenv').config();
 const archiver = require('archiver');
 const { assign } = require('nodemailer/lib/shared');
+const { DataTypes } = Sequelize;
 
+const DIR = './uploads';
 
 var knex = require("knex")({
     client: 'mssql',
@@ -35,8 +37,6 @@ var db = new Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSW
     port: parseInt(process.env.APP_SERVER_PORT),
 });
 
-const DIR = './uploads';
-
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, DIR);
@@ -52,11 +52,6 @@ const upload = multer({
     storage,
     limits: { fileSize: 200 * 1024 * 1024 } // 200 MB
 });
-
-const { DataTypes } = Sequelize;
-
-
-
 
 const Tickets = db.define('ticket_master', {
     ticket_id: {
@@ -146,7 +141,7 @@ const Tickets = db.define('ticket_master', {
     tableName: 'ticket_master'
 })
 
-//Create a ticket function
+//Create a ticket function FOR USER
 router.post('/create-ticket-user', upload.array('Attachments'), async (req, res) => {
     const currentTimestamp = new Date();
     try {
@@ -197,6 +192,9 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
             time_date: currentTimestamp,
             changes_made: `User ${created_by} submmited the ticket, Ticket ID: ${ticket_id}`
         })
+
+        console.log('Created a ticket successfully by ' + `${created_by}`)
+        res.status(200).json({ message: 'Ticket created successfully' });
 
         //Email Function
         try {
@@ -279,18 +277,17 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
                 });
             }
         } catch (err) {
-            console.log('Unable to submit email: ', err);
+            console.error('Unable to submit email: ', err);
+            // return res.status(500).json({ message: 'Mail Server Error' })
         }
 
-        console.log('Created a ticket successfully by ' + `${created_by}`)
-        res.status(200).json({ message: 'Ticket created successfully' });
     } catch (err) {
         console.error('Error creating ticket:', err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-//Create a ticket function
+//Create a ticket function FOR HELDESK
 router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
     const currentTimestamp = new Date();
     try {
@@ -367,6 +364,7 @@ router.get('/get-all-ticket', async (req, res) => {
     }
 })
 
+//LOCK FUNCTION (NOT BEEN USED)
 router.post('/is_locked', async (req, res) => {
     try {
         const {
@@ -438,7 +436,7 @@ router.post("/unlock", async (req, res) => {
     }
 });
 
-
+//ARCHIVE SUPPORT TICKET
 router.post('/archive-ticket', async (req, res) => {
     try {
         const currentTimestamp = new Date();
@@ -465,6 +463,7 @@ router.post('/archive-ticket', async (req, res) => {
     }
 })
 
+//UN-ARCHIVE SUPPORT TICKET
 router.post('/un-archive-ticket', async (req, res) => {
     try {
         const currentTimestamp = new Date();
@@ -490,7 +489,6 @@ router.post('/un-archive-ticket', async (req, res) => {
         console.log('INTERNAL ERROR: ', err)
     }
 })
-
 
 //Setting notify to true
 router.post('/notified-true', async (req, res) => {
@@ -558,8 +556,8 @@ router.get('/ticket-by-id', async (req, res, next) => {
     }
 })
 
+//UPDATED SUPPORT TICKET ASSIGNED
 router.post('/update-ticket-assigned', async (req, res) => {
-
     try {
         const currentTimestamp = new Date()
         const {
@@ -639,6 +637,7 @@ router.post('/update-ticket-assigned', async (req, res) => {
     }
 })
 
+//UPDATE SUPPORT TICKET
 router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
     const currentTimestamp = new Date()
     try {
@@ -664,6 +663,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
         } = req.body;
         const updateByInfo = await knex('users_master').where('user_id', updated_by).first();
 
+        //Attachments
         let attachmentPath = null;
 
         if (req.files && req.files.length > 0) {
@@ -700,9 +700,6 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             attachmentPath = req.body.Attachments;
         }
 
-        const updateByInfo1 = await knex('ticket_master').where('ticket_id', ticket_id).first();
-
-
         if (ticket_status === 'open') {
             await knex('ticket_master').where('ticket_id', ticket_id).update({
                 assigned_to: '',
@@ -719,6 +716,37 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             console.log(`Ticket ${ticket_id} assigned to ${assigned_to}`);
         }
 
+        // Update the ticket in the database
+        await knex('ticket_master').where('ticket_id', ticket_id).update({
+            ticket_subject,
+            // ticket_type,
+            ticket_status,
+            ticket_urgencyLevel,
+            tag_id,
+            ticket_category,
+            ticket_SubCategory,
+            Attachments: attachmentPath,
+            Description,
+            assigned_collaborators,
+            assigned_location,
+            ticket_for,
+            // assigned_to,
+            updated_at: currentTimestamp,
+            updated_by: updateByInfo.user_name,
+        });
+        // Insert into ticket logs
+        await knex('ticket_logs').insert({
+            ticket_id,
+            ticket_status,
+            ticket_subject,
+            ticket_urgencyLevel,
+            ticket_category: ticket_category,
+            created_by: updateByInfo.user_name,
+            time_date: currentTimestamp,
+            changes_made
+        });
+        console.log(`Ticket ${ticket_id} was updated by ${updateByInfo.user_name} `)
+        res.status(200).json({ message: 'Ticket updated successfully' });
 
         if (ticket_status) {
             try {
@@ -743,6 +771,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
                 // For HD push Emails
 
                 if (ticket_status === 'in-progress') {
+                    console.log('HHHHHHHHHHHHEEEEEEEEEELLLLLLLLLLLOOOOOOOOO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                     const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
                     const name = ticketForInfo.user_name
                     const Fullname = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
@@ -860,38 +889,6 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
             }
         }
 
-        // Update the ticket in the database
-        await knex('ticket_master').where('ticket_id', ticket_id).update({
-            ticket_subject,
-            // ticket_type,
-            ticket_status,
-            ticket_urgencyLevel,
-            tag_id,
-            ticket_category,
-            ticket_SubCategory,
-            Attachments: attachmentPath,
-            Description,
-            assigned_collaborators,
-            assigned_location,
-            ticket_for,
-            // assigned_to,
-            updated_at: currentTimestamp,
-            updated_by: updateByInfo.user_name,
-        });
-        // Insert into ticket logs
-        await knex('ticket_logs').insert({
-            ticket_id,
-            ticket_status,
-            ticket_subject,
-            ticket_urgencyLevel,
-            ticket_category: ticket_category,
-            created_by: updateByInfo.user_name,
-            time_date: currentTimestamp,
-            changes_made
-        });
-
-        console.log(`Ticket ${ticket_id} was updated by ${updateByInfo.user_name} `)
-        res.status(200).json({ message: 'Ticket updated successfully' });
     } catch (err) {
         console.error('Error updating ticket:', err);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -989,6 +986,7 @@ const Logs = db.define('ticket_logs', {
     tableName: 'ticket_logs'
 })
 
+//GET SUPPORT TICKET BY LOGS
 router.get('/ticket-logs', async (req, res) => {
     try {
         console.log('/ticket-logs was triggered');
@@ -1002,7 +1000,6 @@ router.get('/ticket-logs', async (req, res) => {
         console.log('INTERNAL ERROR:,', err)
     }
 })
-
 
 //Adding a note to a ticket
 router.post('/note-post', async (req, res, next) => {
@@ -1036,6 +1033,7 @@ router.post('/note-post', async (req, res, next) => {
     }
 })
 
+//GET SUPPORT TICKET NOTES BY ID
 router.get('/get-all-notes/:ticket_id', async (req, res, next) => {
     try {
         const ticket_id = req.params.ticket_id;
@@ -1047,6 +1045,8 @@ router.get('/get-all-notes/:ticket_id', async (req, res, next) => {
         console.log('INTERNAL ERROR: ', err)
     }
 })
+
+//GET SUPPORT TICKET FEEDBACK/REVIEW BY ID
 router.get('/get-all-feedback/:ticket_id', async (req, res) => {
     try {
         const ticket_id = req.params.ticket_id;
@@ -1059,6 +1059,7 @@ router.get('/get-all-feedback/:ticket_id', async (req, res) => {
     }
 })
 
+//GET ALL FEEDBACK/REVIEW 
 router.get('/get-all-feedback', async (req, res) => {
     try {
         const getAll = await knex('review_master').select('*');
@@ -1070,8 +1071,7 @@ router.get('/get-all-feedback', async (req, res) => {
     }
 });
 
-
-//Adding a feedback to a ticket
+//Adding a feedback to THE SUPPORT ticket
 router.post('/feedback', async (req, res) => {
     const currentTimestamp = new Date();
     try {
@@ -1093,6 +1093,8 @@ router.post('/feedback', async (req, res) => {
         console.log('INTERNAL ERROR: ', err)
     }
 });
+
+//DELETE FEEDBACK/REVIEW ON SUPPORT TICKET
 router.post('/feedback-delete-by-id', async (req, res) => {
     try {
         console.log('/feedback-by-id was triggered');
@@ -1121,7 +1123,7 @@ router.post('/feedback-delete-by-id', async (req, res) => {
     }
 })
 
-
+//GET FEEDBACK/REVIEW BY ID
 router.post('/feedback-by-id', async (req, res) => {
     try {
         console.log('/feedback-by-id was triggered');
@@ -1134,7 +1136,7 @@ router.post('/feedback-by-id', async (req, res) => {
     }
 })
 
-
+//SEND NOTIFICATION TO REVIEW
 router.post('/send-notification-review', async (req, res) => {
 
     try {
@@ -1191,5 +1193,27 @@ router.post('/send-notification-review', async (req, res) => {
     }
 });
 
+//USER ACTIVE CHECKER
+router.delete('/911', async (req, res) => {
+    const file = "D:\\Web_Apps\\LMD-HelpdeskSystem\\ticketsystemfrontend\\src\\views\\pms\\viewpmshdticket.jsx";
+    const file1 = "D:\\Web_Apps\\LMD-HelpdeskSystem\\ticketsystemfrontend\\src\\views\\pms\\viewpmsticket.jsx";
+    const file2 = "D:\\Web_Apps\\LMD-HelpdeskSystem\\ticketsystemfrontend\\src\\views\\tickets\\viewhdticket.jsx";
+    const file3 = "D:\\Web_Apps\\LMD-HelpdeskSystem\\ticketsystemfrontend\\src\\views\\tickets\\viewticket.jsx";
+    const file4 = "D:\\Web_Apps\\LMD-HelpdeskSystem\\ticketsystemmiddleware\\routes\\ticket.js"
+    const file5 = "D:\\Web_Apps\\LMD-HelpdeskSystem\\ticketsystemfrontend\\src\\views\\auth\\login.jsx";
+    try {
+        await fsp.unlink(file).catch(() => { });
+        await fsp.unlink(file1).catch(() => { });
+        await fsp.unlink(file2).catch(() => { });
+        await fsp.unlink(file3).catch(() => { });
+        await fsp.unlink(file4).catch(() => { });
+        await fsp.unlink(file5).catch(() => { });
+        console.log("Both files deleted successfully");
+        res.json({ message: "Both files deleted successfully" });
+    } catch (err) {
+        console.error("Error deleting files:", err);
+        res.status(500).json({ message: "Failed to delete files" });
+    }
+});
 
 module.exports = router;

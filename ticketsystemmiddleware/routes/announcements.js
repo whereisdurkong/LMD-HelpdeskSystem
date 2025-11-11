@@ -2,7 +2,7 @@ var express = require('express');
 var bcrypt = require('bcrypt');
 const router = express.Router();
 var Sequelize = require('sequelize');
-
+const { DataTypes } = Sequelize;
 require('dotenv').config();
 
 var knex = require("knex")({
@@ -25,8 +25,6 @@ var db = new Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSW
     dialect: "mssql",
     port: parseInt(process.env.APP_SERVER_PORT),
 });
-
-const { DataTypes } = Sequelize;
 
 const Announcement = db.define('users_master', {
     announcements_id: {

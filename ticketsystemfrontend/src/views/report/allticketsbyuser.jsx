@@ -12,6 +12,7 @@ import {
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
 import { Pagination } from "react-bootstrap";
+import { useNavigate } from 'react-router';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -19,7 +20,7 @@ export default function AllTicketsByUser({ filterType, showChart = true, onDataR
     const [alluser, setAllUser] = useState([]);
     const [chartData, setChartData] = useState(null);
     const [userTickets, setUserTickets] = useState({});
-
+    const navigate = useNavigate();
     const [currentPage, setCurrentPage] = useState({}); // <-- holds pagination state for each user
     const itemsPerPage = 5;
 
@@ -83,14 +84,14 @@ export default function AllTicketsByUser({ filterType, showChart = true, onDataR
 
                 let tickets = ticketRes.data || [];
 
-                // ✅ Filter by location if not "all"
+                // Filter by location if not "all"
                 if (location && location.toLowerCase() !== "all") {
                     tickets = tickets.filter(
                         t => t.assigned_location?.toLowerCase() === location.toLowerCase()
                     );
                 }
 
-                // ✅ Then apply the date filter
+                // Then apply the date filter
                 const allTickets = tickets.filter(t => isInFilter(t.created_at));
                 const notes = noteRes.data || [];
 
@@ -238,7 +239,7 @@ export default function AllTicketsByUser({ filterType, showChart = true, onDataR
                                 {currentTickets.map(t => (
                                     <tr key={t.ticket_id}
                                         style={{ cursor: "pointer" }}
-                                        onClick={() => window.location.replace(`view-hd-ticket?id=${t.ticket_id}`)}>
+                                        onClick={() => navigate(`/view-hd-ticket?id=${t.ticket_id}`)}>
                                         <td>{t.ticket_id}</td>
                                         <td>{t.ticket_subject}</td>
                                         <td>{t.ticket_status}</td>

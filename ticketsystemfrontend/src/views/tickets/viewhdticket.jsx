@@ -63,9 +63,14 @@ export default function ViewHDTicket() {
     const [modalContent, setModalContent] = useState(null);
 
     const [assets, setAssets] = useState([]);
+    const [archBTN1, setArchBTN1] = useState(false);
+    const [archBTN2, setArchBTN2] = useState(false);
 
-    const navigate = useNavigate();
+    const empInfo = JSON.parse(localStorage.getItem('user'));
+    const [lockModal, setLockModal] = useState(false)
+    const [lockError, setLockError] = useState('')
 
+    //All Subcategory
     const subCategoryOptions = {
 
         hardware: [
@@ -156,6 +161,7 @@ export default function ViewHDTicket() {
 
     };
 
+    //Dropdown styles
     const customSelectStyles = {
         container: (provided) => ({
             ...provided,
@@ -194,6 +200,7 @@ export default function ViewHDTicket() {
         }),
     };
 
+    // If ticket was open then you can assign a HD
     useEffect(() => {
         if (formData.ticket_status === 'open') {
             setAssignedToState(true)
@@ -202,14 +209,15 @@ export default function ViewHDTicket() {
         }
     }, [formData.ticket_status])
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    // Loading Timeout
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
     //Alerts timeout
     useEffect(() => {
@@ -265,6 +273,7 @@ export default function ViewHDTicket() {
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const fetchNotes = async () => {
+
             //Open HD Add Note Function
             if (formData.ticket_status === 'in-progress' && formData.assigned_to === empInfo.user_name) {
                 setHDNotesState(true)
@@ -361,16 +370,16 @@ export default function ViewHDTicket() {
 
     }, [formData.ticket_for, formData.assigned_to, formData.ticket_status, ticketForData.emp_location]);
 
+    //Assigned to collaborators state
     useEffect(() => {
         if (formData.assigned_collaborators) {
             setCollaboratorState(true);
         } else {
             setCollaboratorState(false)
-
         }
     }, [formData.assigned_collaborators])
 
-    //Get the ticket 
+    //Get the ticket deatails
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -396,10 +405,6 @@ export default function ViewHDTicket() {
         fetchData();
     }, [ticket_id]);
 
-    const [archBTN1, setArchBTN1] = useState(false);
-    const [archBTN2, setArchBTN2] = useState(false);
-
-
     //Archive Checker
     useEffect(() => {
         if (formData.is_active === false) {
@@ -420,21 +425,27 @@ export default function ViewHDTicket() {
 
     //get all users hd/users
     useEffect(() => {
-        axios.get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
-                const justUsers = res.data.filter(user => user.emp_tier === 'user');
-                setAllUser(justUsers);
+        try {
+            axios.get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
+                    const justUsers = res.data.filter(user => user.emp_tier === 'user');
+                    setAllUser(justUsers);
 
-                const allHD = res.data.filter(hd => hd.emp_tier === 'helpdesk');
-                setAllHDUser(allHD);
-            })
-            .catch((err) => {
-                console.error("Error fetching users:", err);
-            });
+                    const allHD = res.data.filter(hd => hd.emp_tier === 'helpdesk');
+                    setAllHDUser(allHD);
+                })
+                .catch((err) => {
+                    console.error("Error fetching users:", err);
+                });
+        } catch (err) {
+            console.log('Unable to get all users: ', err)
+        }
+
     }, [])
 
     //asset options
     useEffect(() => {
+        //Setting users fullnmae
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const fname = empInfo.user_name;
         const lname = empInfo.user_name;
@@ -445,30 +456,33 @@ export default function ViewHDTicket() {
 
 
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
-            const data = res.data || [];
-            const active = data.filter(a => a.is_active === "1");
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
+                const data = res.data || [];
+                const active = data.filter(a => a.is_active === "1");
 
-            //all of the asset under assign_to 
-            const own = active.filter(e => e.assign_to === formData.ticket_for);
-            console.log('ASSIGNED ASSETS: ', own)
-            const allAssets = active.map(e => e.tag_id);
+                //all of the asset under assign_to 
+                const own = active.filter(e => e.assign_to === formData.ticket_for);
+                console.log('ASSIGNED ASSETS: ', own)
+                const allAssets = active.map(e => e.tag_id);
 
-            setAssets(active)
-            console.log(active)
+                setAssets(active)
+                console.log(active)
+
+            } catch (err) {
+                console.log('Unable to get all assets: ', err)
+            }
 
         }
         fetch();
     }, [formData])
-    // const options = assets.map(asset => ({ value: asset, label: asset }));
+
+    //Dropdown asset format
     const options = assets.map(asset => ({
         value: asset.tag_id,
         label: asset.tag_id,
         category: asset.pms_category
     }));
-
-
-
 
     // handle text area change
     const handleNoteChange = (e) => {
@@ -480,7 +494,7 @@ export default function ViewHDTicket() {
         setHasChanges(changed);
     };
 
-
+    //Notify user function
     const handleNotifyReview = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         //tikcetfor
@@ -507,7 +521,6 @@ export default function ViewHDTicket() {
             console.error('Error notifying review:', err);
         }
     }
-
 
     //Accept ticket function
     const HandleAcceptButton = async () => {
@@ -551,37 +564,7 @@ export default function ViewHDTicket() {
         }
     }
 
-    // const handleSubmitNote = async (e) => {
-    //     e.preventDefault();
-    //     const empInfo = JSON.parse(localStorage.getItem('user'));
-    //     try {
-    //         if (notes === template) {
-    //             setNoteAlert(true)
-    //         } else {
-    //             setLoading(true);
-    //             await axios.post(`${config.baseApi}/ticket/note-post`, {
-    //                 notes,
-    //                 current_user: empInfo.user_name,
-    //                 ticket_id: ticket_id
-    //             });
-
-    //             await axios.post(`${config.baseApi}/ticket/notified-true`, {
-    //                 ticket_id: ticket_id,
-    //                 user_id: empInfo.user_id
-    //             })
-    //             setNoteAlert(false);
-    //             setNotes('');
-    //             console.log('Submitted a note succesfully');
-    //             window.location.reload();
-    //         }
-    //     } catch (err) {
-    //         console.log('Unable to submit note: ', err)
-    //     }
-
-    // }
-
-
-
+    //Handle changes 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => {
@@ -595,12 +578,7 @@ export default function ViewHDTicket() {
         });
     };
 
-
-
     // Lock/unlock function
-    const empInfo = JSON.parse(localStorage.getItem('user'));
-    const [lockModal, setLockModal] = useState(false)
-    const [lockError, setLockError] = useState('')
     useEffect(() => {
         const { user_name } = empInfo || {};
         const currentUser = user_name;
@@ -643,26 +621,32 @@ export default function ViewHDTicket() {
             window.removeEventListener("beforeunload", handleUnload);
             // Normal React navigation unlock
             if (currentTicketId && currentUser) {
-                axios.post(`${config.baseApi}/ticket/unlock`, {
-                    ticket_id: currentTicketId,
-                    updating_by: currentUser,
-                }).catch(() => { });
+                try {
+                    axios.post(`${config.baseApi}/ticket/unlock`, {
+                        ticket_id: currentTicketId,
+                        updating_by: currentUser,
+                    }).catch(() => { });
+                } catch (err) {
+                    console.log('Unable to update lock:', err)
+                }
+
             }
         };
     }, [ticket_id, empInfo]);
 
-
-
     // Refresh lock if form has changes
     useEffect(() => {
-
         const interval = setInterval(() => {
             if (hasChanges) {
+                try {
+                    axios.post(`${config.baseApi}/ticket/lock`, {
+                        ticket_id,
+                        updating_by: empInfo.user_name,
+                    });
+                } catch (err) {
+                    console.log('Unable to uopdate lock: ', err)
+                }
 
-                axios.post(`${config.baseApi}/ticket/lock`, {
-                    ticket_id,
-                    updating_by: empInfo.user_name,
-                });
             }
         }, 10000); // refresh lock every 10s
 
@@ -670,25 +654,28 @@ export default function ViewHDTicket() {
 
     }, [hasChanges, ticket_id, empInfo.user_name]);
 
+    //once ticket was open it will check lock
     useEffect(() => {
         const fetch = async () => {
-            const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
-                params: { id: ticket_id }
-            });
-            const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
+            try {
+                const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
+                    params: { id: ticket_id }
+                });
+                const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
 
-            if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
-                setLockModal(false)
-            } else {
-                setLockModal(true)
+                if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
+                    setLockModal(false)
+                } else {
+                    setLockModal(true)
+                }
+            } catch (err) {
+                console.log('Unable to get lock:', err)
             }
-
         }
         fetch();
-
-
     }, [])
 
+    //resolved checker
     const handleChecker = async () => {
         if (formData.ticket_status === 'resolved') {
             setShowCloseResolutionModal(true)
@@ -697,6 +684,7 @@ export default function ViewHDTicket() {
         )
     }
 
+    //resolution function
     const HandleResolution = async (e) => {
         e.preventDefault();
 
@@ -723,6 +711,7 @@ export default function ViewHDTicket() {
 
     }
 
+    //SAve Function
     const handleSave = async () => {
         try {
 
@@ -735,7 +724,25 @@ export default function ViewHDTicket() {
             if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
                 if (formData.ticket_status === 'in-progress') {
 
-                    if (!formData.ticket_status || !formData.ticket_category || !formData.ticket_SubCategory || !formData.ticket_urgencyLevel) {
+                    if (!formData.ticket_status) {
+                        setLoading(false)
+                        setError('Unable to save empty ticket status! Please try again!');
+                        return;
+                    }
+                    if (!formData.ticket_category) {
+                        setLoading(false)
+                        setError('Unable to save empty Category fields! Please try again!');
+                        return;
+                    } if (!formData.ticket_SubCategory) {
+                        setLoading(false)
+                        setError('Unable to save empty Sub-Category fields! Please try again!');
+                        return;
+                    } if (!formData.ticket_urgencyLevel) {
+                        setLoading(false)
+                        setError('Unable to save empty Urgency fields! Please try again!');
+                        return;
+
+                    } if (!formData.ticket_status || !formData.ticket_category || !formData.ticket_SubCategory || !formData.ticket_urgencyLevel) {
                         setLoading(false)
                         setError('Unable to save empty fields! Please try again!');
                         return;
@@ -860,8 +867,8 @@ export default function ViewHDTicket() {
                 //     });
                 //     window.location.reload()
                 // }
-
-
+                console.log('asdasdasdasd')
+                setLoading(false)
                 setSuccessful('Ticket updated successfully.');
                 setOriginalData(formData);
                 setHasChanges(false);
@@ -875,9 +882,16 @@ export default function ViewHDTicket() {
 
 
         } catch (err) {
-            console.error("Error updating ticket:", err);
             setLoading(false)
-            setError('Failed to update ticket. Please try again later.');
+            if (err.response) {
+                if (err.response.status === 500) {
+                    setError('Unable to send email to the user.')
+                }
+            } else {
+                console.error("Error updating ticket:", err);
+                setError('Failed to update ticket. Please try again later.');
+            }
+
         }
 
         if (notes) {
@@ -906,10 +920,11 @@ export default function ViewHDTicket() {
             } catch (err) {
                 console.log('Unable to submit note: ', err)
             }
-
         }
+
     };
 
+    //Atachment view
     const renderAttachment = () => {
         if (!formData.Attachments) return <div className="text-muted fst-italic">No attachments</div>;
 
@@ -948,6 +963,7 @@ export default function ViewHDTicket() {
         );
     };
 
+    //Add collaboration function
     const AddCollab = () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         if (empInfo.user_name === formData.assigned_to) {
@@ -959,33 +975,42 @@ export default function ViewHDTicket() {
         }
     }
 
+    //Archive function
     const Archive = async () => {
-        const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
-            params: { id: ticket_id }
-        });
-        const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
-        if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
+        try {
+            const fetchticket = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
+                params: { id: ticket_id }
+            });
+            const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
+            if (ticket.is_locked === false || ticket.updating_by === empInfo.user_name || ticket.updating_by === null) {
 
-            try {
-                setLoading(true)
-                await axios.post(`${config.baseApi}/ticket/archive-ticket`, {
-                    ticket_id: ticket_id,
-                    updated_by: empInfo.user_name
-                })
-                console.log('Ticket archived successfully');
-                setSuccessful('Ticket archived successfully');
-                window.location.reload();
+                try {
+                    setLoading(true)
+                    await axios.post(`${config.baseApi}/ticket/archive-ticket`, {
+                        ticket_id: ticket_id,
+                        updated_by: empInfo.user_name
+                    })
+                    console.log('Ticket archived successfully');
+                    setSuccessful('Ticket archived successfully');
+                    window.location.reload();
 
-            } catch (err) {
-                console.log(err)
+                } catch (err) {
+                    console.log(err)
+                }
+            } else if (ticket.is_locked === true || ticket.updating_by !== empInfo.user_name) {
+                setLoading(false)
+                setError(`${ticket.updating_by} is currently working on this ticket`);
+                return;
             }
-        } else if (ticket.is_locked === true || ticket.updating_by !== empInfo.user_name) {
-            setLoading(false)
-            setError(`${ticket.updating_by} is currently working on this ticket`);
-            return;
+        }
+        catch (err) {
+            console.log('Unable to get ticket: ', err)
         }
 
+
     }
+
+    //Unarchive Function
     const UnArchive = async () => {
         console.log('Working');
         try {
@@ -1003,13 +1028,12 @@ export default function ViewHDTicket() {
         }
     }
 
+    //Open modal walkthrough
     const HandleView = () => {
         setModalTitle("Ticket Logs");
         setModalContent(<ViewTicketLogs ticket_id={ticket_id} />);
         setShowModal(true);
     };
-
-
 
     return (
         <Container
@@ -1021,6 +1045,7 @@ export default function ViewHDTicket() {
                 paddingTop: '100px',
             }}
         >
+            {/* Alert Component */}
             {successful && (
                 <div
                     className="position-fixed start-50 l translate-middle-x"
@@ -1041,6 +1066,7 @@ export default function ViewHDTicket() {
                     </Alert>
                 </div>
             )}
+
             <AnimatedContent
                 distance={100}
                 direction="vertical"
@@ -1053,7 +1079,6 @@ export default function ViewHDTicket() {
                 threshold={0.1}
                 delay={0}
             >
-
                 <Container className="bg-white p-4 rounded-3 shadow-sm">
                     <Row>
                         <Col lg={8}>
@@ -1061,7 +1086,7 @@ export default function ViewHDTicket() {
                                 <div className="d-flex justify-content-between align-items-center">
                                     <Row className="align-items-center">
                                         <Col xs="auto">
-                                            <h3 className="fw-bold text-dark mb-0">Ticket Details</h3>
+                                            <h3 className="fw-bold text-dark mb-0">Support Ticket Details</h3>
                                             <h7
                                                 style={{
                                                     fontStyle: "italic",
@@ -1076,6 +1101,7 @@ export default function ViewHDTicket() {
                                                 view ticket logs
                                             </h7>
                                         </Col>
+                                        {/* Button */}
                                         {archiveTextState && (
                                             <Col xs="auto">
                                                 <h4 className="fw-bold text-secondary mb-0">(archived)</h4>
@@ -1084,6 +1110,7 @@ export default function ViewHDTicket() {
                                     </Row>
 
                                     <div className="d-flex gap-2">
+                                        {/* Archive button */}
                                         {archBTN1 && (
                                             <Button
                                                 variant="primary"
@@ -1095,6 +1122,8 @@ export default function ViewHDTicket() {
                                                 <FeatherIcon icon="archive" />
                                             </Button>
                                         )}
+
+                                        {/* Un-Archive Button */}
                                         {archBTN2 && (
                                             <Button
                                                 variant="primary"
@@ -1106,6 +1135,8 @@ export default function ViewHDTicket() {
                                                 <FeatherIcon icon="airplay" />
                                             </Button>
                                         )}
+
+                                        {/* Notify Button */}
                                         {notifyReview && (
                                             <Button
                                                 variant="primary"
@@ -1116,6 +1147,8 @@ export default function ViewHDTicket() {
                                                 <FeatherIcon icon="bell" />
                                             </Button>
                                         )}
+
+                                        {/* Accept button */}
                                         {showAcceptButton && (
                                             <Button
                                                 variant="primary"
@@ -1126,6 +1159,8 @@ export default function ViewHDTicket() {
                                                 Accept
                                             </Button>
                                         )}
+
+                                        {/* Save Changes Button */}
                                         {hasChanges && (
                                             <Button
                                                 variant="primary"
@@ -1690,7 +1725,6 @@ export default function ViewHDTicket() {
                                                 )}
                                             </div>
                                         )}
-
                                     />
                                 </Form.Group>
 
@@ -1897,6 +1931,7 @@ export default function ViewHDTicket() {
                         </Modal.Footer>
                     </Modal>
 
+                    {/* Lock Modal */}
                     <Modal show={lockModal} onHide={() => setLockModal(false)} centered>
                         <Modal.Header closeButton>
                             <Modal.Title>Attention! </Modal.Title>
@@ -1919,7 +1954,7 @@ export default function ViewHDTicket() {
                         </Modal.Footer>
                     </Modal>
 
-
+                    {/* Arhcive MOdal */}
                     <Modal show={archiveState} onHide={() => setArchiveState(false)} centered>
                         <Modal.Header closeButton>
                             <Modal.Title>Archive</Modal.Title>
@@ -1942,6 +1977,7 @@ export default function ViewHDTicket() {
                         </Modal.Footer>
                     </Modal>
 
+                    {/* Unarchive Mpodal */}
                     <Modal show={unarchiveState} onHide={() => setUnArchiveState(false)} centered>
                         <Modal.Header closeButton>
                             <Modal.Title>Unarchive</Modal.Title>
@@ -1964,6 +2000,7 @@ export default function ViewHDTicket() {
                         </Modal.Footer>
                     </Modal>
 
+                    {/* LOgs Modal */}
                     <Modal
                         show={showModal}
                         onHide={() => setShowModal(false)}
@@ -1992,6 +2029,8 @@ export default function ViewHDTicket() {
                     </Modal>
                 </Container >
             </AnimatedContent>
+
+            {/* Loading Componnet */}
             {loading && (
                 <div
                     style={{

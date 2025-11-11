@@ -43,17 +43,10 @@ export default function ViewTicket() {
 
     const [resolveState, setResolveState] = useState(false)
 
-
-    const labels = {
-        1: "Very Dissatisfied",
-        2: "Dissatisfied",
-        3: "Neutral",
-        4: "Satisfied",
-        5: "Very Satisfied",
-    };
-
+    //Setting user scale score
     const thumbLeft = `${10 + (value - 1) * 20}%`;
 
+    //All Sub-Category options
     const subCategoryOptions = {
         incident: {
             hardware: [
@@ -142,31 +135,39 @@ export default function ViewTicket() {
         },
     };
 
+    //Loading State 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             window.location.reload()
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
+
+    //Get All users
     useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                window.location.reload()
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
+        try {
+            axios.get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
+
+                    const allHD = res.data.filter(hd => hd.emp_tier === 'helpdesk');
+                    setAllHDUser(allHD);
+                    console.log('ALL HD USERS:', allHD)
+                })
+                .catch((err) => {
+                    console.error("Error fetching users:", err);
+                });
+
+            console.log(ticket_id)
+        } catch (err) {
+            console.log('unable to fetch all users: ', err)
         }
-    }, [loading])
 
-    useEffect(() => {
-        axios.get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
-
-                const allHD = res.data.filter(hd => hd.emp_tier === 'helpdesk');
-                setAllHDUser(allHD);
-                console.log('ALL HD USERS:', allHD)
-            })
-            .catch((err) => {
-                console.error("Error fetching users:", err);
-            });
-
-        console.log(ticket_id)
     }, [])
 
+    //Collaborators State
     useEffect(() => {
         if (formData.assigned_collaborators) {
             setCollaboratorState(true);
@@ -179,7 +180,7 @@ export default function ViewTicket() {
         }
     }, [formData.assigned_collaborators])
 
-    //Alert timeout effect
+    //Alert timeout effect 3s
     useEffect(() => {
         if (error || successful) {
             const timer = setTimeout(() => {
@@ -189,7 +190,6 @@ export default function ViewTicket() {
             return () => clearTimeout(timer);
         }
     }, [error, successful]);
-
 
     // Fetch all notes for the ticket
     useEffect(() => {
@@ -236,14 +236,12 @@ export default function ViewTicket() {
         fetchData();
     }, [ticket_id]);
 
-
     // Check if ticket status is closed
     useEffect(() => {
         if (formData.ticket_status === 'closed') {
             setClose(false)
         } else if (formData.ticket_status === 'resolved') {
             setResolveState(true)
-
             setClose(false)
         }
         else {
@@ -262,7 +260,6 @@ export default function ViewTicket() {
 
 
     }, [formData.ticket_status])
-
 
     // Fetch current user data from local storage
     useEffect(() => {
@@ -301,6 +298,7 @@ export default function ViewTicket() {
         }
     }, [formData.ticket_for]);
 
+    //Attachment state
     useEffect(() => {
         if (formData.Attachments && formData.Attachments !== '') {
             setAttachmentState(true);
@@ -351,7 +349,7 @@ export default function ViewTicket() {
         return () => clearInterval(interval);
     }, [ticket_id, currentUserData]);
 
-
+    //Handle Changes Function
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => {
@@ -363,6 +361,7 @@ export default function ViewTicket() {
         });
     };
 
+    //Hnadle File changes
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
         if (files.length > 0) {
@@ -380,24 +379,28 @@ export default function ViewTicket() {
         }
     };
 
+    //close reason modal state
     const HandleCheckerFields = async (e) => {
-        const response = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
-            params: { id: ticket_id }
-        });
-        const ticketdata = response.data.data || response.data;
+        try {
+            const response = await axios.get(`${config.baseApi}/ticket/ticket-by-id`, {
+                params: { id: ticket_id }
+            });
+            const ticketdata = response.data.data || response.data;
 
 
-        if (formData.ticket_status === 'closed' && ticketdata.is_locked === '1') {
-            setShowCloseReasonModal(false);
-        } else if (formData.ticket_status === 'closed') {
-            setShowCloseReasonModal(true);
+            if (formData.ticket_status === 'closed' && ticketdata.is_locked === '1') {
+                setShowCloseReasonModal(false);
+            } else if (formData.ticket_status === 'closed') {
+                setShowCloseReasonModal(true);
+            }
+            else {
+                await handleSave();
+            }
+        } catch (err) {
+            console.log('Unable to get ticket id: ', err)
         }
-        else {
-            await handleSave();
-        }
+
     }
-
-
 
     //Reson why Close tikcet function
     const handleConfirmClosure = async (e) => {
@@ -436,6 +439,7 @@ export default function ViewTicket() {
         }
     }
 
+    //Resolution Function
     const handleReview = async (value, userfeedback) => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         console.log("was triggered. ", `Review ${userfeedback} HelpDesk: ${hdUser.user_id} Reviewed by: ${empInfo.user_name}`);
@@ -474,7 +478,7 @@ export default function ViewTicket() {
                     ticket_id: formData.ticket_id,
                     score: value,
                 });
-                console.log("Feedback submitted (no old feedback) ✅");
+                console.log("Feedback submitted (no old feedback)");
             }
 
 
@@ -487,10 +491,6 @@ export default function ViewTicket() {
             setLoading(false);
         }
     };
-
-
-
-
 
     //Save updated fields
     const handleSave = async () => {
@@ -586,7 +586,7 @@ export default function ViewTicket() {
                 setError(`${ticket.updating_by} is currently working on this ticket`);
                 return;
             }
-
+            window.location.reload()
 
         } catch (err) {
             console.error("Error updating ticket:", err);
@@ -594,13 +594,6 @@ export default function ViewTicket() {
             setError('Failed to update ticket.');
         }
     };
-
-
-
-
-
-
-
 
     //Display the files uploaded
     const renderAttachment = () => {
@@ -669,7 +662,6 @@ export default function ViewTicket() {
                 </div>
             )}
 
-
             <AnimatedContent
                 distance={100}
                 direction="vertical"
@@ -688,7 +680,7 @@ export default function ViewTicket() {
                             {/* Buttons */}
                             <Row className="mb-3">
                                 <div className="d-flex justify-content-between align-items-center">
-                                    <h3 className="fw-bold text-dark mb-0">Ticket Details</h3>
+                                    <h3 className="fw-bold text-dark mb-0">Support Ticket Details</h3>
                                     <div className="d-flex gap-2">
                                         {hasChanges && (
                                             <Button
@@ -699,9 +691,6 @@ export default function ViewTicket() {
                                             >
                                                 Save Changes
                                             </Button>
-                                            // <BTN size="sm" label={'Save Changes'}>
-
-                                            // </BTN>
                                         )}
 
                                     </div>
@@ -776,8 +765,6 @@ export default function ViewTicket() {
                                 </Col>
                             </Row>
                             {/* XXX */}
-
-
                             {collaboratorState && (
                                 <Col md={6} className="mb-2">
                                     <Form.Label
@@ -1003,7 +990,8 @@ export default function ViewTicket() {
                             </Card>
                         </Col>
                     </Row>
-                    {/* CLOSE TICKET */}
+
+                    {/* CLOSE TICKET MOdal */}
                     <Modal show={showCloseReasonModal} onHide={() => setShowCloseReasonModal(false)} centered>
                         <Modal.Header closeButton>
                             <Modal.Title>Reason for Closing Ticket</Modal.Title>
@@ -1034,7 +1022,7 @@ export default function ViewTicket() {
                         </Modal.Footer>
                     </Modal>
 
-
+                    {/* Resolve Modal */}
                     <Modal show={resolveState} onHide={() => setResolveState(false)} centered>
                         <Modal.Header closeButton>
                             <Modal.Title>Ticket was marked Resolve</Modal.Title>
@@ -1191,14 +1179,11 @@ export default function ViewTicket() {
                             </Button>
                         </Modal.Footer>
                     </Modal>
-
-
                 </Container>
-
             </AnimatedContent>
+
+            {/* Loading State */}
             {loading && (
-
-
                 <div
                     style={{
                         position: "fixed",

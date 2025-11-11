@@ -15,20 +15,24 @@ export default function ArchiveViewlaptop() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
+    //Fetch all laptop
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-laptop`);
-            const data = res.data || [];
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-laptop`);
+                const data = res.data || [];
 
+                const allactive = data.filter(e => Number(e.is_active) === 0);
+                setAllpc(allactive);
 
-            const allactive = data.filter(e => Number(e.is_active) === 0);
-            setAllpc(allactive);
+                const lmd = data.filter((pc) => pc.assigned_location === "lmd" && pc.pms_category === "laptop" && Number(e.is_active) === 0);
+                setLmdpc(lmd);
 
-            const lmd = data.filter((pc) => pc.assigned_location === "lmd" && pc.pms_category === "laptop" && Number(e.is_active) === 0);
-            setLmdpc(lmd);
-
-            const corp = data.filter((pc) => pc.assigned_location === "corp" && pc.pms_category === "laptop" && Number(e.is_active) === 0);
-            setCorppc(corp);
+                const corp = data.filter((pc) => pc.assigned_location === "corp" && pc.pms_category === "laptop" && Number(e.is_active) === 0);
+                setCorppc(corp);
+            } catch (err) {
+                console.log('Unable to get laptop: ', err)
+            }
         };
         fetch();
     }, []);
@@ -41,7 +45,7 @@ export default function ArchiveViewlaptop() {
                 ? lmdpc
                 : corppc;
 
-    // 🔍 Filter data based on search input
+    // Filter data based on search input
     const filteredPCs = displayedPCs.filter((pc) => {
         const search = searchTerm.toLowerCase();
         return (
@@ -64,9 +68,10 @@ export default function ArchiveViewlaptop() {
         setCurrentPage(1);
     }, [filterStatus, searchTerm]);
 
+    //Navigate thru archive page
     const HandleView = (pc) => {
         const params = new URLSearchParams({ id: pc.pms_id }).toString();
-        window.location.replace(`/ticketsystem/assets-archive-laptop?${params.toString()}`);
+        navigate(`/assets-archive-laptop?${params.toString()}`);
     }
 
     return (

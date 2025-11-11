@@ -14,6 +14,9 @@ export default function CreateTicketWalkthrough() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [currentUser, setCurrentUser] = useState('');
+    const [fullname, setFullName] = useState('');
+    const [assets, setAssets] = useState([]);
     const [validationErrors, setValidationErrors] = useState({});
     const [formData, setFormData] = useState({
         ticket_subject: '',
@@ -22,43 +25,10 @@ export default function CreateTicketWalkthrough() {
         Description: '',
     });
 
-    const [currentUser, setCurrentUser] = useState('');
-    const [fullname, setFullName] = useState('');
-    const [assets, setAssets] = useState([]);
+    //Template
     const desc = 'Issue: \nWhen did it start: \nHave you tried any troubleshooting steps: \nAdditional notes: ';
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
-
-
-    useEffect(() => {
-        if (error || success) {
-            const timer = setTimeout(() => {
-                setError('');
-                setSuccess('');
-            }, 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [error, success]);
-
-    useEffect(() => {
-        const empInfo = JSON.parse(localStorage.getItem('user'));
-        const Fullname = empInfo.user_name;
-        setCurrentUser(Fullname);
-
-        const first = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
-        const last = empInfo.emp_LastName.charAt(0).toUpperCase() + empInfo.emp_LastName.slice(1).toLowerCase();
-        setFullName(first + ' ' + last);
-
-    }, []);
-
-
+    //Dropdown styles
     const customSelectStyles = {
         container: (provided) => ({
             ...provided,
@@ -96,6 +66,8 @@ export default function CreateTicketWalkthrough() {
             },
         }),
     };
+
+    //All Subcategories
     const subCategoryOptions = {
         hardware: [
             'Desktop',
@@ -153,7 +125,40 @@ export default function CreateTicketWalkthrough() {
         ]
     };
 
+    //Loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
+    //Alert State 3s
+    useEffect(() => {
+        if (error || success) {
+            const timer = setTimeout(() => {
+                setError('');
+                setSuccess('');
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [error, success]);
+
+    //Setting user name
+    useEffect(() => {
+        const empInfo = JSON.parse(localStorage.getItem('user'));
+        const Fullname = empInfo.user_name;
+        setCurrentUser(Fullname);
+
+        const first = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
+        const last = empInfo.emp_LastName.charAt(0).toUpperCase() + empInfo.emp_LastName.slice(1).toLowerCase();
+        setFullName(first + ' ' + last);
+
+    }, []);
+
+    //Handle Changes
     const handleChange = (e) => {
         const { name, value, files } = e.target;
 
@@ -187,6 +192,7 @@ export default function CreateTicketWalkthrough() {
 
     };
 
+    //Save function
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -254,31 +260,35 @@ export default function CreateTicketWalkthrough() {
         }
     };
 
+    //Get all assets
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
-            const data = res.data || [];
-            const active = data.filter(a => a.is_active === "1")
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
+                const data = res.data || [];
+                const active = data.filter(a => a.is_active === "1")
 
-            const allAssets = active.map(e => e.tag_id);
+                const allAssets = active.map(e => e.tag_id);
 
-            setAssets(active)
-            console.log(allAssets)
-
+                setAssets(active)
+                console.log(allAssets)
+            } catch (err) {
+                console.log('UNable to get all assets: ', err)
+            }
         }
         fetch();
     }, [])
-    // const options = assets.map(asset => ({ value: asset, label: asset }));
+
+    //Drowndown assets format
     const options = assets.map(asset => ({
         value: asset.tag_id,
         label: asset.tag_id,
         category: asset.pms_category
     }));
 
-
-
     return (
         <Container fluid className="pt-100" style={{ background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)', minHeight: '100vh', paddingTop: '100px' }}>
+            {/* Alert Component */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -309,6 +319,7 @@ export default function CreateTicketWalkthrough() {
                             <h4 className="mb-3">Create Ticket</h4>
                             <Form onSubmit={handleSubmit}>
                                 <Row className="mb-3">
+
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Problem/Issue</Form.Label>
@@ -322,6 +333,7 @@ export default function CreateTicketWalkthrough() {
                                             <Form.Control.Feedback type="invalid">{validationErrors.ticket_subject}</Form.Control.Feedback>
                                         </Form.Group>
                                     </Col>
+
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>
@@ -385,10 +397,7 @@ export default function CreateTicketWalkthrough() {
                                                 )}
                                             />
                                         </Form.Group>
-
-
                                     </Col>
-
                                 </Row>
 
                                 <Row className="mb-3" hidden>
@@ -436,6 +445,7 @@ export default function CreateTicketWalkthrough() {
                                             <Form.Control.Feedback type="invalid">{validationErrors.ticket_category}</Form.Control.Feedback>
                                         </Form.Group>
                                     </Col>
+
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Subcategory</Form.Label>
@@ -455,7 +465,6 @@ export default function CreateTicketWalkthrough() {
                                         </Form.Group>
                                     </Col>
                                 </Row>
-
 
                                 <Form.Group className="mb-3">
                                     <Form.Label>Attachments <span className="fw-light">(optional)</span></Form.Label>
@@ -499,6 +508,7 @@ export default function CreateTicketWalkthrough() {
                     </Col>
                 </Row>
             </AnimatedContent>
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

@@ -5,14 +5,15 @@ import axios from 'axios';
 import config from 'config';
 import Spinner from 'react-bootstrap/Spinner';
 import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
-
-
+import { useNavigate } from 'react-router';
 
 export default function Announcements() {
     const [announcementText, setAnnouncementText] = useState('');
     const [announcementTitleText, setAnnouncementTitleText] = useState('');
     const [announcementsList, setAnnouncementsList] = useState([]);
     const [fullname, setFullname] = useState({});
+
+    const navigate = useNavigate();
 
     const [showCard, setShowCard] = useState(false);
     const [ancId, setAncId] = useState(null);
@@ -38,14 +39,14 @@ export default function Announcements() {
     const [access, setAccess] = useState(false);
 
     //Loading state
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
     //Validations 
     useEffect(() => {
@@ -88,6 +89,7 @@ export default function Announcements() {
         fetchAnnouncements();
     }, []);
 
+    //Add Announcement modal state
     const HandleAdd = () => {
         setShowCard(true);
         setIsEditing(false);
@@ -98,12 +100,14 @@ export default function Announcements() {
     const HandleSave = async () => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
 
+        //Check Fields
         if (!announcementTitleText.trim() || !announcementText.trim()) {
             setLoading(false)
             setError("Unable to save empty fields, please try again.");
             return;
         }
         try {
+
             setLoading(true);
             await axios.post(`${config.baseApi}/announcements/add-anc`, {
                 announcements: announcementText,
@@ -182,10 +186,11 @@ export default function Announcements() {
             setError("Failed to delete announcement.");
         }
     }
+
     //Archvie navigate
     const HandleArchive = () => {
         setLoading(true);
-        window.location.replace('/ticketsystem/inactive-announcements');
+        navigate('/inactive-announcements');
     }
 
     return (
@@ -211,7 +216,7 @@ export default function Announcements() {
                 threshold={0.1}
                 delay={0}
             >
-
+                {/* Alert Components */}
                 {error && (
                     <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                         <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -222,6 +227,7 @@ export default function Announcements() {
                         <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>
                     </div>
                 )}
+
                 {access &&
                     (
                         <Row className="align-items-center mb-3">
@@ -324,6 +330,8 @@ export default function Announcements() {
 
                             </Card>
                         )))}
+
+                    {/* Pagenation */}
                     {totalPages > 1 && (
                         <div className="d-flex justify-content-center mt-3 flex-wrap gap-2">
                             <Button
@@ -407,6 +415,7 @@ export default function Announcements() {
                     </Card>
                 )}
             </AnimatedContent>
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

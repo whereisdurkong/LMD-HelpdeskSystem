@@ -24,14 +24,15 @@ export default function NetworkArchive() {
     const [access, setAccess] = useState(false)
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    //Loading State
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
     // Check user access
     useEffect(() => {
@@ -79,8 +80,9 @@ export default function NetworkArchive() {
         };
         fetchData();
     }, []);
-    const handleUnArchive = async (id) => {
 
+    //Un-Archive Function
+    const handleUnArchive = async (id) => {
         try {
             setLoading(true)
             const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -104,6 +106,7 @@ export default function NetworkArchive() {
         }
     }, [showModal]);
 
+    //Delete Function
     const handleDelete = async (id) => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         if (window.confirm("Are you sure you want to delete ?")) {
@@ -120,8 +123,8 @@ export default function NetworkArchive() {
         }
     }
 
+    // Update Function
     const handleUpdate = async () => {
-
         if (newTitle === '') {
             setLoading(false)
             setError("Please fill in title.");
@@ -151,6 +154,7 @@ export default function NetworkArchive() {
         }
     }
 
+    // Add Function
     const handleSave = async () => {
         console.log("Saving Network:", newTitle, newContent);
         if (newTitle === '') {
@@ -184,6 +188,7 @@ export default function NetworkArchive() {
         }
     };
 
+    // Input Field format and design
     const handleContentChange = () => {
         setNewContent(contentRef.current.innerHTML);
     };
@@ -212,6 +217,7 @@ export default function NetworkArchive() {
                 paddingBottom: '20px',
             }}
         >
+            {/* Alert Component */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -226,6 +232,7 @@ export default function NetworkArchive() {
                 <Card className="p-4 shadow-lg" style={{ borderRadius: "20px", backgroundColor: "#fff" }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="fw-bold text-dark mb-0">Archived Network Questions</h2>
+                        {/* Button */}
                         {access && (
                             <div className="d-flex gap-2">
                                 <Button variant="primary" onClick={() => navigate('/network')}>Network</Button>
@@ -322,7 +329,7 @@ export default function NetworkArchive() {
                 </Card>
             </Container>
 
-            {/* Modal */}
+            {/* Modal for Edit/Add */}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
                 <Modal.Header >
                     <Modal.Title>{editMode ? 'Edit Network Troubleshooting Step' : 'Add Network Troubleshooting Step'}</Modal.Title>
@@ -387,6 +394,8 @@ export default function NetworkArchive() {
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

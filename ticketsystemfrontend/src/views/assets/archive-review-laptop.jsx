@@ -19,7 +19,6 @@ export default function ArchiveReviewLaptop() {
     const [location, setLocation] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showArchiveModal, setShowArchiveModal] = useState(false);
-
     const [userOptions, setUserOptions] = useState([]);
 
     const [tag_id, setTagID] = useState('');
@@ -36,10 +35,13 @@ export default function ArchiveReviewLaptop() {
     const [description, setDescription] = useState('');
     const [originalData, setOriginalData] = useState({});
     const [changedFields, setChangedFields] = useState({});
+    const [lockModal, setLockModal] = useState(false)
+    const [lockError, setLockError] = useState('')
 
     const [showModal, setShowModal] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
     const [modalContent, setModalContent] = useState(null);
+    const empInfo = JSON.parse(localStorage.getItem('user'));
 
     const tagidRef = useRef();
     const deparmentRef = useRef();
@@ -58,20 +60,23 @@ export default function ArchiveReviewLaptop() {
 
     const [close, setClose] = useState(false)
 
+    //all departments
     const departmentOptions = {
         lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
         corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
     };
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [loading]);
+    //Loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer);
+    //     }
+    // }, [loading]);
 
+    //Alert state 3s
     useEffect(() => {
         if (error || success) {
             const timer = setTimeout(() => {
@@ -123,6 +128,7 @@ export default function ArchiveReviewLaptop() {
             } catch (err) {
                 console.log(err);
                 setError('An error occurred while fetching the laptop details. Please try again.');
+                return;
             }
         };
         fetch();
@@ -131,18 +137,23 @@ export default function ArchiveReviewLaptop() {
     // Fetch all users
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/authentication/get-all-users`);
-            const data = res.data || [];
-            const allUser = data.filter(s => s.emp_tier === 'user');
+            try {
+                const res = await axios.get(`${config.baseApi}/authentication/get-all-users`);
+                const data = res.data || [];
+                const allUser = data.filter(s => s.emp_tier === 'user');
 
-            const allUsernames = allUser.map(u => {
-                const fname = u.emp_FirstName;
-                const lname = u.emp_LastName;
-                const first = fname.charAt(0).toUpperCase() + fname.slice(1).toLowerCase();
-                const last = lname.charAt(0).toUpperCase() + lname.slice(1).toLowerCase();
-                return first + ' ' + last;
-            });
-            setUserOptions(allUsernames);
+                const allUsernames = allUser.map(u => {
+                    const fname = u.emp_FirstName;
+                    const lname = u.emp_LastName;
+                    const first = fname.charAt(0).toUpperCase() + fname.slice(1).toLowerCase();
+                    const last = lname.charAt(0).toUpperCase() + lname.slice(1).toLowerCase();
+                    return first + ' ' + last;
+                });
+                setUserOptions(allUsernames);
+            } catch (err) {
+                console.log('Unable to get all users: ', err);
+                return;
+            }
         };
         fetch();
     }, []);
@@ -164,6 +175,7 @@ export default function ArchiveReviewLaptop() {
             } catch (err) {
                 console.log(err);
                 setError('An error occurred while fetching the user details. Please try again.');
+                return;
             }
         };
         if (currentUser) fetch();
@@ -198,27 +210,35 @@ export default function ArchiveReviewLaptop() {
         }
         return changed;
     };
+
+    //Before update check lock
     const updateBTNChecker = async (e) => {
         e.preventDefault();
-        const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id } });
-        const asset = res.data;
+        try {
+            const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id } });
+            const asset = res.data;
 
+            if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
+                console.log('!!!!!!!!!!')
+                setError('Unable to update! Someone is working on this asset, please try again later.')
+                return
 
-        if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
-            console.log('!!!!!!!!!!')
-            setError('Unable to update! Someone is working on this asset, please try again later.')
-            return
-
-        } else if (asset.is_lock === "0" || asset.is_lock === null) {
-            console.log('????????????')
-            handleUpdate();
-            return;
-        } else {
-            console.log('????????????')
-            handleUpdate(e);
-            return;
+            } else if (asset.is_lock === "0" || asset.is_lock === null) {
+                console.log('????????????')
+                handleUpdate();
+                return;
+            } else {
+                console.log('????????????')
+                handleUpdate(e);
+                return;
+            }
+        } catch (err) {
+            console.log('Unable to get computer details: ', err)
         }
+
     }
+
+    //Update Function
     const handleUpdate = async (e) => {
         e.preventDefault();
         setError('');
@@ -282,26 +302,33 @@ export default function ArchiveReviewLaptop() {
 
     };
 
+    //Before delete check lock
     const showDeleteModalChecker = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
-        const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id } });
-        const asset = res.data;
+        try {
+            const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id } });
+            const asset = res.data;
 
-        if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
-            console.log('!!!!!!!!!!')
-            setError('Unable to delete! Someone is working on this asset, please try again later.')
-            setShowDeleteModal(false)
-        } else if (asset.is_lock === "0" || asset.is_lock === null) {
-            console.log('????????????')
-            setShowDeleteModal(true)
-        } else {
-            console.log('????????????')
-            setShowDeleteModal(true)
+            if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
+                console.log('!!!!!!!!!!')
+                setError('Unable to delete! Someone is working on this asset, please try again later.')
+                setShowDeleteModal(false)
+            } else if (asset.is_lock === "0" || asset.is_lock === null) {
+                console.log('????????????')
+                setShowDeleteModal(true)
+            } else {
+                console.log('????????????')
+                setShowDeleteModal(true)
+            }
+        } catch (err) {
+            console.log('Unable to get computer details: ', err)
         }
+
     }
+
+    //Delete function
     const handleDelete = async () => {
         const current_user = JSON.parse(localStorage.getItem('user'));
-
         try {
             setLoading(true);
             await axios.post(`${config.baseApi}/pms/delete-computer`, {
@@ -321,23 +348,32 @@ export default function ArchiveReviewLaptop() {
             return;
         }
     }
+
+    //Archive state checker
     const showArhciveModalChecker = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
-        const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id } });
-        const asset = res.data;
+        try {
+            const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id } });
+            const asset = res.data;
 
-        if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
-            console.log('!!!!!!!!!!')
-            setError('Unable to archive! Someone is working on this asset, please try again later.')
-            setShowArchiveModal(false)
-        } else if (asset.is_lock === "0" || asset.is_lock === null) {
-            console.log('????????????')
-            setShowArchiveModal(true)
-        } else {
-            console.log('????????????')
-            setShowArchiveModal(true)
+            if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
+                console.log('!!!!!!!!!!')
+                setError('Unable to archive! Someone is working on this asset, please try again later.')
+                setShowArchiveModal(false)
+            } else if (asset.is_lock === "0" || asset.is_lock === null) {
+                console.log('????????????')
+                setShowArchiveModal(true)
+            } else {
+                console.log('????????????')
+                setShowArchiveModal(true)
+            }
+        } catch (err) {
+            console.log('Unable to get computer details: ', err)
         }
+
     }
+
+    //Archive Function
     const handleArchive = async () => {
         const current_user = JSON.parse(localStorage.getItem('user'));
 
@@ -358,32 +394,35 @@ export default function ArchiveReviewLaptop() {
         }
     }
 
+    //Logs Function
     const HandleLogs = async () => {
-        const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id } });
-        const asset = res.data;
+        try {
+            const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id } });
+            const asset = res.data;
 
 
-        if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
-            console.log('!!!!!!!!!!')
-            setError('Unable to view! Someone is working on this asset, please try again later.')
+            if (asset.is_lock === "1" && asset.lock_by !== empInfo.user_name) {
+                console.log('!!!!!!!!!!')
+                setError('Unable to view! Someone is working on this asset, please try again later.')
 
-        } else if (asset.is_lock === "0" || asset.is_lock === null) {
-            console.log('????????????')
-            setModalTitle('Pms Logs');
-            setModalContent(<AssetLogs pms_id={pms_id} />);
-            setShowModal(true)
-        } else {
-            console.log('????????????')
-            setModalTitle('Pms Logs');
-            setModalContent(<AssetLogs pms_id={pms_id} />);
-            setShowModal(true)
+            } else if (asset.is_lock === "0" || asset.is_lock === null) {
+                console.log('????????????')
+                setModalTitle('Pms Logs');
+                setModalContent(<AssetLogs pms_id={pms_id} />);
+                setShowModal(true)
+            } else {
+                console.log('????????????')
+                setModalTitle('Pms Logs');
+                setModalContent(<AssetLogs pms_id={pms_id} />);
+                setShowModal(true)
+            }
+        } catch (err) {
+            console.log('Unable to get computer details: ', err)
         }
+
 
     }
 
-    const empInfo = JSON.parse(localStorage.getItem('user'));
-    const [lockModal, setLockModal] = useState(false)
-    const [lockError, setLockError] = useState('')
     // Lock / unlock feature
     useEffect(() => {
         if (!pms_id || !empInfo?.user_name) return;
@@ -393,7 +432,7 @@ export default function ArchiveReviewLaptop() {
         // Try to lock the asset
         const tryLock = async () => {
             try {
-                const res = await axios.post(`${config.baseApi}/pms/lock`, {
+                await axios.post(`${config.baseApi}/pms/lock`, {
                     pms_id: currentTicketId,
                     lock_by: currentUser
                 });
@@ -427,15 +466,20 @@ export default function ArchiveReviewLaptop() {
 
         // Periodically check the lock status (every 5 seconds)
         const interval = setInterval(async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id } });
-            const asset = res.data;
-            if (asset.is_lock === '1' && asset.lock_by !== currentUser) {
-                setLockModal(true);
-                setLockError(`${asset.lock_by} is currently reviewing this asset.`);
-            } else {
-                setLockModal(false);
-                setClose(true);
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id } });
+                const asset = res.data;
+                if (asset.is_lock === '1' && asset.lock_by !== currentUser) {
+                    setLockModal(true);
+                    setLockError(`${asset.lock_by} is currently reviewing this asset.`);
+                } else {
+                    setLockModal(false);
+                    setClose(true);
+                }
+            } catch (err) {
+                console.log('Unable to get computer details')
             }
+
         }, 1000);
 
 
@@ -446,26 +490,34 @@ export default function ArchiveReviewLaptop() {
             axios.post(`${config.baseApi}/pms/unlock`, { pms_id: currentTicketId, lock_by: currentUser }).catch(() => { });
         };
     }, [pms_id, empInfo]);
+
+    //once page was open it will check if assets is lock or no
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id: pms_id } });
-            // const assets = res.data;
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-computer-by-id`, { params: { pms_id: pms_id } });
+                // const assets = res.data;
 
-            const assets = Array.isArray(res.data) ? res.data[0] : res.data;
+                const assets = Array.isArray(res.data) ? res.data[0] : res.data;
 
-            if (assets.is_lock === '0' || assets.lock_by === currentUser || assets.lock_by === null) {
-                setLockModal(false)
+                if (assets.is_lock === '0' || assets.lock_by === currentUser || assets.lock_by === null) {
+                    setLockModal(false)
+                }
+                else {
+                    console.log("LOCKED")
+                    setLockModal(true)
+                }
+            } catch (err) {
+                console.log('Unable to get computer details: ', err)
             }
-            else {
-                console.log("LOCKED")
-                setLockModal(true)
-            }
+
         }
         fetch();
     }, [])
 
     return (
         <Container fluid className="pt-100" style={{ background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)', minHeight: '100vh', paddingTop: '100px' }}>
+            {/* Alert Components */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -515,6 +567,7 @@ export default function ArchiveReviewLaptop() {
                                         view {tag_id} logs
                                     </h6>
                                 </div>
+                                {/* Buttons */}
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }}>
                                     <div
                                         title="Unarchive"
@@ -691,6 +744,7 @@ export default function ArchiveReviewLaptop() {
                 </Row>
             </AnimatedContent>
 
+            {/* Lock Modals */}
             <Modal show={lockModal} onHide={() => setLockModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Attention! </Modal.Title>
@@ -713,6 +767,7 @@ export default function ArchiveReviewLaptop() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Delete Modals */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Confirm Delete</Modal.Title>
@@ -730,6 +785,7 @@ export default function ArchiveReviewLaptop() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Archive Modals */}
             <Modal show={showArchiveModal} onHide={() => setShowArchiveModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Confirm Unarchive</Modal.Title>
@@ -747,12 +803,8 @@ export default function ArchiveReviewLaptop() {
                 </Modal.Footer>
             </Modal>
 
-            <Modal
-                show={showModal}
-                onHide={() => setShowModal(false)}
-                size="lg" // smaller than xl
-                centered
-            >
+            {/* Logs Modal */}
+            <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
                 <Modal.Header closeButton>
                     <Modal.Title>{modalTitle}</Modal.Title>
                 </Modal.Header>
@@ -774,23 +826,23 @@ export default function ArchiveReviewLaptop() {
                 </Modal.Footer>
             </Modal>
 
-            {
-                loading && (
-                    <div style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        width: "100vw",
-                        height: "100vh",
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        zIndex: 9999,
-                    }}>
-                        <Spinner animation="border" variant="light" />
-                    </div>
-                )
+            {/* Loading Components */}
+            {loading && (
+                <div style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 9999,
+                }}>
+                    <Spinner animation="border" variant="light" />
+                </div>
+            )
             }
         </Container >
     );

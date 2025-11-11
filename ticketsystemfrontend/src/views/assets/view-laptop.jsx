@@ -15,20 +15,26 @@ export default function Viewlaptop() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
+    //get all Laptop
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-laptop`);
-            const data = res.data || [];
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-laptop`);
+                const data = res.data || [];
 
 
-            const allactive = data.filter(e => Number(e.is_active) === 1);
-            setAllpc(allactive);
+                const allactive = data.filter(e => Number(e.is_active) === 1);
+                setAllpc(allactive);
 
-            const lmd = data.filter((pc) => pc.assigned_location === "lmd" && pc.pms_category === "laptop" && pc.is_active === 1);
-            setLmdpc(lmd);
+                const lmd = data.filter((pc) => pc.assigned_location === "lmd" && pc.pms_category === "laptop" && pc.is_active === 1);
+                setLmdpc(lmd);
 
-            const corp = data.filter((pc) => pc.assigned_location === "corp" && pc.pms_category === "laptop" && pc.is_active === 1);
-            setCorppc(corp);
+                const corp = data.filter((pc) => pc.assigned_location === "corp" && pc.pms_category === "laptop" && pc.is_active === 1);
+                setCorppc(corp);
+            } catch (err) {
+                console.log('Unable to get all Lpatop: ', err)
+            }
+
         };
         fetch();
     }, []);
@@ -41,7 +47,7 @@ export default function Viewlaptop() {
                 ? lmdpc
                 : corppc;
 
-    // 🔍 Filter data based on search input
+    // Filter data based on search input
     const filteredPCs = displayedPCs.filter((pc) => {
         const search = searchTerm.toLowerCase();
         return (
@@ -64,9 +70,10 @@ export default function Viewlaptop() {
         setCurrentPage(1);
     }, [filterStatus, searchTerm]);
 
+    //Navigate to review
     const HandleView = (pc) => {
         const params = new URLSearchParams({ id: pc.pms_id }).toString();
-        window.location.replace(`/ticketsystem/assets-laptop?${params.toString()}`);
+        navigate(`/assets-laptop?${params.toString()}`);
     }
 
     return (

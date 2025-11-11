@@ -10,6 +10,7 @@ const SubCatDepartment = ({ filterType, location, onDataReady }) => {
     const [grandTotal, setGrandTotal] = useState(0);
     const [monthlyData, setMonthlyData] = useState([]);
 
+    //Get all tickets
     useEffect(() => {
         const fetch = async () => {
             try {
@@ -110,7 +111,7 @@ const SubCatDepartment = ({ filterType, location, onDataReady }) => {
 
                     setMonthlyData(summary);
                     onDataReady && onDataReady(summary);
-                    return; // ✅ stop here (no need to continue single summary)
+                    return; // stop here (no need to continue single summary)
                 }
 
                 // 🔹 default (non-monthly)
@@ -143,7 +144,7 @@ const SubCatDepartment = ({ filterType, location, onDataReady }) => {
         fetch();
     }, [filterType, location]);
 
-    // 🔹 Render
+    // Filter
     if (filterType === "perMonth") {
         return (
             <div style={{ width: "100%", maxWidth: "100vw", overflowX: "auto" }}>
@@ -186,7 +187,6 @@ const SubCatDepartment = ({ filterType, location, onDataReady }) => {
         );
     }
 
-    // 🔹 Render default table (non-monthly)
     return (
         <div style={{ width: "100%", maxWidth: "100vw", overflowX: "auto", height: "100%", overflowY: "auto" }}>
             <Table

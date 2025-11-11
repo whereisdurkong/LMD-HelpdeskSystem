@@ -1,15 +1,18 @@
 import BTN from "layouts/ReactBits/BTN";
 import { useEffect, useState } from "react";
 import { Card, Container, Row, Col, Spinner, Button } from "react-bootstrap";
-
+import { useNavigate } from 'react-router';
 export default function Profile() {
   const [userData, setUserData] = useState(null);
+  const navigate = useNavigate();
 
+  //Get user details on localstorage
   useEffect(() => {
     const empInfo = JSON.parse(localStorage.getItem("user"));
     setUserData(empInfo);
   }, []);
 
+  //if no data. Spin loading state
   if (!userData) {
     return (
       <Container
@@ -45,12 +48,10 @@ export default function Profile() {
             My Profile
           </h2>
           <BTN label={'Change Password'}
-            onClick={() => window.location.replace("/ticketsystem/edit-password")}
+            onClick={() => navigate("/edit-password")}
             style={{ color: "#333" }}
           />
-
         </div>
-
 
         <hr />
 

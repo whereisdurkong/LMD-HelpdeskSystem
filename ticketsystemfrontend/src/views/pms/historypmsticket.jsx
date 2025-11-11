@@ -20,8 +20,8 @@ export default function HistoryPMSTicket() {
     const [currentPage, setCurrentPage] = useState(1);
     const ticketsPerPage = 10;
 
-
     const navigate = useNavigate();
+
     //Current user Data
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -29,6 +29,7 @@ export default function HistoryPMSTicket() {
 
     }, []);
 
+    //all ticket user worked
     useEffect(() => {
         if (!userData || !userData.user_name) return;
 
@@ -91,8 +92,7 @@ export default function HistoryPMSTicket() {
         fetchData();
     }, [userData]);
 
-
-
+    //Filter ticket
     const filteredTickets = toFilter.filter((ticket) => {
 
         const ticketDate = new Date(ticket.created_at || ticket.date_created || ticket.date);
@@ -114,6 +114,7 @@ export default function HistoryPMSTicket() {
         return matchesSearch && matchesStatus && matchesDate;
     });
 
+    //Ascending || descending
     const sortedTickets = [...filteredTickets].sort((a, b) => {
         const dateA = new Date(a.created_at || a.date_created || a.date); // adjust based on your DB column
         const dateB = new Date(b.created_at || b.date_created || b.date);
@@ -126,6 +127,7 @@ export default function HistoryPMSTicket() {
     const currentTickets = sortedTickets.slice(indexOfFirstTicket, indexOfLastTicket);
     const totalPages = Math.ceil(sortedTickets.length / ticketsPerPage)
 
+    //Status badge design
     const renderStatusBadge = (status) => {
         const baseStyle = {
             display: 'inline-block',
@@ -165,39 +167,7 @@ export default function HistoryPMSTicket() {
         return <span style={style}>{label}</span>;
     };
 
-    const renderUrgencyBadge = (urgency) => {
-        const baseStyle = {
-            display: 'inline-block',
-            padding: '6px 12px',
-            borderRadius: '50px',
-            border: '0.1px solid',
-            color: 'white',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
-            textAlign: 'center',
-            minWidth: '60px',
-        };
-
-        let style = {};
-        let label = urgency;
-
-        switch (urgency?.toLowerCase()) {
-            case 'low':
-                style = { ...baseStyle, backgroundColor: '#003006ff', color: '#ffffffff' }; label = 'Low'; break;
-            case 'medium':
-                style = { ...baseStyle, backgroundColor: '#9e8600ff', color: '#ffffffff' }; label = 'Medium'; break;
-            case 'high':
-                style = { ...baseStyle, backgroundColor: '#720000ff', color: '#ffffffff' }; label = 'High'; break;
-            case 'critical':
-                style = { ...baseStyle, backgroundColor: '#fd0000ff', color: '#fefefeff' }; label = 'Critical'; break;
-            default:
-                style = { ...baseStyle, backgroundColor: '#6c757d' }; break;
-        }
-
-        return <span style={style}>{label}</span>;
-    };
-
+    //navigate to the ticket
     const HandleView = (ticket) => {
         const params = new URLSearchParams({ id: ticket.pmsticket_id });
         const user = JSON.parse(localStorage.getItem('user'));
@@ -210,21 +180,16 @@ export default function HistoryPMSTicket() {
     };
 
     return (
-
         <Container
             style={{
                 padding: '20px',
                 background: '#fff',
                 borderRadius: '12px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-
             }}
         >
             {/* Search and Filter */}
-            <div
-                className="d-flex flex-wrap align-items-end gap-3 mb-4"
-                style={{ width: '100%' }}
-            >
+            <div className="d-flex flex-wrap align-items-end gap-3 mb-4" style={{ width: '100%' }}>
                 {/* Search */}
                 <div style={{ flex: '1 1 250px', minWidth: '250px' }}>
                     <Form.Label style={{ fontSize: "13px", fontWeight: 600, marginBottom: "4px" }}>
@@ -396,11 +361,10 @@ export default function HistoryPMSTicket() {
                             }}
                         >
                             <Card.Body>
-                                <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: 4 }}>#{ticket.ticket_id}</div>
-                                <div><strong>Problem/Issue:</strong> {ticket.ticket_subject}</div>
+                                <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: 4 }}>#{ticket.pmsticket_id}</div>
+                                <div><strong>Tag_id:</strong> {ticket.tag_id}</div>
                                 {/* <div><strong>Type:</strong> {ticket.ticket_type}</div> */}
                                 <div><strong>Status:</strong> {renderStatusBadge(ticket.pms_status)}</div>
-                                <div><strong>Urgency:</strong> {renderUrgencyBadge(ticket.ticket_urgencyLevel)}</div>
                                 <div style={{ marginBottom: 4 }}><strong>Description:</strong> {ticket.Description}</div>
                                 <div style={{ marginTop: '8px', color: '#003006ff', fontWeight: 500 }}>View</div>
                             </Card.Body>

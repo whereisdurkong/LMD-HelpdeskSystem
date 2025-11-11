@@ -221,7 +221,7 @@ export default function NavRight() {
           </Dropdown.Toggle>
           <Dropdown.Menu className="dropdown-menu-end pc-h-dropdown">
             <Dropdown.Item>
-              {notifContent.length === 0 && pmsnotifContent === 0 ? (
+              {notifContent.length === 0 || pmsnotifContent === 0 ? (
                 'No new notifications'
               ) : (
                 <div style={{ fontSize: '15px', color: '#333' }}>
@@ -232,12 +232,14 @@ export default function NavRight() {
                         padding: '8px 0',
                         borderBottom: '1px solid #eee'
                       }}
+                      onClick={() => HandleView(content)}
                     >
-                      <span className="text-muted" onClick={() => HandleView(content)}>
+                      <span className="text-muted" >
                         New Notification from Ticket ID: {content}
                       </span>
                     </div>
                   ))}
+
                   {pmsnotifContent.map((content, index) => (
                     <div key={index}
                       style={{
@@ -245,8 +247,9 @@ export default function NavRight() {
                         padding: '8px 0',
                         borderBottom: '1px solid #eee'
                       }}
+                      onClick={() => HandlePMSView(content)}
                     >
-                      <span className="text-muted" onClick={() => HandlePMSView(content)}>
+                      <span className="text-muted" >
                         New Notification from PMS Ticket ID: {content}
                       </span>
                     </div>

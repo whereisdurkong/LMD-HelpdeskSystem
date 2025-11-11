@@ -40,96 +40,7 @@ export default function ViewPmsTicket() {
 
     const [resolveState, setResolveState] = useState(false)
 
-
     const thumbLeft = `${10 + (value - 1) * 20}%`;
-
-    const subCategoryOptions = {
-        incident: {
-            hardware: [
-                "Desktop",
-                "Laptop",
-                "Monitor",
-                "Printer",
-                "Scanner",
-                "Printer/Scanner Combo",
-                "Peripherals (Keyboard, Mouse, Webcam, External Drive)",
-                "Docking Station",
-                "Projector",
-                "Fax Machine",
-                "Telephone",
-                "Server Hardware",
-                "UPS (Uninterruptible Power Supply)",
-                "Cabling & Ports",
-                "Others",
-            ],
-            network: [
-                "Internet Connectivity",
-                "Wi-Fi",
-                "LAN (Local Area Network)",
-                "WAN (Wide Area Network)",
-                "Server Access",
-                "Network Printer/Scanner",
-                "VPN Connection",
-                "Firewall",
-                "Router/Switch Configuration",
-                "MPLS",
-                "ISP",
-                "Network Security (Intrusion Detection/Prevention)",
-                "Bandwidth Issues",
-                "Others",
-            ],
-            software: [
-                "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
-                "Oracle (PROD/BIPUB)",
-                "Email (Setup, Creation, Error, Backup)",
-                "System Updates & Patches",
-                "Active Directory (User Creation, Login, Password)",
-                "Zoom / Video Conferencing Tools",
-                "FoxPro (Accounting System)",
-                "GEMCOM",
-                "SURPAC",
-                "FTP (Access Creation, Change Password)",
-                "PDF (Conversion, Reduce Size, Editing)",
-                "Antivirus / Security Software",
-                "Operating System (Windows, macOS, Linux)",
-                "Custom In-house Applications",
-                "Backup & Restore Tools",
-                "Cloud Services (OneDrive, Google Drive, Dropbox)",
-                "Others",
-            ],
-        },
-        request: {
-            hardware: [
-                "New Laptop Request",
-                "New Monitor Request",
-                "Printer Installation",
-                "Additional Peripherals",
-                "Hardware Upgrade",
-                "Others",
-            ],
-            network: [
-                "New VPN Access",
-                "Firewall Rule Request",
-                "New Router/Switch Setup",
-                "Bandwidth Upgrade",
-                "ISP Request",
-                "Others",
-            ],
-            software: [
-                "New Software Installation",
-                "License Renewal",
-                "User Account Creation",
-                "Database Access Request",
-                "Cloud Storage Request",
-                "Others",
-            ],
-        },
-        inquiry: {
-            hardware: ["Warranty Inquiry", "Specs Inquiry", "Others"],
-            network: ["Network Policy Inquiry", "Coverage Inquiry", "Others"],
-            software: ["Software Policy Inquiry", "Version Inquiry", "Others"],
-        },
-    };
 
     // useEffect(() => {
     //     if (loading) {
@@ -141,22 +52,25 @@ export default function ViewPmsTicket() {
     //     }
     // }, [loading])
 
+    //Get all user
     useEffect(() => {
-        axios.get(`${config.baseApi}/authentication/get-all-users`)
-            .then((res) => {
+        try {
+            axios.get(`${config.baseApi}/authentication/get-all-users`)
+                .then((res) => {
 
-                const allHD = res.data.filter(hd => hd.emp_tier === 'helpdesk');
-                setAllHDUser(allHD);
+                    const allHD = res.data.filter(hd => hd.emp_tier === 'helpdesk');
+                    setAllHDUser(allHD);
 
-            })
-            .catch((err) => {
-                console.error("Error fetching users:", err);
-            });
-
-
+                })
+                .catch((err) => {
+                    console.error("Error fetching users:", err);
+                });
+        } catch (err) {
+            console.log('Unable to get all users: ', err)
+        }
     }, [])
 
-    //Alert timeout effect
+    //Alert timeout effect 3s
     useEffect(() => {
         if (error || successful) {
             const timer = setTimeout(() => {
@@ -166,7 +80,6 @@ export default function ViewPmsTicket() {
             return () => clearTimeout(timer);
         }
     }, [error, successful]);
-
 
     // Fetch all notes for the ticket
     useEffect(() => {
@@ -198,7 +111,6 @@ export default function ViewPmsTicket() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-
                 const fetchticket = await axios.get(`${config.baseApi}/pmsticket/pmsticket-by-id`, {
                     params: { id: pmsticket_id }
                 });
@@ -213,7 +125,6 @@ export default function ViewPmsTicket() {
         };
         fetchData();
     }, [pmsticket_id]);
-
 
     // // Check if ticket status is closed
     useEffect(() => {
@@ -243,7 +154,6 @@ export default function ViewPmsTicket() {
 
 
     }, [formData.pms_status])
-
 
     // // Fetch current user data from local storage
     useEffect(() => {
@@ -282,11 +192,9 @@ export default function ViewPmsTicket() {
         }
     }, [formData.pmsticket_for]);
 
-
     //Lock Function
     useEffect(() => {
         const interval = setInterval(() => {
-
             const getUpdated = async () => {
                 try {
                     const response = await axios.get(`${config.baseApi}/pmsticket/pmsticket-by-id`, {
@@ -321,7 +229,7 @@ export default function ViewPmsTicket() {
         return () => clearInterval(interval);
     }, [pmsticket_id, currentUserData]);
 
-
+    // Handle Change
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => {
@@ -333,43 +241,27 @@ export default function ViewPmsTicket() {
         });
     };
 
-    const Test = async (e) => {
-        const response = await axios.get(`${config.baseApi}/pmsticket/pmsticket-by-id`, {
-            params: { id: pmsticket_id }
-        });
-        const ticketdata = response.data.data || response.data;
-
-
-        if (formData.pms_status === 'closed' && ticketdata.is_locked === '1') {
-            setShowCloseReasonModal(false);
-        } else if (formData.pms_status === 'closed') {
-            setShowCloseReasonModal(true);
-        }
-        else {
-            await handleSave();
-        }
-    }
-
-
+    //Check fields
     const HandleCheckerFields = async () => {
+        try {
+            const response = await axios.get(`${config.baseApi}/pmsticket/pmsticket-by-id`, {
+                params: { id: pmsticket_id }
+            });
+            const ticketdata = response.data.data || response.data;
 
-        const response = await axios.get(`${config.baseApi}/pmsticket/pmsticket-by-id`, {
-            params: { id: pmsticket_id }
-        });
-        const ticketdata = response.data.data || response.data;
-
-
-        if (formData.pms_status === 'closed' && ticketdata.is_locked === '1') {
-            setShowCloseReasonModal(false);
-        } else if (formData.pms_status === 'closed') {
-            setShowCloseReasonModal(true);
+            if (formData.pms_status === 'closed' && ticketdata.is_locked === '1') {
+                setShowCloseReasonModal(false);
+            } else if (formData.pms_status === 'closed') {
+                setShowCloseReasonModal(true);
+            }
+            else {
+                await handleSave();
+            }
+        } catch (err) {
+            console.log('Unable to get ticket details: ', err)
         }
-        else {
-            await handleSave();
-        }
+
     }
-
-
 
     //Reson why Close tikcet function
     const handleConfirmClosure = async (e) => {
@@ -407,10 +299,10 @@ export default function ViewPmsTicket() {
             setError('Failed to close ticket. Please try again.');
             setShowCloseReasonModal(false);
             setClosureReason('');
-
         }
     }
 
+    //Review function
     const handleReview = async (value, userfeedback) => {
 
         const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -463,7 +355,6 @@ export default function ViewPmsTicket() {
             console.log("Error while submitting review: ", err);
         }
     };
-
 
     // //Save updated fields
     const handleSave = async () => {
@@ -549,7 +440,7 @@ export default function ViewPmsTicket() {
 
     return (
         <Container fluid className="pt-100 pb-4" style={{ background: 'linear-gradient(to bottom, #ffe798, #b8860b)', minHeight: '100vh', paddingTop: '100px' }}>
-            {/* ALERT BAR */}
+            {/* ALERT Component */}
             {error && (
                 <div
                     className="position-fixed start-50 l translate-middle-x"
@@ -570,6 +461,7 @@ export default function ViewPmsTicket() {
                     </Alert>
                 </div>
             )}
+
             <Container className="bg-white p-4 rounded-3 shadow-sm">
                 <Row>
                     <Col lg={8}>
@@ -578,6 +470,7 @@ export default function ViewPmsTicket() {
                             <div className="d-flex justify-content-between align-items-center">
                                 <h3 className="fw-bold text-dark mb-0">PMS Ticket Details</h3>
                                 <div className="d-flex gap-2">
+                                    {/* Save Chnges */}
                                     {hasChanges && (
                                         <Button
                                             variant="primary"
@@ -606,6 +499,7 @@ export default function ViewPmsTicket() {
                                 </Form.Group>
                             ))}
                         </Row>
+
                         {/* DETAILS */}
                         <h6 className="text-muted fw-semibold mt-4 mb-2">Details</h6>
                         <Row>
@@ -725,6 +619,7 @@ export default function ViewPmsTicket() {
                         </Card>
                     </Col>
                 </Row>
+
                 {/* CLOSE TICKET */}
                 <Modal show={showCloseReasonModal} onHide={() => setShowCloseReasonModal(false)} centered>
                     <Modal.Header closeButton>
@@ -756,7 +651,7 @@ export default function ViewPmsTicket() {
                     </Modal.Footer>
                 </Modal>
 
-
+                {/* Resolve MOdal */}
                 <Modal show={resolveState} onHide={() => setResolveState(false)} centered>
                     <Modal.Header closeButton>
                         <Modal.Title>Ticket was marked Resolve</Modal.Title>
@@ -914,11 +809,10 @@ export default function ViewPmsTicket() {
                     </Modal.Footer>
                 </Modal>
 
-
             </Container>
+
+            {/* Loading Component */}
             {loading && (
-
-
                 <div
                     style={{
                         position: "fixed",

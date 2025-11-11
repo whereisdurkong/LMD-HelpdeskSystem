@@ -24,14 +24,15 @@ export default function Network() {
     const [access, setAccess] = useState(false)
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    //Loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
     // Check user access
     useEffect(() => {
@@ -87,8 +88,8 @@ export default function Network() {
         }
     }, [showModal]);
 
+    //Arhcive Function
     const handleArchive = async (id) => {
-
         try {
             setLoading(true)
             const empInfo = JSON.parse(localStorage.getItem("user"));
@@ -105,8 +106,8 @@ export default function Network() {
 
     }
 
+    //Update Function
     const handleUpdate = async () => {
-
         if (newTitle === '') {
             setLoading(false)
             setError("Please fill in title.");
@@ -136,6 +137,7 @@ export default function Network() {
         }
     }
 
+    //Add Function
     const handleSave = async () => {
         console.log("Saving Network:", newTitle, newContent);
         setLoading(false)
@@ -169,6 +171,7 @@ export default function Network() {
         }
     };
 
+    //Input field format and design
     const handleContentChange = () => {
         setNewContent(contentRef.current.innerHTML);
     };
@@ -197,6 +200,7 @@ export default function Network() {
                 paddingBottom: '20px',
             }}
         >
+            {/* Alert Componnet */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -211,6 +215,7 @@ export default function Network() {
                 <Card className="p-4 shadow-lg" style={{ borderRadius: "20px", backgroundColor: "#fff" }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="fw-bold text-dark mb-0">Network Frequently Asked Questions</h2>
+                        {/* Button */}
                         {access && (
                             <div className="d-flex gap-2">
                                 <Button variant="primary" onClick={() => navigate('/networkarchive')}>Archive</Button>
@@ -291,7 +296,7 @@ export default function Network() {
                 </Card>
             </Container>
 
-            {/* Modal */}
+            {/* Modal for Add/Edit */}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
                 <Modal.Header >
                     <Modal.Title>{editMode ? 'Edit Network Troubleshooting Step' : 'Add Network Troubleshooting Step'}</Modal.Title>
@@ -356,6 +361,8 @@ export default function Network() {
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

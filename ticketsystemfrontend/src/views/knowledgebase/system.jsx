@@ -24,14 +24,15 @@ export default function System() {
     const [access, setAccess] = useState(false)
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    // Loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
     // Check user access
     useEffect(() => {
@@ -87,6 +88,7 @@ export default function System() {
         }
     }, [showModal]);
 
+    // Archive Function
     const handleArchive = async (id) => {
 
         try {
@@ -105,6 +107,7 @@ export default function System() {
 
     }
 
+    // Update Function
     const handleUpdate = async () => {
 
         if (newTitle === '') {
@@ -136,6 +139,7 @@ export default function System() {
         }
     }
 
+    //Add Function
     const handleSave = async () => {
         console.log("Saving System:", newTitle, newContent);
 
@@ -170,6 +174,7 @@ export default function System() {
         }
     };
 
+    // INput field design and style
     const handleContentChange = () => {
         setNewContent(contentRef.current.innerHTML);
     };
@@ -198,6 +203,7 @@ export default function System() {
                 paddingBottom: '20px',
             }}
         >
+            {/* Alert Component */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -212,6 +218,7 @@ export default function System() {
                 <Card className="p-4 shadow-lg" style={{ borderRadius: "20px", backgroundColor: "#fff" }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="fw-bold text-dark mb-0">System Frequently Asked Questions</h2>
+                        {/* Button */}
                         {access && (
                             <div className="d-flex gap-2">
                                 <Button variant="primary" onClick={() => navigate('/systemarchive')}>Archive</Button>
@@ -292,7 +299,7 @@ export default function System() {
                 </Card>
             </Container>
 
-            {/* Modal */}
+            {/* Modal for Edit || Add*/}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
                 <Modal.Header >
                     <Modal.Title>{editMode ? 'Edit System Troubleshooting Step' : 'Add System Troubleshooting Step'}</Modal.Title>
@@ -358,6 +365,7 @@ export default function System() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

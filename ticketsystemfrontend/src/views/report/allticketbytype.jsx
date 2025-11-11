@@ -12,17 +12,19 @@ import {
     Tooltip,
     Legend
 } from 'chart.js';
-
+import { useNavigate } from 'react-router';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function AllTicketbyType({ filterType, showChart = true, location, onDataReady }) {
     const [chartData, setChartData] = useState(null);
     const [tickets, setTickets] = useState([]);
+    const navigate = useNavigate();
 
-    // ✅ Pagination state
+    // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
+    //Filter Function
     const isInFilter = (date) => {
         const d = new Date(date);
         const today = new Date();
@@ -57,6 +59,7 @@ export default function AllTicketbyType({ filterType, showChart = true, location
         }
     };
 
+    //Get all ticket function
     useEffect(() => {
         const fetch = async () => {
             try {
@@ -146,7 +149,7 @@ export default function AllTicketbyType({ filterType, showChart = true, location
         fetch();
     }, [filterType, location]);
 
-    // ✅ Table renderer with pagination
+    // Table renderer with pagination
     const renderTable = (title, rows) => {
         const totalPages = Math.ceil(rows.length / itemsPerPage);
         const indexOfLastItem = currentPage * itemsPerPage;
@@ -194,7 +197,7 @@ export default function AllTicketbyType({ filterType, showChart = true, location
                         {currentRows.map((t, idx) => (
                             <tr key={idx}
                                 style={{ cursor: "pointer" }}
-                                onClick={() => window.location.replace(`view-hd-ticket?id=${t.ticket_id}`)}
+                                onClick={() => navigate(`/view-hd-ticket?id=${t.ticket_id}`)}
                             >
                                 <td>{t.ticket_id}</td>
                                 <td>{t.ticket_subject}</td>
@@ -214,7 +217,6 @@ export default function AllTicketbyType({ filterType, showChart = true, location
             </div>
         );
     };
-
 
     return (
         <div style={{ width: '100%', height: '100%' }}>

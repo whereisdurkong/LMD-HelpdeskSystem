@@ -12,6 +12,7 @@ import {
     Legend
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
+import { useNavigate } from 'react-router';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -21,10 +22,12 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
     const [networkTickets, setNetworkTickets] = useState([]);
     const [softwareTickets, setSoftwareTickets] = useState([]);
     const [systemTickets, setSystemTickets] = useState([]);
+    const navigate = useNavigate();
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
+    //Filter Function
     const isInFilter = (date) => {
         const d = new Date(date);
         const today = new Date();
@@ -62,6 +65,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
         }
     };
 
+    //Get all tickets
     useEffect(() => {
         const fetch = async () => {
             try {
@@ -175,6 +179,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
         fetch();
     }, [filterType, showChart, location]);
 
+    //Table per category
     const renderTable = (title, rows) => {
         const totalPages = Math.ceil(rows.length / itemsPerPage);
         const indexOfLastItem = currentPage * itemsPerPage;
@@ -183,7 +188,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
 
         return (
             <div style={{ marginTop: "20px" }}>
-                {/* ✅ Title + Pagination in same row */}
+                {/* Title + Pagination in same row */}
                 <div className="d-flex justify-content-between align-items-center mb-2">
                     <h4 className="mb-0">{title}</h4>
                     {totalPages > 1 && (
@@ -222,7 +227,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                         {currentRows.map((t, idx) => (
                             <tr key={idx}
                                 style={{ cursor: "pointer" }}
-                                onClick={() => window.location.replace(`view-hd-ticket?id=${t.ticket_id}`)}
+                                onClick={() => navigate(`/view-hd-ticket?id=${t.ticket_id}`)}
                             >
                                 <td>{t.ticket_id}</td>
                                 <td>{t.ticket_subject}</td>

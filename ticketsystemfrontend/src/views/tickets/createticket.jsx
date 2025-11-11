@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router';
 
 export default function CreateTicket() {
   const navigate = useNavigate();
+
+  //Route of the create ticket based on their roles
   useEffect(() => {
     const empInfo = JSON.parse(localStorage.getItem('user'));
 

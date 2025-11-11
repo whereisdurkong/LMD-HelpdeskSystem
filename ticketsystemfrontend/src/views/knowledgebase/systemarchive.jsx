@@ -24,14 +24,15 @@ export default function SystemArchive() {
     const [access, setAccess] = useState(false)
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    // // Loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
     // Check user access
     useEffect(() => {
@@ -79,6 +80,8 @@ export default function SystemArchive() {
         };
         fetchData();
     }, []);
+
+    //Un-Archive Function
     const handleUnArchive = async (id) => {
 
         try {
@@ -104,6 +107,7 @@ export default function SystemArchive() {
         }
     }, [showModal]);
 
+    // Delete Function
     const handleDelete = async (id) => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         if (window.confirm("Are you sure you want to delete ?")) {
@@ -120,6 +124,7 @@ export default function SystemArchive() {
         }
     }
 
+    // Update Function
     const handleUpdate = async () => {
 
         if (newTitle === '') {
@@ -151,6 +156,7 @@ export default function SystemArchive() {
         }
     }
 
+    // Add Function
     const handleSave = async () => {
         console.log("Saving System:", newTitle, newContent);
         if (newTitle === '') {
@@ -184,6 +190,7 @@ export default function SystemArchive() {
         }
     };
 
+    // Input Field Design and Format
     const handleContentChange = () => {
         setNewContent(contentRef.current.innerHTML);
     };
@@ -212,6 +219,7 @@ export default function SystemArchive() {
                 paddingBottom: '20px',
             }}
         >
+            {/* Alert Component */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -226,6 +234,7 @@ export default function SystemArchive() {
                 <Card className="p-4 shadow-lg" style={{ borderRadius: "20px", backgroundColor: "#fff" }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="fw-bold text-dark mb-0">Archived System Questions</h2>
+                        {/* Button */}
                         {access && (
                             <div className="d-flex gap-2">
                                 <Button variant="primary" onClick={() => navigate('/system')}>System</Button>
@@ -322,7 +331,7 @@ export default function SystemArchive() {
                 </Card>
             </Container>
 
-            {/* Modal */}
+            {/* Modal for Edit || Add*/}
             <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
                 <Modal.Header >
                     <Modal.Title>{editMode ? 'Edit System Troubleshooting Step' : 'Add System Troubleshooting Step'}</Modal.Title>
@@ -388,6 +397,7 @@ export default function SystemArchive() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

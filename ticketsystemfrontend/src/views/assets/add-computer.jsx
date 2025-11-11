@@ -50,21 +50,23 @@ export default function AddComputer() {
     const desc = 'Issue: \nWhen did it start: \nHave you tried any troubleshooting steps: \nAdditional notes: ';
     const tag = 'LMD.PC'
 
+    //All Deparments
     const departmentOptions = {
         lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
         corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
     };
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    //Loading timeout 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
-
+    //Alert Component timeout 2s
     useEffect(() => {
         if (error || success) {
             const timer = setTimeout(() => {
@@ -75,7 +77,7 @@ export default function AddComputer() {
         }
     }, [error, success]);
 
-    //HD full name
+    //setting HD full name
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const Fullname = empInfo.user_name;
@@ -91,31 +93,34 @@ export default function AddComputer() {
 
     }, []);
 
-    //Fetch All users
+    //Fetch All users for the option on assigned_to
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/authentication/get-all-users`);
-            const data = res.data || [];
+            try {
+                const res = await axios.get(`${config.baseApi}/authentication/get-all-users`);
+                const data = res.data || [];
 
-            const allUser = data.filter(s => s.emp_tier === 'user')
-            setAllUser(allUser)
+                const allUser = data.filter(s => s.emp_tier === 'user')
+                setAllUser(allUser)
 
-            const allUsernames = allUser.map(u => {
-                const fname = u.emp_FirstName;
-                const lname = u.emp_LastName;
-                const first = fname.charAt(0).toUpperCase() + fname.slice(1).toLowerCase();
-                const last = lname.charAt(0).toUpperCase() + lname.slice(1).toLowerCase();
-                return first + ' ' + last
-            });
-            setUserOptions(allUsernames)
+                const allUsernames = allUser.map(u => {
+                    const fname = u.emp_FirstName;
+                    const lname = u.emp_LastName;
+                    const first = fname.charAt(0).toUpperCase() + fname.slice(1).toLowerCase();
+                    const last = lname.charAt(0).toUpperCase() + lname.slice(1).toLowerCase();
+                    return first + ' ' + last
+                });
+                setUserOptions(allUsernames)
+            } catch (err) {
+                console.log(err);
+                setError('Error: please try again later.')
+            }
+
         }
         fetch();
     }, [])
 
-
-
-
-
+    //Save new desktop/computer
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -124,54 +129,48 @@ export default function AddComputer() {
 
         const empInfo = JSON.parse(localStorage.getItem('user'));
 
+        //empty field validation
         if (!tag_id && !password && !ip_address && !processor && !memory && !storage && !monitorBrandModel && !monitorSerial) {
             setLoading(false)
             setError('All Fields are required! please try again! ')
             return
         }
-
         if (!tag_id) {
             setLoading(false);
             tagidRef.current.focus();
             setError('Tag ID is required');
             return;
         }
-
         if (tag_id === tag) {
             setLoading(false);
             tagidRef.current.focus();
             setError('Tag ID is required');
             return;
         }
-
         if (!password) {
             setLoading(false);
             passwordRef.current.focus();
             setError('Password is required');
             return;
         }
-
         if (!ip_address) {
             setLoading(false);
             ipaddressRef.current.focus();
             setError('IP Address is required');
             return;
         }
-
         if (!processor.trim()) {
             setLoading(false);
             processorRef.current.focus();
             setError('Processor is required');
             return;
         }
-
         if (!memory) {
             setLoading(false);
             memoryRef.current.focus();
             setError('Memory is required');
             return;
         }
-
         if (!storage) {
             setLoading(false);
             storageRef.current.focus();
@@ -222,7 +221,6 @@ export default function AddComputer() {
             setMonitorSerial('')
             setPMSDate('');
             setDescription('');
-            setLoading(false)
 
             window.location.replace('/ticketsystem/assets')
         } catch (err) {
@@ -231,15 +229,11 @@ export default function AddComputer() {
             setLoading(false);
             return;
         }
-
-
-
-
-
     };
 
     return (
         <Container fluid className="pt-100" style={{ background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)', minHeight: '100vh', paddingTop: '100px' }}>
+            {/* Alert Components */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -469,6 +463,7 @@ export default function AddComputer() {
                     </Col>
                 </Row>
             </AnimatedContent>
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

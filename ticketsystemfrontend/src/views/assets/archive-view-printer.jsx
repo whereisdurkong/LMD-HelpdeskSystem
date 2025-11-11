@@ -18,18 +18,22 @@ export default function ArchiveViewPrinter() {
 
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-printer`);
-            const data = res.data || [];
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-printer`);
+                const data = res.data || [];
 
 
-            const allactive = data.filter(e => Number(e.is_active) === 0);
-            setAllpc(allactive);
+                const allactive = data.filter(e => Number(e.is_active) === 0);
+                setAllpc(allactive);
 
-            const lmd = data.filter((pc) => pc.assigned_location === "lmd" && pc.pms_category === "printer" && Number(e.is_active) === 0);
-            setLmdpc(lmd);
+                const lmd = data.filter((pc) => pc.assigned_location === "lmd" && pc.pms_category === "printer" && Number(e.is_active) === 0);
+                setLmdpc(lmd);
 
-            const corp = data.filter((pc) => pc.assigned_location === "corp" && pc.pms_category === "printer" && Number(e.is_active) === 0);
-            setCorppc(corp);
+                const corp = data.filter((pc) => pc.assigned_location === "corp" && pc.pms_category === "printer" && Number(e.is_active) === 0);
+                setCorppc(corp);
+            } catch (err) {
+                console.log('Unable to fetch all printers: ', err)
+            }
         };
         fetch();
     }, []);
@@ -42,7 +46,7 @@ export default function ArchiveViewPrinter() {
                 ? lmdpc
                 : corppc;
 
-    // 🔍 Filter data based on search input
+    // Filter data based on search input
     const filteredPCs = displayedPCs.filter((pc) => {
         const search = searchTerm.toLowerCase();
         return (
@@ -65,9 +69,10 @@ export default function ArchiveViewPrinter() {
         setCurrentPage(1);
     }, [filterStatus, searchTerm]);
 
+    //Navigate thru archive
     const HandleView = (pc) => {
         const params = new URLSearchParams({ id: pc.pms_id }).toString();
-        window.location.replace(`/ticketsystem/assets-archive-printer?${params.toString()}`);
+        navigate(`/assets-archive-printer?${params.toString()}`);
     }
 
     return (

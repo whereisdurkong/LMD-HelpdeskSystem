@@ -14,7 +14,6 @@ export default function EditPassword() {
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
 
-
     const [loading, setLoading] = useState(false);
     const [successful, setSuccessful] = useState('');
     const [error, setError] = useState('');
@@ -22,17 +21,17 @@ export default function EditPassword() {
     const newPasswordRef = useRef();
     const confirmPasswordRef = useRef();
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    //Loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
-
-
+    //Alert state 6s
     useEffect(() => {
         if (error || successful) {
             const timer = setTimeout(() => {
@@ -43,9 +42,11 @@ export default function EditPassword() {
         }
     }, [error, successful]);
 
+    //Save function
     const handleSubmit = async (e) => {
         e.preventDefault();
         const empInfo = JSON.parse(localStorage.getItem("user"));
+        //Validations
         if (!newPassword) {
             setError("Password is empty!");
             newPasswordRef.current.focus()
@@ -102,7 +103,7 @@ export default function EditPassword() {
                     >
                         <Card.Body className="position-relative">
 
-                            {/* Centered alerts inside the card */}
+                            {/*Alert Components*/}
                             {(error || successful) && (
                                 <div
                                     className="position-absolute start-50 translate-middle"
@@ -196,7 +197,7 @@ export default function EditPassword() {
                 </Col>
             </Row>
 
-
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

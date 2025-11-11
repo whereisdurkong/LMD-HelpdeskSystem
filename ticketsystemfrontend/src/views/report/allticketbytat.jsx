@@ -17,6 +17,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 export default function AllTicketByTAT({ filterType }) {
     const [chartData, setChartData] = useState(null);
 
+    //Filter Function
     const isInFilter = (date) => {
         const d = new Date(date);
         const today = new Date();
@@ -60,6 +61,7 @@ export default function AllTicketByTAT({ filterType }) {
         }
     };
 
+    //Get All tickets
     useEffect(() => {
         const fetchData = async () => {
             try {

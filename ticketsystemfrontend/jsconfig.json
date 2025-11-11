@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
     "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": false,
@@ -17,7 +21,19 @@
     "jsx": "react-jsx",
     "baseUrl": "src"
   },
-  "exclude": ["node_modules", "vite.config.mjs"], // Exclude vite.config.mts
-  "include": ["src", "**/*.js", "**/*.jsx", "src/**/*"],
-  "references": [{ "path": "./jsconfig.node.json" }]
+  "exclude": [
+    "node_modules",
+    "vite.config.mjs"
+  ], // Exclude vite.config.mts
+  "include": [
+    "src",
+    "**/*.js",
+    "**/*.jsx",
+    "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "./jsconfig.node.json"
+    }
+  ]
 }

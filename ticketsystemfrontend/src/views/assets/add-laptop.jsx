@@ -54,16 +54,17 @@ export default function AddLaptop() {
         corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
     };
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
+    //Loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
-
+    //Alert state 3s
     useEffect(() => {
         if (error || success) {
             const timer = setTimeout(() => {
@@ -93,27 +94,30 @@ export default function AddLaptop() {
     //Fetch All users
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/authentication/get-all-users`);
-            const data = res.data || [];
+            try {
+                const res = await axios.get(`${config.baseApi}/authentication/get-all-users`);
+                const data = res.data || [];
 
-            const allUser = data.filter(s => s.emp_tier === 'user')
+                const allUser = data.filter(s => s.emp_tier === 'user')
 
-            const allUsernames = allUser.map(u => {
-                const fname = u.emp_FirstName;
-                const lname = u.emp_LastName;
-                const first = fname.charAt(0).toUpperCase() + fname.slice(1).toLowerCase();
-                const last = lname.charAt(0).toUpperCase() + lname.slice(1).toLowerCase();
-                return first + ' ' + last
-            });
-            setUserOptions(allUsernames)
+                const allUsernames = allUser.map(u => {
+                    const fname = u.emp_FirstName;
+                    const lname = u.emp_LastName;
+                    const first = fname.charAt(0).toUpperCase() + fname.slice(1).toLowerCase();
+                    const last = lname.charAt(0).toUpperCase() + lname.slice(1).toLowerCase();
+                    return first + ' ' + last
+                });
+                setUserOptions(allUsernames)
+            } catch (err) {
+                console.log('UNable to get all users, something went wrong');
+                return;
+            }
+
         }
         fetch();
     }, [])
 
-
-
-
-
+    //Save Function
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -122,33 +126,30 @@ export default function AddLaptop() {
 
         const empInfo = JSON.parse(localStorage.getItem('user'));
 
+        //Check empty fields
         if (!tag_id && !password && !ip_address && !processor && !memory && !storage) {
             setLoading(false)
             setError('All Fields are required! please try again! ')
             return
         }
-
         if (!tag_id) {
             setLoading(false);
             tagidRef.current.focus();
             setError('Tag ID is required');
             return;
         }
-
         if (tag_id === tag) {
             setLoading(false);
             tagidRef.current.focus();
             setError('Tag ID is required');
             return;
         }
-
         if (!password) {
             setLoading(false);
             passwordRef.current.focus();
             setError('Password is required');
             return;
         }
-
         if (!ip_address) {
             setLoading(false);
             ipaddressRef.current.focus();
@@ -167,28 +168,24 @@ export default function AddLaptop() {
             setError('Serial is required');
             return;
         }
-
         if (!processor.trim()) {
             setLoading(false);
             processorRef.current.focus();
             setError('Processor is required');
             return;
         }
-
         if (!memory) {
             setLoading(false);
             memoryRef.current.focus();
             setError('Memory is required');
             return;
         }
-
         if (!storage) {
             setLoading(false);
             storageRef.current.focus();
             setError('Storage is required');
             return;
         }
-
 
         console.log(tag_id, department, assign_to, password, ip_address, model, serial, processor, memory, storage, pms_date, description);
 
@@ -232,15 +229,12 @@ export default function AddLaptop() {
             setLoading(false);
             return;
         }
-
-
-
-
-
     };
+
 
     return (
         <Container fluid className="pt-100" style={{ background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)', minHeight: '100vh', paddingTop: '100px' }}>
+            {/* Alert Component */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -467,6 +461,8 @@ export default function AddLaptop() {
                     </Col>
                 </Row>
             </AnimatedContent>
+
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

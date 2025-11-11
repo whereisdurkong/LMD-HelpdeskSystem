@@ -11,7 +11,7 @@ import Alltickets from './alltickets';
 import Myticket from './myticket';
 import History from './history';
 import ArchivedTickets from './archivedtickets';
-
+import { useNavigate } from 'react-router';
 
 import VariableProximity from 'layouts/ReactBits/VariableProximity.jsx'
 
@@ -21,7 +21,9 @@ export default function Tickets() {
     const containerRef = useRef(null);
     const [adminaccess, setadminAccess] = useState(false);
     const [hdaccess, sethdAccess] = useState(false);
+    const navigate = useNavigate();
 
+    //Getting user role
     useEffect(() => {
         const userInfo = JSON.parse(localStorage.getItem('user'));
         if (userInfo.emp_tier === 'helpdesk') {
@@ -31,15 +33,15 @@ export default function Tickets() {
         }
     }, [])
 
+    // Naviagte tp create a ticket base on role
     const HandleRegister = () => {
         const userInfo = JSON.parse(localStorage.getItem('user'));
 
         if (userInfo.emp_tier === 'helpdesk') {
-            window.location.replace(`/ticketsystem/create-ticket-hd`)
+            navigate(`/create-ticket-hd`)
         } else if (userInfo.emp_tier === 'user') {
-            window.location.replace(`/ticketsystem/create-ticket-user`)
+            navigate(`/create-ticket-user`)
         }
-
     }
 
 
@@ -54,26 +56,32 @@ export default function Tickets() {
 
             }}
         >
-
-
             {/* Outer Center Wrapper */}
             <div style={{ maxWidth: "1500px", margin: "0 auto", }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px' }} >
-                    <div><div ref={containerRef}>
-                        <VariableProximity
-                            label={'Support Tickets'}
-                            className={'variable-proximity-demo'}
-                            style={{
-                                fontSize: '2rem', // responsive font size
-                                color: "#5d3600ff"
-                            }}
-                            fromFontVariationSettings="'wght' 800, 'opsz' 9"
-                            toFontVariationSettings="'wght' 2000, 'opsz' 30"
-                            containerRef={containerRef}
-                            radius={50}
-                            falloff="linear"
-                        />
-                    </div></div>
+                    <div>
+                        {/* <div ref={containerRef}>
+                            <VariableProximity
+                                label={'Support Tickets'}
+                                className={'variable-proximity-demo'}
+                                style={{
+                                    fontSize: '2rem', // responsive font size
+                                    color: "#5d3600ff"
+                                }}
+                                fromFontVariationSettings="'wght' 800, 'opsz' 9"
+                                toFontVariationSettings="'wght' 2000, 'opsz' 30"
+                                containerRef={containerRef}
+                                radius={50}
+                                falloff="linear"
+                            />
+                        </div> */}
+                        <h3 style={{
+                            fontSize: '2rem', // responsive font size
+                            color: "#5d3600ff"
+                        }}
+                        ><b>Support Tickets</b>
+                        </h3>
+                    </div>
                     <Button onClick={HandleRegister}>+ Create Ticket</Button>
                 </div>
                 <Tabs
@@ -104,6 +112,12 @@ export default function Tickets() {
                                     falloff="linear"
                                 />
                             </div>
+                            // <h3 style={{
+                            //     fontSize: '1rem', // responsive font size
+                            //     color: "#5d3600ff"
+                            // }}
+                            // ><b>MY TICKETS</b>
+                            // </h3>
                         }
                     >
                         <Myticket />
@@ -163,23 +177,31 @@ export default function Tickets() {
                         </Tab>
                     )}
 
-                    {hdaccess && (<Tab eventKey="all" title={<div
-                        ref={containerRef}
-                    >
-                        <VariableProximity
-                            label={'All Tickets'}
-                            className={'variable-proximity-demo'}
-                            style={{
-                                fontSize: '1rem', // responsive font size
-                                color: "#5d3600ff"
-                            }}
-                            fromFontVariationSettings="'wght' 800, 'opsz' 9"
-                            toFontVariationSettings="'wght' 2000, 'opsz' 30"
-                            containerRef={containerRef}
-                            radius={50}
-                            falloff="linear"
-                        />
-                    </div>} > <Alltickets /> </Tab>)}
+                    {hdaccess && (
+                        <Tab eventKey="all"
+                            title={
+                                <div
+                                    ref={containerRef}
+                                >
+                                    <VariableProximity
+                                        label={'All Tickets'}
+                                        className={'variable-proximity-demo'}
+                                        style={{
+                                            fontSize: '1rem', // responsive font size
+                                            color: "#5d3600ff"
+                                        }}
+                                        fromFontVariationSettings="'wght' 800, 'opsz' 9"
+                                        toFontVariationSettings="'wght' 2000, 'opsz' 30"
+                                        containerRef={containerRef}
+                                        radius={50}
+                                        falloff="linear"
+                                    />
+                                </div>
+                            }
+                        >
+                            <Alltickets />
+                        </Tab>
+                    )}
 
                     <Tab
                         eventKey="history"

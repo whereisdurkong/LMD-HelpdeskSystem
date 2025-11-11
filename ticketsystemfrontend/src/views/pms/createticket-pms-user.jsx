@@ -33,38 +33,7 @@ export default function CreatePMSUser() {
     const [assets, setAssets] = useState([]);
     const desc = 'Issue: \nWhen did it start: \nHave you tried any troubleshooting steps: \nAdditional notes: ';
 
-    useEffect(() => {
-        if (loading) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer)
-        }
-    }, [loading])
-
-
-    useEffect(() => {
-        if (error || success) {
-            const timer = setTimeout(() => {
-                setError('');
-                setSuccess('');
-            }, 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [error, success]);
-
-    useEffect(() => {
-        const empInfo = JSON.parse(localStorage.getItem('user'));
-        const Fullname = empInfo.user_name;
-        setCurrentUser(Fullname);
-
-        const first = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
-        const last = empInfo.emp_LastName.charAt(0).toUpperCase() + empInfo.emp_LastName.slice(1).toLowerCase();
-        setFullName(first + ' ' + last);
-
-    }, []);
-
-
+    //drop down design
     const customSelectStyles = {
         container: (provided) => ({
             ...provided,
@@ -102,6 +71,8 @@ export default function CreatePMSUser() {
             },
         }),
     };
+
+    //all subcategories
     const subCategoryOptions = {
         hardware: [
             'Desktop',
@@ -159,7 +130,40 @@ export default function CreatePMSUser() {
         ]
     };
 
+    //loading state 2s
+    // useEffect(() => {
+    //     if (loading) {
+    //         const timer = setTimeout(() => {
+    //             setLoading(false);
+    //         }, 2000);
+    //         return () => clearTimeout(timer)
+    //     }
+    // }, [loading])
 
+    // Alert state 3s
+    useEffect(() => {
+        if (error || success) {
+            const timer = setTimeout(() => {
+                setError('');
+                setSuccess('');
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [error, success]);
+
+    //get users details
+    useEffect(() => {
+        const empInfo = JSON.parse(localStorage.getItem('user'));
+        const Fullname = empInfo.user_name;
+        setCurrentUser(Fullname);
+
+        const first = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
+        const last = empInfo.emp_LastName.charAt(0).toUpperCase() + empInfo.emp_LastName.slice(1).toLowerCase();
+        setFullName(first + ' ' + last);
+
+    }, []);
+
+    //Handle change function
     const handleChange = (e) => {
         const { name, value, files } = e.target;
 
@@ -192,21 +196,19 @@ export default function CreatePMSUser() {
         }
     };
 
+    //save function
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
 
-
         const empInfo = JSON.parse(localStorage.getItem('user'));
 
         const errors = {};
+
+        //Empty fields validation
         if (!formData.tag_id.trim()) errors.tag_id = 'Tag ID is required';
-
-
-        console.log(
-            `tagid: ${formData.tag_id || 'empty'}, created_by: ${currentUser || 'empty'}, additional_info: ${formData.Description || 'empty'}`
-        )
+        console.log(`tagid: ${formData.tag_id || 'empty'}, created_by: ${currentUser || 'empty'}, additional_info: ${formData.Description || 'empty'}`)
         setValidationErrors(errors);
 
         if (Object.keys(errors).length > 0) {
@@ -218,7 +220,6 @@ export default function CreatePMSUser() {
         }
 
         try {
-
             setLoading(true)
             const response = await axios.post(`${config.baseApi}/pmsticket/create-ticket-user`, {
                 tag_id: formData.tag_id,
@@ -244,32 +245,36 @@ export default function CreatePMSUser() {
         }
     };
 
+    //Get all pms 
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
-            const data = res.data || [];
-            const active = data.filter(a => a.is_active === "1")
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
+                const data = res.data || [];
+                const active = data.filter(a => a.is_active === "1")
 
-            const allAssets = active.map(e => e.tag_id);
+                const allAssets = active.map(e => e.tag_id);
 
-            setAssets(active)
-            console.log(allAssets)
-
+                setAssets(active)
+                console.log(allAssets)
+            } catch (err) {
+                console.log('Unable to get all pms: ', err)
+            }
         }
         fetch();
     }, [])
-    // const options = assets.map(asset => ({ value: asset, label: asset }));
+
+    //drop down format
     const options = assets.map(asset => ({
         value: asset.tag_id,
         label: asset.tag_id,
         category: asset.pms_category
     }));
 
+    //Walkthrough 
     const handleView = () => {
         setModalTitle("Sample PMS Ticket Walkthrough");
         setModalContent(<div style={{
-            // width: "100vw",
-            // height: "100vh",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
@@ -291,10 +296,9 @@ export default function CreatePMSUser() {
         setShowModal(true);
     }
 
-
-
     return (
         <Container fluid className="d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)', minHeight: '100vh', paddingTop: '100px' }}>
+            {/* Alert Component */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -324,7 +328,7 @@ export default function CreatePMSUser() {
                         <Card className="p-4 shadow-sm">
                             <Row className="align-items-center mb-3">
                                 <Col xs="auto">
-                                    <div ref={containerRef} className="">
+                                    {/* <div ref={containerRef} className="">
                                         <VariableProximity
                                             label={'Create PMS Ticket'}
                                             className={'variable-proximity-demo'}
@@ -338,7 +342,13 @@ export default function CreatePMSUser() {
                                             radius={50}
                                             falloff="linear"
                                         />
-                                    </div>
+                                    </div> */}
+                                    <h3 style={{
+                                        fontSize: '1.5rem', // responsive font size
+                                        color: "#272727ff"
+                                    }}
+                                    ><b>Create PMS Ticket</b>
+                                    </h3>
                                     <h7
                                         style={{
                                             fontStyle: "italic",
@@ -444,97 +454,7 @@ export default function CreatePMSUser() {
                                             />
                                         </Form.Group>
                                     </Col>
-                                    <Col xs={12} md={6}>
-                                        <Form.Group hidden>
-                                            <Form.Label>Problem/Issue</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                name="ticket_subject"
-                                                value={formData.ticket_subject}
-                                                onChange={handleChange}
-                                                isInvalid={!!validationErrors.ticket_subject}
-                                            />
-                                            <Form.Control.Feedback type="invalid">{validationErrors.ticket_subject}</Form.Control.Feedback>
-                                        </Form.Group>
-                                    </Col>
-
-
                                 </Row>
-
-                                <Row className="mb-3" hidden>
-                                    <Col xs={12} md={6}>
-                                        <Form.Group>
-                                            <Form.Label>Status</Form.Label>
-                                            <Form.Control type="text" name="ticket_status" value="Open" disabled />
-                                        </Form.Group>
-                                    </Col>
-                                    <Col xs={12} md={6}>
-                                        <Form.Group>
-                                            <Form.Label>Urgency Level</Form.Label>
-                                            <Form.Select
-                                                name="ticket_urgencyLevel"
-                                                value={formData.ticket_urgencyLevel}
-                                                onChange={handleChange}
-                                                isInvalid={!!validationErrors.ticket_urgencyLevel}
-                                            >
-                                                <option value="">Select</option>
-                                                <option value="low">Low</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="high">High</option>
-                                                <option value="critical">Critical</option>
-                                            </Form.Select>
-                                            <Form.Control.Feedback type="invalid">{validationErrors.ticket_urgencyLevel}</Form.Control.Feedback>
-                                        </Form.Group>
-                                    </Col>
-                                </Row>
-
-                                <Row className="mb-3" hidden>
-                                    <Col xs={12} md={6}>
-                                        <Form.Group>
-                                            <Form.Label>Category</Form.Label>
-                                            <Form.Select
-                                                name="ticket_category"
-                                                value={formData.ticket_category}
-                                                onChange={handleChange}
-                                                isInvalid={!!validationErrors.ticket_category}
-                                            >
-                                                <option value="">Select</option>
-                                                <option value="hardware">Hardware</option>
-                                                <option value="network">Network</option>
-                                                <option value="software">Software</option>
-                                            </Form.Select>
-                                            <Form.Control.Feedback type="invalid">{validationErrors.ticket_category}</Form.Control.Feedback>
-                                        </Form.Group>
-                                    </Col>
-                                    <Col xs={12} md={6}>
-                                        <Form.Group>
-                                            <Form.Label>Subcategory</Form.Label>
-                                            <Form.Select
-                                                name="ticket_SubCategory"
-                                                value={formData.ticket_SubCategory}
-                                                onChange={handleChange}
-                                                disabled={!formData.ticket_category}
-                                                isInvalid={!!validationErrors.ticket_SubCategory}
-                                            >
-                                                <option value="">Select</option>
-                                                {subCategoryOptions[formData.ticket_category]?.map((subcat, idx) => (
-                                                    <option key={idx} value={subcat}>{subcat}</option>
-                                                ))}
-                                            </Form.Select>
-                                            <Form.Control.Feedback type="invalid">{validationErrors.ticket_SubCategory}</Form.Control.Feedback>
-                                        </Form.Group>
-                                    </Col>
-                                </Row>
-
-                                <Form.Group className="mb-3" hidden>
-                                    <Form.Label>Attachments <span className="fw-light">(optional)</span></Form.Label>
-                                    <Form.Control
-                                        type="file"
-                                        name="Attachments"
-                                        multiple
-                                        onChange={handleChange}
-                                    />
-                                </Form.Group>
 
                                 <Form.Group  >
                                     <Form.Label>Additional informations <span>(optional)</span></Form.Label>
@@ -560,6 +480,7 @@ export default function CreatePMSUser() {
                 </Row>
             </AnimatedContent>
 
+            {/* Walkthrough Modal */}
             <Modal
                 show={showModal}
                 onHide={() => setShowModal(false)}
@@ -587,6 +508,7 @@ export default function CreatePMSUser() {
                 </Modal.Footer>
             </Modal>
 
+            {/* Loading Component */}
             {loading && (
                 <div
                     style={{

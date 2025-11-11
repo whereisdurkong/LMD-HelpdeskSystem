@@ -1,7 +1,7 @@
 USE [ticket_system]
 GO
 
-/****** Object:  Table [dbo].[ticket_logs]    Script Date: 8/2/2025 3:40:12 PM ******/
+/****** Object:  Table [dbo].[ticket_logs]    Script Date: 11/10/2025 11:00:07 AM ******/
 SET ANSI_NULLS ON
 GO
 

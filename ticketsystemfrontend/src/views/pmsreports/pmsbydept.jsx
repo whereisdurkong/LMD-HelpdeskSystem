@@ -16,7 +16,7 @@ const PMSbyDept = ({ filterType, location, onDataReady, showChart = true }) => {
                 const res = await axios.get(`${config.baseApi}/pmsticket/get-all-pmsticket`);
                 let tickets = res.data || [];
 
-                // 🔹 filter by location
+                //  filter by location
                 if (location === "lmd")
                     tickets = tickets.filter(t => t.assigned_location === "lmd" && t.is_active === true);
                 else if (location === "corp")
@@ -26,7 +26,7 @@ const PMSbyDept = ({ filterType, location, onDataReady, showChart = true }) => {
 
                 const now = new Date();
 
-                // 🔹 filter by date range
+                //  filter by date range
                 if (filterType === "today") {
                     tickets = tickets.filter(t => new Date(t.created_at).toDateString() === now.toDateString());
                 } else if (filterType === "thisWeek") {
@@ -54,7 +54,7 @@ const PMSbyDept = ({ filterType, location, onDataReady, showChart = true }) => {
                     tickets = tickets.filter(t => new Date(t.created_at).getFullYear() === now.getFullYear());
                 }
 
-                // 🔹 map user → department
+                //  map user → department
                 const uniqueUsernames = [...new Set(tickets.map(ticket => ticket.pmsticket_for))];
                 const userRequests = uniqueUsernames.map(username =>
                     axios.get(`${config.baseApi}/authentication/get-by-username`, {
@@ -69,7 +69,7 @@ const PMSbyDept = ({ filterType, location, onDataReady, showChart = true }) => {
                     userDeptMap[user.user_name] = user.emp_department;
                 });
 
-                // 🔹 handle perMonth view
+                //  handle perMonth view
                 if (filterType === "perMonth") {
                     const monthLabels = [
                         "January", "February", "March", "April", "May", "June",
@@ -113,7 +113,7 @@ const PMSbyDept = ({ filterType, location, onDataReady, showChart = true }) => {
                     return;
                 }
 
-                // 🔹 ticket per dept
+                // ticket per dept
                 const deptCountTemp = {};
                 const ticketsGrouped = {};
                 let total = 0;
@@ -148,7 +148,7 @@ const PMSbyDept = ({ filterType, location, onDataReady, showChart = true }) => {
         fetch();
     }, [filterType, location]);
 
-    // 🔹 Render perMonth view
+    // Render perMonth view
     if (filterType === "perMonth") {
         return (
             <div style={{ width: "100%", maxWidth: "100vw", overflowX: "auto" }}>
@@ -191,11 +191,11 @@ const PMSbyDept = ({ filterType, location, onDataReady, showChart = true }) => {
         );
     }
 
-    // 🔹 Default Render (Summary or Detailed Tables)
+    // Default Render (Summary or Detailed Tables)
     return (
         <div style={{ width: "100%", maxWidth: "100vw", overflowX: "auto" }}>
 
-            {/* 🔸 Show Summary Table only when showChart is true */}
+            {/* Show Summary Table only when showChart is true */}
             {showChart && (
                 <Table
                     striped
@@ -227,7 +227,7 @@ const PMSbyDept = ({ filterType, location, onDataReady, showChart = true }) => {
                 </Table>
             )}
 
-            {/* 🔸 Show Detailed Tables per Department only when showChart is false */}
+            {/* Show Detailed Tables per Department only when showChart is false */}
             {!showChart && departments.map(dept => (
                 <div key={dept} style={{ marginTop: "40px" }}>
                     <h6 style={{ fontWeight: "bold", marginBottom: "10px" }}>

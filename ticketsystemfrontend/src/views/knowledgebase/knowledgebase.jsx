@@ -29,6 +29,7 @@ export default function Knowledgebase() {
         }
     };
 
+    //Items below
     const items = [
         {
             title: 'Hardware',
@@ -127,9 +128,6 @@ export default function Knowledgebase() {
                     threshold={0.1}
                     delay={0}
                 >
-
-
-
                     <Container style={{ maxWidth: '1000px', paddingTop: '10vh' }}>
                         <h1 style={{ paddingBottom: '10px' }}><b>Hi. How can we help?</b></h1>
 
@@ -200,7 +198,7 @@ export default function Knowledgebase() {
                             )}
                         </div>
 
-                        {/* {/* Troubleshooting Links */}
+                        {/* Troubleshooting Links - CHANGEABLE */}
                         <div
                             style={{
                                 marginTop: '20px',

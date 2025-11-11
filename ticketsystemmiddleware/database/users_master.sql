@@ -1,7 +1,7 @@
 USE [ticket_system]
 GO
 
-/****** Object:  Table [dbo].[users_master]    Script Date: 8/2/2025 3:40:48 PM ******/
+/****** Object:  Table [dbo].[users_master]    Script Date: 11/10/2025 11:01:13 AM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -25,6 +25,10 @@ CREATE TABLE [dbo].[users_master](
 	[updated_by] [nvarchar](100) NULL,
 	[is_active] [bit] NULL,
 	[emp_phone] [varchar](100) NULL,
+	[emp_location] [varchar](255) NULL,
+	[is_lock] [varchar](255) NULL,
+	[lock_by] [varchar](255) NULL,
+	[lock_at] [varchar](255) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[user_id] ASC

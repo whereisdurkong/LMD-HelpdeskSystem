@@ -18,7 +18,6 @@ export default function AssetLogs({ pms_id }) {
                 console.error("Error fetching ticket logs:", err);
             }
         };
-
         if (pms_id) fetchLogs();
     }, [pms_id]);
 

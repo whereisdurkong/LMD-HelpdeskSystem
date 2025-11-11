@@ -6,6 +6,7 @@ import { Card } from "react-bootstrap";
 export default function ViewTicketLogs({ ticket_id }) {
     const [logs, setLogs] = useState([]);
 
+    //Fetch all ticket logs
     useEffect(() => {
         const fetchLogs = async () => {
             try {
@@ -22,7 +23,6 @@ export default function ViewTicketLogs({ ticket_id }) {
     }, [ticket_id]);
 
     return (
-
         <Card
             style={{
                 backgroundColor: "#fffbe6",

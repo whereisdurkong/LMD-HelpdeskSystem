@@ -26,6 +26,7 @@ ChartJS.register(
 export default function AllTicketsByStatus({ filterType }) {
     const [chartData, setChartData] = useState(null);
 
+    //Filter Function
     const isInFilter = (date) => {
         const d = new Date(date);
         const today = new Date();
@@ -69,6 +70,7 @@ export default function AllTicketsByStatus({ filterType }) {
         }
     };
 
+    //Get all tickets
     useEffect(() => {
         const fetch = async () => {
             try {

@@ -22,7 +22,7 @@ import LocationTicketsChart from "./allticketbysite";
 import AllTicketbyType from "./allticketbytype";
 import AllTicketsByUser from "./allticketsbyuser";
 import FeatherIcon from "feather-icons-react";
-
+import { useNavigate } from 'react-router';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function Report() {
@@ -30,7 +30,7 @@ export default function Report() {
     const [stats, setStats] = useState([]);
     const [allTickets, setAllTickets] = useState([]);
     const [filteredTickets, setFilteredTickets] = useState([]);
-
+    const navigate = useNavigate();
     const [location, setLocation] = useState('')
 
     // Modal states
@@ -47,12 +47,16 @@ export default function Report() {
     const [ticketTypeSummary, setTicketTypeSummary] = useState(null);
     const [ticketCategorySummary, setTicketCategorySummary] = useState(null);
     const [ticketUsersSummary, setTicketUsersSummary] = useState(null);
+    const [locationFilteredTickets, setLocationFilteredTickets] = useState([]);
+
+    //Settting modal content
     const openModal = (title, content) => {
         setModalTitle(title);
         setModalContent(content);
         setShowModal(true);
     };
 
+    // Function to calculate Turnaround Time (TAT) between two dates
     const calcTAT = (start, end) => {
         const startDate = new Date(start);
         const endDate = new Date(end);
@@ -63,6 +67,7 @@ export default function Report() {
         return { diffMs, text: `${diffDays}d ${diffHours}h ${diffMinutes}m` };
     };
 
+    //Render Tablet
     const TicketsTable = ({ tickets }) => {
         const [currentPage, setCurrentPage] = useState(1);
         const itemsPerPage = 10;
@@ -92,7 +97,7 @@ export default function Report() {
                             currentTickets.map(ticket => (
                                 <tr key={ticket.ticket_id}
                                     style={{ cursor: "pointer" }}
-                                    onClick={() => window.location.replace(`view-hd-ticket?id=${ticket.ticket_id}`)}>
+                                    onClick={() => navigate(`/view-hd-ticket?id=${ticket.ticket_id}`)}>
                                     <td>{ticket.ticket_id}</td>
                                     <td>{ticket.ticket_subject}</td>
                                     <td>{ticket.ticket_status}</td>
@@ -136,8 +141,6 @@ export default function Report() {
         );
     };
 
-    const [locationFilteredTickets, setLocationFilteredTickets] = useState([]);
-
     // Fetch tickets once
     useEffect(() => {
 
@@ -156,6 +159,7 @@ export default function Report() {
         fetch();
     }, []);
 
+    //Setting tickets per site
     useEffect(() => {
         let filetered = [...allTickets];
         if (location === 'lmd') {
@@ -298,6 +302,7 @@ export default function Report() {
         });
     }, [filterType, locationFilteredTickets]);
 
+    // Calculate overall totals by summing up all values from the "stats" array
     const totalRow = stats.reduce(
         (totals, row) => {
             totals.total += row.total;
@@ -309,8 +314,7 @@ export default function Report() {
         { total: 0, resolved: 0, closed: 0, open: 0 }
     );
 
-
-
+    //Downalod Excel
     const handleDownloadExcel = async () => {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("All Reports");
@@ -478,10 +482,6 @@ export default function Report() {
         saveAs(new Blob([buffer]), "Reports.xlsx");
     };
 
-
-
-
-
     return (
         <Container fluid className="pt-100 px-3 px-md-5"
             style={{
@@ -533,10 +533,7 @@ export default function Report() {
                 </Col>
             </Row>
 
-
-
-
-            {/* ✅ Clickable Open / Not Reviewed / Closed cards */}
+            {/* Clickable Open / Not Reviewed / Closed cards */}
             <Row style={{ paddingBottom: '20px' }}>
                 <Col>
                     <div

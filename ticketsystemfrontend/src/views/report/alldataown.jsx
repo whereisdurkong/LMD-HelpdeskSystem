@@ -14,7 +14,7 @@ import {
     Tooltip,
     Legend
 } from 'chart.js';
-
+import { useNavigate } from 'react-router';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function AllDataOwn({ filterType, location, showChart = true, helpdesk }) {
@@ -26,12 +26,15 @@ export default function AllDataOwn({ filterType, location, showChart = true, hel
     const [monthlyPercentages, setMonthlyPercentages] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const navigate = useNavigate();
 
+    //Get User Information
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
         setUserData(empInfo);
     }, []);
 
+    //Date Filter
     const isInFilter = (date) => {
         const d = new Date(date);
         const today = new Date();
@@ -65,6 +68,7 @@ export default function AllDataOwn({ filterType, location, showChart = true, hel
         }
     };
 
+    //get all own tickets
     useEffect(() => {
         // if (!userData || !userData.user_name) return;
 
@@ -170,6 +174,7 @@ export default function AllDataOwn({ filterType, location, showChart = true, hel
     const currentItems = onGoingTickets.slice(indexOfFirstItem, indexOfLastItem);
     const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
+    //Setting score style
     const getColor = (value) => {
         if (value >= 80) return "#27ae60";
         if (value >= 60) return "#2ecc71";
@@ -178,8 +183,10 @@ export default function AllDataOwn({ filterType, location, showChart = true, hel
         return "#e74c3c";
     };
 
+    //Months
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+    //chart style
     const chartData = {
         labels: monthNames,
         datasets: [
@@ -192,6 +199,7 @@ export default function AllDataOwn({ filterType, location, showChart = true, hel
         ],
     };
 
+    //Chart option based on filter
     const chartOptions = {
         responsive: true,
         scales: {
@@ -312,7 +320,7 @@ export default function AllDataOwn({ filterType, location, showChart = true, hel
                                 currentItems.map((t) => (
                                     <tr key={t.ticket_id}
                                         style={{ cursor: "pointer" }}
-                                        onClick={() => window.location.replace(`view-hd-ticket?id=${t.ticket_id}`)}
+                                        onClick={() => navigate(`/view-hd-ticket?id=${t.ticket_id}`)}
                                     >
                                         <td>{t.ticket_id}</td>
                                         <td>{t.ticket_subject || "-"}</td>

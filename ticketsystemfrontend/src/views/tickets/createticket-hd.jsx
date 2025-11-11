@@ -12,6 +12,8 @@ export default function CreateTicketHD() {
     const [success, setSuccess] = useState('');
     const [validationErrors, setValidationErrors] = useState({});
     const [assets, setAssets] = useState([]);
+    const [currentUser, setCurrentUser] = useState('');
+    const [fullname, setFullName] = useState('');
     const [formData, setFormData] = useState({
         ticket_subject: '',
         ticket_status: '',
@@ -24,30 +26,10 @@ export default function CreateTicketHD() {
         created_by: '',
     });
 
-    const [currentUser, setCurrentUser] = useState('');
-    const [fullname, setFullName] = useState('');
+    //Template
     const desc = 'Issue: \nWhen did it start: \nHave you tried any troubleshooting steps: \nAdditional notes: ';
 
-    useEffect(() => {
-        if (error || success) {
-            const timer = setTimeout(() => {
-                setError('');
-                setSuccess('');
-            }, 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [error, success]);
-
-    useEffect(() => {
-        const empInfo = JSON.parse(localStorage.getItem('user'));
-        const Fullname = empInfo.user_name;
-        setCurrentUser(Fullname);
-
-        const first = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
-        const last = empInfo.emp_LastName.charAt(0).toUpperCase() + empInfo.emp_LastName.slice(1).toLowerCase();
-        setFullName(first + ' ' + last);
-    }, []);
-
+    //All Sub-cateogry
     const subCategoryOptions = {
         hardware: [
             "Desktop",
@@ -106,6 +88,8 @@ export default function CreateTicketHD() {
             "Others"
         ]
     };
+
+    //Drop down styles
     const customSelectStyles = {
         container: (provided) => ({
             ...provided,
@@ -144,6 +128,29 @@ export default function CreateTicketHD() {
         }),
     };
 
+    //Alert state 3s
+    useEffect(() => {
+        if (error || success) {
+            const timer = setTimeout(() => {
+                setError('');
+                setSuccess('');
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [error, success]);
+
+    //Setting usernames 
+    useEffect(() => {
+        const empInfo = JSON.parse(localStorage.getItem('user'));
+        const Fullname = empInfo.user_name;
+        setCurrentUser(Fullname);
+
+        const first = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
+        const last = empInfo.emp_LastName.charAt(0).toUpperCase() + empInfo.emp_LastName.slice(1).toLowerCase();
+        setFullName(first + ' ' + last);
+    }, []);
+
+    //Changes Function
     const handleChange = (e) => {
         const { name, value, files } = e.target;
 
@@ -165,6 +172,7 @@ export default function CreateTicketHD() {
         }
     };
 
+    //Save Function
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -234,21 +242,26 @@ export default function CreateTicketHD() {
         }
     };
 
+    //Get all assets
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
-            const data = res.data || [];
-            const active = data.filter(a => a.is_active === "1")
+            try {
+                const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
+                const data = res.data || [];
+                const active = data.filter(a => a.is_active === "1")
 
-            const allAssets = active.map(e => e.tag_id);
+                const allAssets = active.map(e => e.tag_id);
 
-            setAssets(active)
-            console.log(allAssets)
-
+                setAssets(active)
+                console.log(allAssets)
+            } catch (err) {
+                console.log('Unable to get all assets: ', err)
+            }
         }
         fetch();
     }, [])
 
+    //Drop down format
     const options = assets.map(asset => ({
         value: asset.tag_id,
         label: asset.tag_id,
@@ -257,6 +270,7 @@ export default function CreateTicketHD() {
 
     return (
         <Container fluid className="d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(to bottom, #ffe798ff, #b8860b)', minHeight: '100vh', paddingTop: '100px' }}>
+            {/* Alert Component */}
             {error && (
                 <div className="position-fixed start-50 translate-middle-x" style={{ top: '100px', zIndex: 9999, minWidth: '300px' }}>
                     <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>
@@ -283,10 +297,8 @@ export default function CreateTicketHD() {
                 <Row className="justify-content-center">
                     <Col xs={12} md={10} lg={8}>
                         <Card className="p-4 shadow-sm">
-
-
                             <div ref={containerRef} className="mb-3">
-                                <VariableProximity
+                                {/* <VariableProximity
                                     label={'Create Support Ticket'}
                                     className={'variable-proximity-demo'}
                                     style={{
@@ -298,7 +310,13 @@ export default function CreateTicketHD() {
                                     containerRef={containerRef}
                                     radius={50}
                                     falloff="linear"
-                                />
+                                /> */}
+                                <h3 style={{
+                                    fontSize: '1.5rem', // responsive font size
+                                    color: "#272727ff"
+                                }}
+                                ><b>Create Support Ticket</b>
+                                </h3>
                             </div>
 
                             <Form onSubmit={handleSubmit}>

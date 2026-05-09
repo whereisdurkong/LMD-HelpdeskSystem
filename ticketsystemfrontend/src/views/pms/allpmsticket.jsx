@@ -37,10 +37,22 @@ export default function AllPMStickets() {
     const [showCloseResolutionModal, setShowCloseResolutionModal] = useState(false);
     const [resolution, setResolution] = useState('');
 
-    const [openState, setOpenState] = useState(false);
-
+    const [turnaroundtime, setTurnAroundTime] = useState('');
+    const [assets, setAssets] = useState([]);
 
     const navigate = useNavigate();
+
+    //get assets
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
+            const data = res.data || [];
+            const active = data.filter(a => a.is_active === "1");
+            setAssets(active)
+        }
+        fetch();
+    }, [])
+
 
     //Alerts state 3s
     useEffect(() => {
@@ -67,6 +79,7 @@ export default function AllPMStickets() {
                 .then((res) => {
                     const activeTicket = res.data.filter((ticket) => ticket.is_active === true);
                     setAllTicket(activeTicket);
+                    console.log('Fetched tickets: ', activeTicket);
                 });
             if (user.emp_location) {
                 setEmpLocation(user.emp_location);
@@ -85,7 +98,7 @@ export default function AllPMStickets() {
                 .then((res) => {
                     setAllUsers(res.data);
                 });
-            console.log(allticket)
+
         } catch (err) {
             console.log('Unable to get all users: ', err)
         }
@@ -98,9 +111,13 @@ export default function AllPMStickets() {
         if (!userData || allticket.length === 0 || allUsers.length === 0) return;
 
         const departmentUsers = allUsers.filter(user => user.emp_department === userData.emp_department);
-        const usernamesInDept = departmentUsers.map(user => user.user_name);
 
-        const filtered = allticket.filter(ticket => usernamesInDept.includes(ticket.ticket_for));
+        const usernamesInDept = departmentUsers.map(user => user.user_name);
+        console.log('Department users:', usernamesInDept);
+
+        const filtered = allticket.filter(ticket => usernamesInDept.includes(ticket.pmsticket_for));
+        console.log('Filtered tickets for admin user:', filtered);
+
 
         if (userData.emp_role === 'admin' && userData.emp_tier === 'user') {
             setHDstate(false)
@@ -219,7 +236,7 @@ export default function AllPMStickets() {
         setSelectedTicket(ticket);
         setSelectedNewStatus(newStatus);
         //if na review na
-        if ((prevStat === 'closed' && ticket.is_reviewed === true) && (newStatus === 'open' || newStatus === 'in-progress' || newStatus === 'resolved' || newStatus === 'assigned')) {
+        if ((prevStat === 'closed' && ticket.is_reviewed === true) && (newStatus === 'open' || newStatus === 'in-progress' || newStatus === 'resolved' || newStatus === 'closed' || newStatus === 'assigned')) {
             setError('Unable to change status! Ticket was already reviewed')
         }
         //if open and not empty
@@ -232,7 +249,6 @@ export default function AllPMStickets() {
             setModalContent(`Are you sure you want to "accept" this ticket?\n\nReminder: Leave a note before committing changes.`)
             setShowModal(true)
         }
-
 
         //if assigned tapos open tas naka assign sa assgined na tao
         else if (prevStat === 'assigned' && newStatus === 'open' && (ticket.assigned_to === empInfo.user_name)) {
@@ -257,6 +273,7 @@ export default function AllPMStickets() {
             setModalContent(`Are you sure you want to change the status to "resolved"?\n\nReminder: Leave a note before committing changes.`)
             setShowModal(true)
         }
+        /////////TAT
 
 
         //in-progress changing to resolve or open And not the assign
@@ -333,10 +350,12 @@ export default function AllPMStickets() {
         }
         else if (prevStat === 'assigned' && (selectedNewStatus === 'in-progress') && selectedTicket.assigned_to === empInfo.user_name) {
             setLoading(true);
+
+
             try {
                 await axios.post(`${config.baseApi}/pmsticket/update-pmsticket`, {
                     pmsticket_id: selectedTicket.pmsticket_id,
-                    ticket_status: selectedNewStatus,
+                    pms_status: selectedNewStatus,
                     updated_by: empInfo.user_id,
                     updated_at: new Date()
                 });
@@ -349,6 +368,7 @@ export default function AllPMStickets() {
                 console.log(err)
             }
         }
+        ////TAT
         else if (prevStat === 'assigned' && (selectedNewStatus === 'resolved') && selectedTicket.assigned_to === empInfo.user_name) {
             setShowCloseResolutionModal(true)
             setShowModal(false)
@@ -404,11 +424,29 @@ export default function AllPMStickets() {
         e.preventDefault();
         setShowModal(false)
 
-
         const empInfo = JSON.parse(localStorage.getItem('user'));
+
+        if (selectedTicket.tag_id === '' || selectedTicket.tag_id === null || selectedTicket.tag_id === undefined) {
+            setError('Unable to save empty Asset Tag! Please try again!');
+            return;
+        }
+
+        const selectedAsset = assets.find(asset => asset.tag_id === selectedTicket.tag_id);
+
+        if (!selectedAsset) {
+            console.log(`${selectedTicket.tag_id} not found in assets list.`);
+            setError(`Tag ID: ${selectedTicket.tag_id} not found in assets list. `);
+            return;
+        }
+
+        if (selectedAsset.is_active === "0" || selectedAsset.is_active === false) {
+            setError('Selected asset is inactive. Please select an active asset.');
+            return;
+        }
+
         try {
             setLoading(true);
-            await axios.post(`${config.baseApi}/pmsticket/note-post`, {
+            await axios.post(`${config.baseApi}/pmsticket/note-hd-post`, {
                 notes: resolution,
                 current_user: empInfo.user_name,
                 pmsticket_id: selectedTicket.pmsticket_id
@@ -424,6 +462,17 @@ export default function AllPMStickets() {
                 updated_by: empInfo.user_id,
                 updated_at: new Date()
             });
+
+            await axios.post(`${config.baseApi}/pms/turnaround-time`, {
+                tat: turnaroundtime,
+                user_id: empInfo.user_id,
+                pmsticket_id: selectedTicket.pmsticket_id,
+                user_name: empInfo.user_name,
+                pms_category: selectedAsset.pms_category,
+                created_by: empInfo.user_name,
+                ticket_type: 'pms',
+                ticket_created_at: selectedTicket.created_at
+            })
             setSuccessful(`Succesfully changed ${selectedTicket.pmsticket_id} to in-progress!`);
             setTimeout(() => {
                 window.location.reload()
@@ -519,7 +568,7 @@ export default function AllPMStickets() {
                                 <option value="assigned">Assigned</option>
                                 <option value="in-progress">In Progress</option>
                                 {/* <option value="escalate">Escalated</option> */}
-                                <option value="resolved">Resolved</option>
+                                <option hidden value="resolved">Resolved</option>
                                 <option value="re-opened">Re-opened</option>
                                 <option value="closed">Closed</option>
                             </Form.Select>
@@ -646,6 +695,8 @@ export default function AllPMStickets() {
                             />
                         </Form.Group>
                     </Col>
+
+
                     <Col xs={12} md={4} lg={3}>
                         {/* Status Filter */}
                         <Form.Group controlId="status-filter" style={{ width: '100%' }}>
@@ -691,6 +742,8 @@ export default function AllPMStickets() {
                     {hdstate ? (
                         //HELPDESK TABLE DATA
                         <tbody style={{ fontSize: '15px', color: '#333' }}>
+                            {console.log('Rendering user table with currentTickets:', currentTickets)}
+
                             {currentTickets.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="text-center py-4">
@@ -699,6 +752,7 @@ export default function AllPMStickets() {
                                 </tr>
                             ) : (
                                 currentTickets.map((ticket, index) => (
+
                                     <tr
                                         key={index}
 
@@ -706,7 +760,7 @@ export default function AllPMStickets() {
                                         className="table-row-hover"
                                     >
                                         <td onClick={() => HandleView(ticket)}>{ticket.pmsticket_id}</td>
-                                        <td onClick={() => HandleView(ticket)}>{ticket.created_at}</td>
+                                        <td onClick={() => HandleView(ticket)}>{new Date(ticket.created_at).toLocaleString()}</td>
                                         <td onClick={() => HandleView(ticket)}>{ticket.tag_id}</td>
                                         <td onClick={() => HandleView(ticket)}>{ticket.assigned_to || '-'}</td>
                                         <td onClick={() => HandleView(ticket)} style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -719,16 +773,44 @@ export default function AllPMStickets() {
                                                     onChange={(e) => handleStatusChange(ticket, e.target.value)}
                                                     style={{ width: 170, borderRadius: 8, fontSize: 13 }}
                                                 >
-                                                    <option value="open">Open</option>
-                                                    {ticket.pms_status === 'assigned' ? (
-                                                        <option value="assigned">Assigned</option>
+                                                    {ticket.pms_status === 'open' ? (
+                                                        // When status is open, show only Open and Accept options
+                                                        <>
+                                                            <option hidden value="open">Open</option>
+                                                            <option value="assigned">Accept</option>
+                                                        </>
+                                                    ) : ticket.pms_status === 'closed' ? (
+                                                        // When status is closed, show only Close option
+                                                        <>
+                                                            <option value="closed">Close</option>
+                                                        </>
+                                                    ) : ticket.pms_status === 'resolved' ? (
+                                                        // When status is resolved, show only Accept option
+                                                        <>
+                                                            <option hidden value="resolved">Resolve</option>
+                                                            <option value="assigned">Accept</option>
+                                                        </>
+                                                    ) : ticket.pms_status === 're-opened' ? (
+                                                        // When status is re-opened, show only Accept option
+                                                        <>
+                                                            <option hidden value="re-opened">Re-Opened</option>
+                                                            <option value="assigned">Accept</option>
+                                                        </>
                                                     ) : (
-                                                        <option value="assigned">Accept</option>
+                                                        // For all other statuses, show all options
+                                                        <>
+                                                            <option value="open">Open</option>
+                                                            {ticket.pms_status === 'assigned' || ticket.pms_status === 'in-progress' ? (
+                                                                <option value="assigned">Assigned</option>
+                                                            ) : (
+                                                                <option value="assigned">Accept</option>
+                                                            )}
+                                                            <option value="in-progress">In-Progress</option>
+                                                            <option value="resolved">Resolved</option>
+                                                            <option hidden value="re-opened">Re-Opened</option>
+                                                            <option value="closed" hidden>Close</option>
+                                                        </>
                                                     )}
-                                                    <option value="in-progress">In-Progress</option>
-                                                    <option value="resolved">Resolved</option>
-                                                    <option hidden value="re-opened">Re-Opened</option>
-                                                    <option hidden value="closed">Closed</option>
                                                 </Form.Select>
                                             </div>
                                         </td>
@@ -740,6 +822,7 @@ export default function AllPMStickets() {
                     ) : (
                         //USER TABLE DATA
                         <tbody style={{ fontSize: '15px', color: '#333' }}>
+                            {console.log('Rendering user table with currentTickets:', currentTickets)}
                             {currentTickets.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="text-center py-4">
@@ -763,7 +846,7 @@ export default function AllPMStickets() {
                                         <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {ticket.description}
                                         </td>
-                                        <td>{renderStatusBadge(ticket.ticket_status)}</td>
+                                        <td>{renderStatusBadge(ticket.pms_status)}</td>
                                         <td style={{ color: '#003006ff', fontWeight: 500 }}>View</td>
                                     </tr>
                                 ))
@@ -833,7 +916,7 @@ export default function AllPMStickets() {
                 </Modal.Header>
                 <Modal.Body>
                     <Form.Group controlId="userResolution">
-                        <Form.Label>How were you able to resolve Ticket ID:{selectedTicket?.ticket_id || ''}</Form.Label>
+                        <Form.Label>How were you able to resolve Ticket ID:{selectedTicket?.pmsticket_id || ''}</Form.Label>
                         <Form.Control
                             as="textarea"
                             rows={3}
@@ -841,6 +924,25 @@ export default function AllPMStickets() {
                             onChange={(e) => setResolution(e.target.value)}
                             placeholder="Enter your troubleshooting steps here"
                         />
+                    </Form.Group>
+                    <Form.Group controlId="userResolution">
+                        <Form.Label>Turn around time(TAT)</Form.Label>
+                        <Form.Label>Category</Form.Label>
+                        <Form.Select
+                            name="ticket_tat"
+                            value={turnaroundtime ?? ''}
+                            onChange={(e) => setTurnAroundTime(e.target.value)}
+                            required
+                            disabled={!resolution}
+                        >
+                            <option value="" hidden>-</option>
+                            <option value="30m">30 minutes</option>
+                            <option value="1h">1 hour</option>
+                            <option value="2h">2 hour</option>
+                            <option value="1d">24 hour (1 day)</option>
+                            <option value="2d">48 hour (2 days)</option>
+                            <option value="3d">72 hour (3 days)</option>
+                        </Form.Select>
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>

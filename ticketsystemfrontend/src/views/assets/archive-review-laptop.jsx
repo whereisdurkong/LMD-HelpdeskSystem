@@ -31,6 +31,10 @@ export default function ArchiveReviewLaptop() {
     const [processor, setProcessor] = useState('');
     const [memory, setMemory] = useState('');
     const [storage, setStorage] = useState('');
+    const [date_purchased, setDatePurchased] = useState('');
+    const [microsoft_license, setMicrosoftLicense] = useState('');
+    const [windows_license, setWindowsLicense] = useState('');
+
     const [pms_date, setPMSDate] = useState('');
     const [description, setDescription] = useState('');
     const [originalData, setOriginalData] = useState({});
@@ -53,6 +57,7 @@ export default function ArchiveReviewLaptop() {
     const storageRef = useRef();
     const pmsdateRef = useRef();
     const descriptionRef = useRef();
+    const datepurchasedRef = useRef();
 
     const [currentUser, setCurrentUser] = useState('');
     const [fullname, setFullName] = useState('');
@@ -60,11 +65,11 @@ export default function ArchiveReviewLaptop() {
 
     const [close, setClose] = useState(false)
 
-    //all departments
     const departmentOptions = {
-        lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
-        corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
-    };
+    lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'RND', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
+    corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
+  };
+
 
     //Loading state 2s
     // useEffect(() => {
@@ -104,6 +109,9 @@ export default function ArchiveReviewLaptop() {
                 setProcessor(data.processor || '');
                 setMemory(data.memory || '');
                 setStorage(data.storage || '');
+                setDatePurchased(data.date_purchased ? new Date(data.date_purchased).toLocaleString() : '');
+                setMicrosoftLicense(data.msl || '');
+                setWindowsLicense(data.wl || '');
                 setPMSDate(data.pms_date ? new Date(data.pms_date).toLocaleString() : '');
                 setDescription(data.description || '');
                 setCurrentUser(data.created_by || '');
@@ -120,6 +128,8 @@ export default function ArchiveReviewLaptop() {
                     serial: data.serial || '',
                     processor: data.processor || '',
                     memory: data.memory || '',
+                    msl: data.msl || '',
+                    wl: data.wl || '',
                     storage: data.storage || '',
                     pms_date: data.pms_date ? new Date(data.pms_date).toLocaleString() : '',
                     description: data.description || '',
@@ -194,6 +204,9 @@ export default function ArchiveReviewLaptop() {
             processor,
             memory,
             storage,
+            date_purchased,
+            windows_license,
+            microsoft_license,
             pms_date,
             description,
             assigned_location: location
@@ -257,7 +270,7 @@ export default function ArchiveReviewLaptop() {
         const changeSummary = changeSentences.join(', ');
         console.log(`Changes made: ${changeSummary}`);
 
-        if (!tag_id || !password || !ip_address || !processor || !memory || !storage || !location) {
+        if (!tag_id || !password || !ip_address || !processor || !memory || !storage || !location || !date_purchased) {
             setLoading(false);
             setError('Please fill in all required fields.');
             return;
@@ -281,6 +294,9 @@ export default function ArchiveReviewLaptop() {
             processor,
             memory,
             storage,
+            date_purchased,
+            windows_license,
+            microsoft_license,
             pms_date,
             description,
             assigned_location: location,
@@ -602,6 +618,8 @@ export default function ArchiveReviewLaptop() {
 
                             <Form onSubmit={updateBTNChecker}>
                                 <Row className="mb-3">
+                                    <h6 className="text-muted fw-semibold mt-4 mb-2">Basic Asset Information</h6>
+
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Tag ID</Form.Label>
@@ -636,7 +654,19 @@ export default function ArchiveReviewLaptop() {
                                             <Form.Control type="text" value={password} onChange={(e) => setPassword(e.target.value)} ref={passwordRef} disabled={!close} />
                                         </Form.Group>
                                     </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Location</Form.Label>
+                                            <Form.Select value={location} onChange={(e) => setLocation(e.target.value)} disabled={!close}>
+                                                <option value="">Select Location</option>
+                                                <option value="lmd">LMD</option>
+                                                <option value="corp">CORP</option>
+                                            </Form.Select>
+                                        </Form.Group>
+                                    </Col>
                                 </Row>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Hardware Specifications</h6>
+
                                 <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         <Form.Group>
@@ -650,9 +680,7 @@ export default function ArchiveReviewLaptop() {
                                             <Form.Control type="text" value={model} onChange={(e) => setModel(e.target.value)} disabled={!close} />
                                         </Form.Group>
                                     </Col>
-                                </Row>
 
-                                <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Serial Number</Form.Label>
@@ -665,9 +693,7 @@ export default function ArchiveReviewLaptop() {
                                             <Form.Control type="text" value={processor} onChange={(e) => setProcessor(e.target.value)} ref={processorRef} disabled={!close} />
                                         </Form.Group>
                                     </Col>
-                                </Row>
 
-                                <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Memory</Form.Label>
@@ -681,6 +707,7 @@ export default function ArchiveReviewLaptop() {
                                         </Form.Group>
                                     </Col>
                                 </Row>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Purchase & Maintenance Details</h6>
 
                                 <Row className="mb-3">
                                     <Col xs={12} md={6}>
@@ -698,15 +725,33 @@ export default function ArchiveReviewLaptop() {
                                         </Form.Group>
                                     </Col>
                                     <Col xs={12} md={6}>
-                                        <Form.Group>
-                                            <Form.Label>Location</Form.Label>
-                                            <Form.Select value={location} onChange={(e) => setLocation(e.target.value)} disabled={!close}>
-                                                <option value="">Select Location</option>
-                                                <option value="lmd">LMD</option>
-                                                <option value="corp">CORP</option>
-                                            </Form.Select>
+                                        <Form.Group style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <Form.Label style={{ fontSize: '14px', marginBottom: '6px' }}>
+                                                Date Purchased
+                                            </Form.Label>
+                                            <DatePicker
+                                                placeholderText='Pick date'
+                                                selected={date_purchased ? new Date(date_purchased) : null}
+                                                onChange={(date) => setDatePurchased(date?.toLocaleString())}
+                                                dateFormat="yyyy-MM-dd"
+                                                className="form-control"
+                                                disabled={!close}
+                                            />
                                         </Form.Group>
                                     </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Microsoft License</Form.Label>
+                                            <Form.Control type="text" value={microsoft_license} onChange={(e) => setMicrosoftLicense(e.target.value)} disabled={!close} />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Windows License</Form.Label>
+                                            <Form.Control type="text" value={windows_license} onChange={(e) => setWindowsLicense(e.target.value)} disabled={!close} />
+                                        </Form.Group>
+                                    </Col>
+
                                 </Row>
 
                                 <Form.Group className="mb-3">

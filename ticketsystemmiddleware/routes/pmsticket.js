@@ -14,7 +14,7 @@ const archiver = require('archiver');
 const { assign } = require('nodemailer/lib/shared');
 const { DataTypes } = Sequelize;
 
-const DIR = './uploads';
+const DIR = './esignatures';
 
 var knex = require("knex")({
     client: 'mssql',
@@ -37,6 +37,38 @@ var db = new Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSW
     port: parseInt(process.env.APP_SERVER_PORT),
 });
 
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // Use the existing esignatures folder in your backend
+        cb(null, DIR);
+    },
+    filename: (req, file, cb) => {
+        // Use the filename that was set on the frontend
+        // It should already be in format: username-signature.extension
+        cb(null, file.originalname);
+    }
+});
+
+const upload = multer({
+    storage,
+    limits: { fileSize: 200 * 1024 * 1024 } // 200 MB
+});
+// File filter to only allow images
+const signatureFileFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('Only image files are allowed!'), false);
+    }
+};
+
+const uploadSignature = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: signatureFileFilter
+});
+
+
 const PMSTickets = db.define('pmsticket_master', {
     pmsticket_id: {
         type: DataTypes.INTEGER,
@@ -46,6 +78,9 @@ const PMSTickets = db.define('pmsticket_master', {
         type: DataTypes.STRING,
     },
     assigned_to: {
+        type: DataTypes.STRING,
+    },
+    assigned_location: {
         type: DataTypes.STRING,
     },
     returned_at: {
@@ -102,7 +137,142 @@ const PMSTickets = db.define('pmsticket_master', {
     tableName: 'pmsticket_master'
 })
 
-//Create a ticket function
+// //Create a ticket function
+// router.post('/create-ticket-user', async (req, res) => {
+//     const currentTimestamp = new Date();
+//     try {
+//         const {
+//             tag_id,
+//             Description,
+//             assigned_location,
+//             created_by,
+//             user_id
+//         } = req.body;
+
+//         // //Get the current user's information
+//         const empInfo = await knex('users_master').where('user_id', user_id).first();
+//         // // Capitalize the first letter of the user's first name
+//         const Fullname = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
+
+
+//         // // Insert the ticket into the database
+//         const [createPMSTicket] = await knex('pmsticket_master').insert({
+//             pms_status: 'open',
+//             pmsticket_for: created_by,
+//             assigned_location,
+//             tag_id,
+//             description: Description,
+//             created_by,
+//             created_at: currentTimestamp,
+//             is_active: true
+//         }).returning('pmsticket_id')
+
+//         const pmsticket_id = createPMSTicket.ticket_id || createPMSTicket;
+
+//         // Insert into ticket logs
+//         await knex('pmsticket_logs').insert({
+//             pmsticket_id: pmsticket_id,
+//             tag_id,
+//             created_by,
+//             created_at: currentTimestamp,
+//             changes_made: `User ${created_by} submmited the ticket, Ticket ID: ${pmsticket_id}`
+//         })
+
+//         console.log('Created a ticket successfully by ' + `${created_by}`)
+//         res.status(200).json({ message: 'Ticket created successfully' });
+
+//         // //Email Function
+//         try {
+//             const transporter = nodemailer.createTransport({
+//                 host: process.env.EMAIL_HOST,
+//                 secure: false,
+//                 auth: {
+//                     user: process.env.EMAIL,
+//                     pass: process.env.EMAIL_PASS
+//                 },
+//                 tls: {
+//                     rejectUnauthorized: false
+//                 }
+//             });
+//             let email = [];
+
+//             //If HD created a ticket do not send an email
+//             if (empInfo.emp_tier === 'helpdesk') {
+//                 console.log('HD created a ticket, no email sent');
+//             } else if (empInfo.emp_tier === 'user') {
+//                 console.log('User created a ticket');
+//                 const allHdEmails = await knex('users_master').select('*').whereIn('emp_tier', 'helpdesk');
+
+//                 const hdEmail = allHdEmails.map(email => email.emp_email);
+//                 email = hdEmail;
+
+//                 var start = 'Good Day, <br><br>'
+//                     + 'This is to inform you that a new PMS ticket has been successfully created in our system. Below are the details for your reference: <br><br>'
+//                     + `<b>PMS Ticket Number: </b>${pmsticket_id} <br>
+//                        <b>TagID: </b> ${tag_id} <br>
+//                        <b>Created By: </b> ${created_by} <br>
+//                        <b>Date Created: </b> ${currentTimestamp} <br>
+//                        <b>Description: </b> ${Description} <br><br>`
+
+//                 var body = 'Kindly review the PMS ticket and take the necessary action in accordance with our standard support procedures.<br>'
+//                     + `You may access and update the ticket via the <a href=${process.env.REACT_CLIENT}/view-pms-hd-ticket?id=${pmsticket_id}>Click me to view PMS ticket</a>` + ' link.<br><br>'
+
+//                 var end = 'Thank you for your prompt attention to this matter.<br><br>'
+//                 var footer = 'Best regards,<br> Lepanto Helpdesk System';
+//                 var privacy = '<br><p style="color:gray;font-size:12px">Privacy Notice: </p>' +
+//                     '<p style="color:gray;font-size:12px">The content of this email is intended for the person ' +
+//                     'or entity to which it is addressed only. This email may contain confidential information. If you are not the person ' +
+//                     'to whom this message is addressed, be aware that any use, reproduction, or distribution of this message is strictly ' +
+//                     'prohibited.</p>'
+
+//                 var useremail = `Hello ${Fullname},<br><br>`
+//                     + `Thank you for submitting a ticket. Below are the details of your PMS ticket: <br><br>`
+//                     + `<b>PMS Ticket Number: </b>${pmsticket_id} <br>
+//                        <b>Tag ID: </b> ${tag_id} <br>
+//                        <b>Created By: </b> ${created_by} <br>
+//                        <b>Date Created: </b> ${currentTimestamp} <br>
+//                        <b>Description: </b> ${Description} <br><br>`
+//                     + `Our support team will review your PMS ticket and get back to you as soon as possible.<br>`
+//                     + `You can track the status of your ticket by logging into the system and navigating to the "My Tickets" section.<br><br>`
+//                     + `If you have additional information to provide you can update your PMS ticket directly in the system.<br><br>`
+//                     + 'Best regards,<br> Lepanto Helpdesk System';
+
+//                 var UserWholeEmail = useremail + privacy
+
+//                 var wholeEmail = start + body + end + footer + privacy
+//                 //Email for all helpdesk personnel
+//                 const mailOption = {
+//                     from: process.env.EMAIL,
+//                     to: email,
+//                     subject: `Help Desk System Notification - New PMS Ticket Created`,
+//                     html: wholeEmail
+//                 }
+//                 //Email for the user who created the ticket
+//                 const userMailOption = {
+//                     from: process.env.EMAIL,
+//                     to: empInfo.emp_email,
+//                     subject: `Help Desk System Notification - New PMS Ticket Created`,
+//                     html: UserWholeEmail
+//                 }
+
+//                 await transporter.sendMail(mailOption);
+//                 await transporter.sendMail(userMailOption);
+//                 return res.status(200).json({
+//                     message: 'PMS Ticket created successfully and email sent to HD'
+//                 });
+//             }
+//         } catch (err) {
+//             console.log('Unable to submit email: ', err);
+//         }
+
+
+//     } catch (err) {
+//         console.error('Error creating ticket:', err);
+//         res.status(500).json({ error: 'Internal Server Error' });
+//     }
+// });
+
+// Create a ticket function
 router.post('/create-ticket-user', async (req, res) => {
     const currentTimestamp = new Date();
     try {
@@ -114,14 +284,18 @@ router.post('/create-ticket-user', async (req, res) => {
             user_id
         } = req.body;
 
-        // //Get the current user's information
+        // Get the current user's information
         const empInfo = await knex('users_master').where('user_id', user_id).first();
-        // // Capitalize the first letter of the user's first name
+
+        // Capitalize the first letter of the user's first name
         const Fullname = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
 
+        const ticketmasterlength = await knex('pmsticket_master').count('* as count').first();
+        const pmsticket_id = (ticketmasterlength.count || 0) + 1;
 
-        // // Insert the ticket into the database
-        const [createPMSTicket] = await knex('pmsticket_master').insert({
+        // Insert the ticket into the database
+        await knex('pmsticket_master').insert({
+            pmsticket_id,
             pms_status: 'open',
             pmsticket_for: created_by,
             assigned_location,
@@ -130,9 +304,9 @@ router.post('/create-ticket-user', async (req, res) => {
             created_by,
             created_at: currentTimestamp,
             is_active: true
-        }).returning('pmsticket_id')
+        })
 
-        const pmsticket_id = createPMSTicket.ticket_id || createPMSTicket;
+
 
         // Insert into ticket logs
         await knex('pmsticket_logs').insert({
@@ -140,13 +314,12 @@ router.post('/create-ticket-user', async (req, res) => {
             tag_id,
             created_by,
             created_at: currentTimestamp,
-            changes_made: `User ${created_by} submmited the ticket, Ticket ID: ${pmsticket_id}`
-        })
+            changes_made: `User ${created_by} submitted the ticket, Ticket ID: ${pmsticket_id}`
+        });
 
-        console.log('Created a ticket successfully by ' + `${created_by}`)
-        res.status(200).json({ message: 'Ticket created successfully' });
+        console.log('Created a ticket successfully by ' + `${created_by}`);
 
-        // //Email Function
+        // Email Function
         try {
             const transporter = nodemailer.createTransport({
                 host: process.env.EMAIL_HOST,
@@ -159,17 +332,22 @@ router.post('/create-ticket-user', async (req, res) => {
                     rejectUnauthorized: false
                 }
             });
-            let email = [];
 
-            //If HD created a ticket do not send an email
+            // If HD created a ticket do not send an email
             if (empInfo.emp_tier === 'helpdesk') {
                 console.log('HD created a ticket, no email sent');
-            } else if (empInfo.emp_tier === 'user') {
-                console.log('User created a ticket');
-                const allHdEmails = await knex('users_master').select('*').whereIn('emp_tier', 'helpdesk');
+                return res.status(200).json({
+                    message: 'Ticket created successfully by HD, no email sent'
+                });
+            }
 
-                const hdEmail = allHdEmails.map(email => email.emp_email);
-                email = hdEmail;
+            if (empInfo.emp_tier === 'user') {
+                console.log('User created a ticket');
+
+                // Get all helpdesk emails
+                const hdEmail = await knex('users_master')
+                    .where('emp_tier', 'helpdesk')
+                    .pluck('emp_email');
 
                 var start = 'Good Day, <br><br>'
                     + 'This is to inform you that a new PMS ticket has been successfully created in our system. Below are the details for your reference: <br><br>'
@@ -177,18 +355,18 @@ router.post('/create-ticket-user', async (req, res) => {
                        <b>TagID: </b> ${tag_id} <br>
                        <b>Created By: </b> ${created_by} <br>
                        <b>Date Created: </b> ${currentTimestamp} <br>
-                       <b>Description: </b> ${Description} <br><br>`
+                       <b>Description: </b> ${Description} <br><br>`;
 
                 var body = 'Kindly review the PMS ticket and take the necessary action in accordance with our standard support procedures.<br>'
-                    + `You may access and update the ticket via the <a href=192.168.4.251:3007/ticketsystem/view-pms-hd-ticket?id=${pmsticket_id}>Click me to view PMS ticket</a>` + ' link.<br><br>'
+                    + `You may access and update the ticket via the <a href=${process.env.REACT_CLIENT}/view-pms-ticket?id=${pmsticket_id}>Click me to view PMS ticket</a>` + ' link.<br><br>';
 
-                var end = 'Thank you for your prompt attention to this matter.<br><br>'
+                var end = 'Thank you for your prompt attention to this matter.<br><br>';
                 var footer = 'Best regards,<br> Lepanto Helpdesk System';
                 var privacy = '<br><p style="color:gray;font-size:12px">Privacy Notice: </p>' +
                     '<p style="color:gray;font-size:12px">The content of this email is intended for the person ' +
                     'or entity to which it is addressed only. This email may contain confidential information. If you are not the person ' +
                     'to whom this message is addressed, be aware that any use, reproduction, or distribution of this message is strictly ' +
-                    'prohibited.</p>'
+                    'prohibited.</p>';
 
                 var useremail = `Hello ${Fullname},<br><br>`
                     + `Thank you for submitting a ticket. Below are the details of your PMS ticket: <br><br>`
@@ -202,38 +380,45 @@ router.post('/create-ticket-user', async (req, res) => {
                     + `If you have additional information to provide you can update your PMS ticket directly in the system.<br><br>`
                     + 'Best regards,<br> Lepanto Helpdesk System';
 
-                var UserWholeEmail = useremail + privacy
+                var UserWholeEmail = useremail + privacy;
+                var wholeEmail = start + body + end + footer + privacy;
 
-                var wholeEmail = start + body + end + footer + privacy
-                //Email for all helpdesk personnel
+                // Email for all helpdesk personnel
                 const mailOption = {
                     from: process.env.EMAIL,
-                    to: email,
+                    to: hdEmail.join(','), // Convert array to comma-separated string
                     subject: `Help Desk System Notification - New PMS Ticket Created`,
                     html: wholeEmail
-                }
-                //Email for the user who created the ticket
+                };
+
+                // Email for the user who created the ticket
                 const userMailOption = {
                     from: process.env.EMAIL,
                     to: empInfo.emp_email,
                     subject: `Help Desk System Notification - New PMS Ticket Created`,
                     html: UserWholeEmail
-                }
+                };
 
+                // Send emails
                 await transporter.sendMail(mailOption);
                 await transporter.sendMail(userMailOption);
+
                 return res.status(200).json({
-                    message: 'PMS Ticket created successfully and email sent to HD'
+                    message: 'PMS Ticket created successfully and emails sent'
                 });
             }
         } catch (err) {
             console.log('Unable to submit email: ', err);
+            // Still return success since ticket was created, even if email failed
+            return res.status(200).json({
+                message: 'Ticket created successfully but email notification failed',
+                error: err.message
+            });
         }
-
 
     } catch (err) {
         console.error('Error creating ticket:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -429,15 +614,18 @@ router.post('/update-pmsticket', async (req, res) => {
                     const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
                     const name = ticketForInfo.user_name
                     const Fullname = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-                    var body = `This is to inform you that your PMS ticket has been resolved by our support team.<br>`
+                    var body = `We would like to inform you that the scheduled PMS has already been completed.<br>`
                         + `Below are the details of your ticket: <br><br>`
                         + `<b>PMS Ticket Number: </b>${pmsticket_id} <br>`
                         + `<b>Tag ID: </b> ${tag_id} <br>`
                         + `<b>PMS Ticket Status: </b> ${pms_status} <br><br>`
+                        + `To proceed with the acknowledgement, please ensure that the PMS ticket is closed in the system.<br>`
+                        + `Once the ticket has been closed, you may then upload your <i>e-signature</i> in the designated section to formally acknowledge the completion.<br>`
+                        + `This will serve as your official acknowledgment that the PMS has been completed. <br><br>`
                         + `To help us improve our service, we kindly request you to leave a review regarding your experience.<br>`
-                        + `<a href=192.168.4.251:3007/ticketsystem/view-pms-user-ticket?id=${pmsticket_id}>Click me to view the PMS ticket</a><br>`
+                        + `<a href=${process.env.REACT_CLIENT}/view-pms-user-ticket?id=${pmsticket_id}>Click me to view the PMS ticket</a><br>`
                         + `Your feedback is highly valuable to us and helps ensure we continue to provide the best support possible.<br><br>`
-                        + `If you have encountered any issues/problem after your PMS, you can open a support ticket for us to assist you further.<br><br>`
+                        + `If you encounter any issues or have any concerns, please feel free to open a new ticket and our team will be glad to assist you promptly.<br><br>`
                     var start = `Hello ${Fullname}, <br><br>`
                     var wholeEmail = start + body + end + privacy;
                     const mailOption = {
@@ -510,7 +698,8 @@ router.post('/update-pmsticket', async (req, res) => {
                     console.log(`Email sent to ${assignedToInfo.emp_email} regarding ticket update`);
 
                     await knex('pmsticket_master').where('pmsticket_id', pmsticket_id).update({
-                        is_reviewed: false
+                        is_reviewed: false,
+                        closed_at: currentTimestamp
                     })
                 }
             } catch (err) {
@@ -634,21 +823,23 @@ router.get('/get-all-notes/:pmsticket_id', async (req, res, next) => {
     }
 })
 
-//Adding a note to a ticket
-router.post('/note-post', async (req, res, next) => {
+// //Adding a note to a ticket
+router.post('/note-hd-post', async (req, res, next) => {
     const currentTimestamp = new Date()
 
     try {
         const {
             notes,
             current_user,
-            pmsticket_id
+            pmsticket_id,
+            signature
         } = req.body;
         await knex('pmsnotes_master').insert({
             note: notes,
             created_by: current_user,
             created_at: currentTimestamp,
-            pmsticket_id: pmsticket_id
+            pmsticket_id: pmsticket_id,
+            signature: signature
         })
 
         await knex('pmsticket_logs').insert({
@@ -666,6 +857,111 @@ router.post('/note-post', async (req, res, next) => {
         console.log('Internal Error: ', err)
     }
 })
+
+//Adding a note to a ticket
+router.post('/note-post', upload.single('signature'), async (req, res, next) => {
+    const currentTimestamp = new Date()
+
+    try {
+
+        const {
+            notes,
+            current_user,
+            pmsticket_id,
+
+        } = req.body;
+
+        console.log('File uploaded:', req.file); // Debug log
+
+        await knex('pmsnotes_master').insert({
+            note: notes,
+            created_by: current_user,
+            created_at: currentTimestamp,
+            pmsticket_id: pmsticket_id,
+        });
+
+        await knex('pmsticket_logs').insert({
+            pmsticket_id: pmsticket_id,
+            tag_id: '',
+            created_by: current_user,
+            created_at: currentTimestamp,
+            changes_made: `${current_user} placed a note "${notes}"`
+        });
+
+        console.log(`${current_user} placed a note successfully`)
+        res.status(200).json({ message: 'PLaced a note successfully' });
+
+    } catch (err) {
+        console.error('Internal Error: ', err);
+    }
+});
+
+//Adding a note to a ticket
+router.post('/note-post-signature', upload.single('signature'), async (req, res, next) => {
+    const currentTimestamp = new Date()
+
+    try {
+        // Check if file was uploaded
+        if (!req.file) {
+            return res.status(400).json({
+                message: 'No signature file uploaded',
+                error: 'File is required'
+            });
+        }
+
+        const {
+            notes,
+            current_user,
+            pmsticket_id,
+            is_pms
+        } = req.body;
+
+        // Validate required fields
+        if (!notes || !current_user || !pmsticket_id) {
+            return res.status(400).json({
+                message: 'Missing required fields'
+            });
+        }
+
+        console.log('File uploaded:', req.file); // Debug log
+
+        await knex('pmsnotes_master').insert({
+            note: notes,
+            created_by: current_user,
+            created_at: currentTimestamp,
+            pmsticket_id: pmsticket_id,
+            signature: req.file.path, // This will be the full path
+            is_pms: is_pms === 'true' // Convert string back to boolean
+        });
+
+        await knex('pmsticket_master').where({ pmsticket_id }).update({
+            signature: req.file.path // Update the ticket with the signature path
+        })
+
+        await knex('pmsticket_logs').insert({
+            pmsticket_id: pmsticket_id,
+            tag_id: '',
+            created_by: current_user,
+            created_at: currentTimestamp,
+            changes_made: `${current_user} placed a note "${notes}"`
+        });
+
+        console.log(`${current_user} placed a note successfully with signature: ${req.file.filename}`);
+        res.status(200).json({
+            message: 'Note added successfully',
+            file: req.file.filename
+        });
+
+    } catch (err) {
+        console.error('Internal Error: ', err);
+        res.status(500).json({
+            message: 'Failed to add note',
+            error: err.message
+        });
+    }
+});
+
+
 
 //Setting notify to true
 router.post('/notified-true', async (req, res) => {
@@ -929,11 +1225,13 @@ router.post('/send-notification-review', async (req, res) => {
         const Fullname = ticketname.charAt(0).toUpperCase() + ticketname.slice(1).toLowerCase();
 
         var start = `Hello ${Fullname},<br><br>`;
-        var body = `We’re glad to inform you that your PMS ticket ID: ${pmsticket_id} has been successfully resolved.`
-            + ` At this stage, you may now proceed to close the pms ticket if you are satisfied with the resolution.<br>`
-            + `We would also appreciate it if you could take a moment to provide your review or feedback on your `
-            + `experience. Your input is valuable and helps us continue improving our support services.<br><br>`
-            + `<a href={192.168.4.251:3007/ticketsystem/view-pms-user-ticket?id=${pmsticket_id}}>Submit Your Feedback Here.</a><br><br>`
+        var body = `We would like to inform you that your PMS ticket(PMS ticket ID: ${pmsticket_id}) has already been successfully resolved. <br><br>`
+
+            + ` Kindly log in to the system and close the ticket as confirmation that the PMS has been completed.<br>`
+            + `Your confirmation is important for us to properly document and finalize the process.<br><br>`
+            + `We would also greatly appreciate it if you could take a moment to leave a review or feedback<br>`
+            + `regarding the service provided. Your feedback helps us continuously improve and serve you better.<br><br>`
+            + `<a href={${process.env.REACT_CLIENT}/view-pms-user-ticket?id=${pmsticket_id}}>Submit Your Feedback Here.</a><br><br>`
             + `If you have encountered issue/problem after your PMS, you may open a support ticket for us to assist you further.<br><br>`
             + `Thank you for your cooperation and support!<br><br>`;
 

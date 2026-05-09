@@ -8,9 +8,11 @@ import FeatherIcon from 'feather-icons-react';
 import Spinner from 'react-bootstrap/Spinner';
 import { useNavigate } from "react-router-dom";
 import ViewTicketLogs from './viewticketlogs';
+import ViewTicketTAT from './viewtickettat';
 
 import CreatableSelect from 'react-select/creatable';
 import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
+
 
 export default function ViewHDTicket() {
     const [formData, setFormData] = useState({});
@@ -44,6 +46,8 @@ export default function ViewHDTicket() {
     const [showCloseResolutionModal, setShowCloseResolutionModal] = useState(false);
     const [resolution, setResolution] = useState('');
 
+    const [turnaroundtime, setTurnAroundTime] = useState('');
+
     const [collaboratorState, setCollaboratorState] = useState(false);
     const ticket_id = new URLSearchParams(window.location.search).get('id');
 
@@ -62,6 +66,10 @@ export default function ViewHDTicket() {
     const [modalTitle, setModalTitle] = useState("");
     const [modalContent, setModalContent] = useState(null);
 
+    const [showModalTAT, setShowModalTAT] = useState(false);
+    const [modalTitleTAT, setModalTitleTAT] = useState("");
+    const [modalContentTAT, setModalContentTAT] = useState(null);
+
     const [assets, setAssets] = useState([]);
     const [archBTN1, setArchBTN1] = useState(false);
     const [archBTN2, setArchBTN2] = useState(false);
@@ -69,6 +77,17 @@ export default function ViewHDTicket() {
     const empInfo = JSON.parse(localStorage.getItem('user'));
     const [lockModal, setLockModal] = useState(false)
     const [lockError, setLockError] = useState('')
+
+    const [attachmentButtonState, setAttachmentButtonState] = useState(false)
+
+    const [noteAttachments, setNoteAttachments] = useState([]);
+    const [noteAttachmentPaths, setNoteAttachmentPaths] = useState('');
+
+    // State for custom subcategories
+    const [customSubCategories, setCustomSubCategories] = useState({});
+    const [showAddSubCategoryModal, setShowAddSubCategoryModal] = useState(false);
+    const [newSubCategoryName, setNewSubCategoryName] = useState('');
+    const [isAddingSubCategory, setIsAddingSubCategory] = useState(false);
 
     //All Subcategory
     const subCategoryOptions = {
@@ -88,7 +107,6 @@ export default function ViewHDTicket() {
             "Server Hardware",
             "UPS (Uninterruptible Power Supply)",
             "Cabling & Ports",
-
             "New Laptop Request",
             "New Monitor Request",
             "Printer Installation",
@@ -120,7 +138,7 @@ export default function ViewHDTicket() {
             "Coverage Inquiry",
             "Others"
         ],
-        software: [
+        application: [
             "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
             "Email (Setup, Creation, Error, Backup)",
             "Active Directory (User Creation, Login, Password)",
@@ -139,6 +157,7 @@ export default function ViewHDTicket() {
             "Database Access Request",
             "Cloud Storage Request",
             "Software Policy Inquiry", "Version Inquiry",
+            "Doc Library Access",
             "Others",
         ],
         system: [
@@ -155,10 +174,102 @@ export default function ViewHDTicket() {
             "Edit Account",
             "Request Access",
             "System Policy Inquiry", "Assistance",
+            "Bizbox",
             "Others"
         ]
+    };
 
+    // Load custom subcategories from backend/localStorage
+    useEffect(() => {
+        const loadCustomSubCategories = async () => {
+            try {
+                const response = await axios.get(`${config.baseApi}/ticket/get-custom-subcategories`);
+                if (response.data && response.data.success) {
+                    setCustomSubCategories(response.data.categories);
+                } else {
+                    // Fallback to localStorage
+                    const saved = localStorage.getItem('customSubCategories');
+                    if (saved) {
+                        setCustomSubCategories(JSON.parse(saved));
+                    }
+                }
+            } catch (error) {
+                // Fallback to localStorage if backend fails
+                const saved = localStorage.getItem('customSubCategories');
+                if (saved) {
+                    setCustomSubCategories(JSON.parse(saved));
+                }
+            }
+        };
 
+        loadCustomSubCategories();
+    }, []);
+
+    // Save custom subcategory to backend/localStorage
+    const saveCustomSubCategory = async (category, subCategory) => {
+        const updatedCategories = {
+            ...customSubCategories,
+            [category]: [...(customSubCategories[category] || []), subCategory]
+        };
+
+        setCustomSubCategories(updatedCategories);
+
+        // Save to localStorage as fallback
+        localStorage.setItem('customSubCategories', JSON.stringify(updatedCategories));
+
+        // Try to save to backend
+        try {
+            await axios.post(`${config.baseApi}/ticket/add-custom-subcategory`, {
+                category: category,
+                subcategory: subCategory
+            });
+        } catch (error) {
+            console.error('Failed to save custom subcategory to backend:', error);
+        }
+    };
+
+    // Get current subcategory options (default + custom)
+    const getCurrentSubCategoryOptions = () => {
+        if (!formData.ticket_category) return [];
+
+        const defaultOptions = subCategoryOptions[formData.ticket_category] || [];
+        const customOptions = customSubCategories[formData.ticket_category] || [];
+
+        return [...defaultOptions, ...customOptions];
+    };
+
+    // Handle adding new subcategory
+    const handleAddSubCategory = async () => {
+        if (!newSubCategoryName.trim()) {
+            setError('Please enter a subcategory name');
+            return;
+        }
+
+        if (!formData.ticket_category) {
+            setError('Please select a category first');
+            return;
+        }
+
+        setIsAddingSubCategory(true);
+
+        try {
+            await saveCustomSubCategory(formData.ticket_category, newSubCategoryName.trim());
+
+            // Automatically select the newly added subcategory
+            setFormData(prev => ({
+                ...prev,
+                ticket_SubCategory: newSubCategoryName.trim()
+            }));
+
+            setShowAddSubCategoryModal(false);
+            setNewSubCategoryName('');
+            setSuccessful(`Subcategory "${newSubCategoryName}" added successfully!`);
+        } catch (error) {
+            setError('Failed to add subcategory. Please try again.');
+            console.error('Error adding subcategory:', error);
+        } finally {
+            setIsAddingSubCategory(false);
+        }
     };
 
     //Dropdown styles
@@ -256,13 +367,18 @@ export default function ViewHDTicket() {
                 }
             }
 
-            if (formData.ticket_status === 'resolved' || formData.ticket_status === 'closed') {
+            if (formData.ticket_status === 'resolved') {
                 setIsEditable(false);
                 if (isEditable === true) {
                     setShowAcceptButton(false)
                 } else {
                     setShowAcceptButton(true)
                 }
+            }
+
+            if (formData.ticket_status === 'closed') {
+                setIsEditable(false);
+                setShowAcceptButton(false)
             }
         }
 
@@ -390,7 +506,7 @@ export default function ViewHDTicket() {
                 setFormData(ticket);
                 setOriginalData(ticket);
 
-                if (ticket.ticket_status === 'closed' && ticket.is_reviewed === false || ticket.is_reviewed === null) {
+                if (ticket.ticket_status === 'resolved' && ticket.is_reviewed === false || ticket.is_reviewed === null) {
                     setNotifyReview(true)
                 } else {
                     setNotifyReview(false)
@@ -483,6 +599,28 @@ export default function ViewHDTicket() {
         label: asset.tag_id,
         category: asset.pms_category
     }));
+
+
+    useEffect(() => {
+        try {
+            const fetchData = async () => {
+                const res = await axios.get(`${config.baseApi}/tat/get-tat-by-id`, {
+                    params: { ticket_id: ticket_id }
+                })
+                const resData = res.data || [];
+                // const tatsupport = resData.filter(a => a.ticket_type === 'support');
+
+                console.log(resData)
+            }
+            fetchData();
+
+        } catch (err) {
+            console.log('Unable to fetch assets: ', err)
+        }
+    }, [])
+
+
+
 
     // handle text area change
     const handleNoteChange = (e) => {
@@ -675,8 +813,28 @@ export default function ViewHDTicket() {
         fetch();
     }, [])
 
+
+
     //resolved checker
     const handleChecker = async () => {
+        if (!formData.ticket_category) {
+            setLoading(false)
+            setError('Unable to save empty Category fields! Please try again!');
+            return;
+        } if (!formData.ticket_SubCategory) {
+            setLoading(false)
+            setError('Unable to save empty Sub-Category fields! Please try again!');
+            return;
+        } if (!formData.ticket_urgencyLevel) {
+            setLoading(false)
+            setError('Unable to save empty Urgency fields! Please try again!');
+            return;
+
+        } if (!formData.ticket_category || !formData.ticket_SubCategory || !formData.ticket_urgencyLevel) {
+            setLoading(false)
+            setError('Unable to save empty fields! Please try again!');
+            return;
+        }
         if (formData.ticket_status === 'resolved') {
             setShowCloseResolutionModal(true)
         } else (
@@ -686,9 +844,26 @@ export default function ViewHDTicket() {
 
     //resolution function
     const HandleResolution = async (e) => {
+
+        console.log('TAT:' + turnaroundtime)
         e.preventDefault();
 
         const empInfo = JSON.parse(localStorage.getItem('user'));
+
+        console.log({
+            'tat': turnaroundtime,
+            'user_id': empInfo.user_id,
+            'ticket_id': ticket_id,
+            'user_name': empInfo.user_name,
+            'category': formData.ticket_category,
+            'sub_category': formData.ticket_SubCategory
+        })
+
+        if (!turnaroundtime) {
+            setError('Unable to save empty Turn Around Time! Please try again!');
+            return
+        }
+
         try {
             setLoading(true);
             await axios.post(`${config.baseApi}/ticket/note-post`, {
@@ -702,6 +877,20 @@ export default function ViewHDTicket() {
                 user_id: empInfo.user_id
             })
 
+            await axios.post(`${config.baseApi}/ticket/turnaround-time`, {
+                tat: turnaroundtime,
+                user_id: empInfo.user_id,
+                ticket_id: ticket_id,
+                user_name: empInfo.user_name,
+                category: formData.ticket_category,
+                sub_category: formData.ticket_SubCategory,
+                created_by: empInfo.user_name,
+                ticket_type: 'support',
+                ticket_created_at: formData.created_at
+            })
+
+
+
             setResolution('');
             console.log('Submitted a resolution succesfully');
             handleSave();
@@ -710,6 +899,12 @@ export default function ViewHDTicket() {
         }
 
     }
+
+    // Add this function before the handleSave function
+    const handleNoteFileChange = (e) => {
+        const files = Array.from(e.target.files);
+        setNoteAttachments(files);
+    };
 
     //SAve Function
     const handleSave = async () => {
@@ -856,18 +1051,70 @@ export default function ViewHDTicket() {
 
                 }
 
-                // Case 3: If status changed to open from another status → reset assigned_to
-                // if (originalData.ticket_status !== 'open' && formData.ticket_status === 'open') {
-                //     console.log('CHANGED TO OPEN → clearing assigned_to');
-                //     await axios.post(`${config.baseApi}/ticket/update-ticket-assigned`, {
-                //         assigned_to: '',
-                //         ticket_status: 'open',
-                //         updated_by: empInfo.user_id,
-                //         ticket_id: formData.ticket_id
-                //     });
-                //     window.location.reload()
-                // }
-                console.log('asdasdasdasd')
+
+                if (notes && notes !== template) {
+                    const empInfo = JSON.parse(localStorage.getItem('user'));
+                    try {
+                        setLoading(true);
+
+                        // Create FormData for file upload
+                        const formData = new FormData();
+                        formData.append('notes', notes);
+                        formData.append('current_user', empInfo.user_name);
+                        formData.append('ticket_id', ticket_id);
+
+                        // Append files if they exist
+                        if (noteAttachments.length > 0) {
+                            noteAttachments.forEach(file => {
+                                formData.append('note_upload_path', file);
+                            });
+                            console.log('Sending files:', noteAttachments.map(f => f.name));
+                        }
+
+                        console.log('@@@@@@@@@@@@@@@@@@@@@', formData)
+
+                        // Send the request with FormData and wait for completion
+                        const response = await axios.post(`${config.baseApi}/ticket/note-post`, formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            },
+                            onUploadProgress: (progressEvent) => {
+                                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                                console.log(`Upload progress: ${percentCompleted}%`);
+                            }
+                        });
+
+                        console.log('Note submitted successfully:', response.data);
+
+                        // Clear after successful save
+                        setNoteAlert(false);
+                        setNotes(template);
+                        setNoteAttachments([]);
+                        setAttachmentButtonState(false);
+
+                        // Refresh notes list - wait for this to complete
+                        const updatedNotes = await axios.get(`${config.baseApi}/ticket/get-all-notes/${ticket_id}`);
+                        setAllNotes(updatedNotes.data);
+
+                        setSuccessful('Note added successfully');
+
+
+
+                        // Wait additional 2 seconds to ensure everything is processed
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        // Now reload the page
+                        window.location.reload();
+
+                    } catch (err) {
+                        setLoading(false);
+                        console.error('Unable to submit note: ', err);
+                        setError('Failed to submit note: ' + (err.response?.data?.error || err.message));
+                    }
+                }
+
+
+
                 setLoading(false)
                 setSuccessful('Ticket updated successfully.');
                 setOriginalData(formData);
@@ -893,42 +1140,14 @@ export default function ViewHDTicket() {
             }
 
         }
-
-        if (notes) {
-            const empInfo = JSON.parse(localStorage.getItem('user'));
-            try {
-                if (notes === template) {
-                    setNoteAlert(true)
-                } else {
-                    setLoading(true);
-
-                    await axios.post(`${config.baseApi}/ticket/note-post`, {
-                        notes,
-                        current_user: empInfo.user_name,
-                        ticket_id: ticket_id
-                    });
-
-                    await axios.post(`${config.baseApi}/ticket/notified-true`, {
-                        ticket_id: ticket_id,
-                        user_id: empInfo.user_id
-                    })
-                    setNoteAlert(false);
-                    setNotes('');
-                    console.log('Submitted a note succesfully');
-                    window.location.reload();
-                }
-            } catch (err) {
-                console.log('Unable to submit note: ', err)
-            }
-        }
-
     };
 
-    //Atachment view
     const renderAttachment = () => {
         if (!formData.Attachments) return <div className="text-muted fst-italic">No attachments</div>;
 
-        const filePaths = formData.Attachments.split(',');
+        // Check if separator is semicolon or comma
+        const separator = formData.Attachments.includes(';') ? ';' : ',';
+        const filePaths = formData.Attachments.split(separator);
 
         const getFileIcon = (filename) => {
             const ext = filename.split('.').pop().toLowerCase();
@@ -941,9 +1160,14 @@ export default function ViewHDTicket() {
         return (
             <div className="d-flex flex-column">
                 {filePaths.map((filePath, idx) => {
-                    const fileName = filePath.split('\\').pop().split('/').pop();
+                    // Clean up the file path
+                    let cleanPath = filePath.trim();
+                    // Ensure consistent path separators and remove leading slashes
+                    cleanPath = cleanPath.replace(/^[\\/]+/, '').replace(/\\/g, '/');
+
+                    const fileName = cleanPath.split('/').pop();
                     const shortName = fileName.length > 25 ? fileName.slice(0, 25) + '...' : fileName;
-                    const fileUrl = `${config.baseApi}/${filePath.replace(/\\/g, '/')}`;
+                    const fileUrl = `${config.baseApi}/${cleanPath}`;
 
                     return (
                         <Card key={idx} className="shadow-sm border-0 mb-1" style={{ backgroundColor: '#fdedd3ff' }}>
@@ -1028,12 +1252,61 @@ export default function ViewHDTicket() {
         }
     }
 
-    //Open modal walkthrough
+    //Open modal logs
     const HandleView = () => {
         setModalTitle("Ticket Logs");
         setModalContent(<ViewTicketLogs ticket_id={ticket_id} />);
         setShowModal(true);
     };
+
+    //Open modal TAT
+    const HandleViewTAT = () => {
+        setModalTitleTAT("Ticket Turn Around Time Details");
+        setModalContentTAT(<ViewTicketTAT ticket_id={ticket_id} />);
+        setShowModalTAT(true);
+    };
+
+
+    const renderNoteAttachments = (attachmentPath) => {
+        if (!attachmentPath) return null;
+
+        // Split by semicolon and space (your format)
+        const separator = attachmentPath.includes(';') ? ';' : ',';
+        const filePaths = attachmentPath.split(separator).filter(path => path.trim());
+
+        if (filePaths.length === 0) return null;
+
+        const getFileIcon = (filename) => {
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return <FaFileImage size={20} className="text-primary" />;
+            if (['pdf'].includes(ext)) return <FaFilePdf size={20} className="text-danger" />;
+            if (['doc', 'docx'].includes(ext)) return <FaFileWord size={20} className="text-info" />;
+            return <FaFileAlt size={20} className="text-secondary" />;
+        };
+
+        return (
+            <div className="mt-2">
+                <small className="text-muted">Attachments:</small>
+                {filePaths.map((filePath, idx) => {
+                    let cleanPath = filePath.trim().replace(/^[\\/]+/, '').replace(/\\/g, '/');
+                    const fileName = cleanPath.split('/').pop();
+                    const fileUrl = `${config.baseApi}/${cleanPath}`;
+
+                    return (
+                        <div key={idx} className="mt-1">
+                            <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                                <div className="d-flex align-items-center">
+                                    <div className="me-2">{getFileIcon(fileName)}</div>
+                                    <small>{fileName.length > 30 ? fileName.slice(0, 30) + '...' : fileName}</small>
+                                </div>
+                            </a>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
 
     return (
         <Container
@@ -1067,6 +1340,42 @@ export default function ViewHDTicket() {
                 </div>
             )}
 
+            {/* Modal for adding new subcategory */}
+            <Modal show={showAddSubCategoryModal} onHide={() => !isAddingSubCategory && setShowAddSubCategoryModal(false)} centered>
+                <Modal.Header closeButton={!isAddingSubCategory}>
+                    <Modal.Title>Add New Subcategory</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form.Group>
+                        <Form.Label>Category</Form.Label>
+                        <Form.Control
+                            type="text"
+                            value={formData.ticket_category ? formData.ticket_category.charAt(0).toUpperCase() + formData.ticket_category.slice(1) : ''}
+                            disabled
+                        />
+                    </Form.Group>
+                    <Form.Group className="mt-3">
+                        <Form.Label>New Subcategory Name</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Enter new subcategory"
+                            value={newSubCategoryName}
+                            onChange={(e) => setNewSubCategoryName(e.target.value)}
+                            disabled={isAddingSubCategory}
+                            autoFocus
+                        />
+                    </Form.Group>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowAddSubCategoryModal(false)} disabled={isAddingSubCategory}>
+                        Cancel
+                    </Button>
+                    <Button variant="primary" onClick={handleAddSubCategory} disabled={isAddingSubCategory}>
+                        {isAddingSubCategory ? 'Adding...' : 'Add Subcategory'}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
             <AnimatedContent
                 distance={100}
                 direction="vertical"
@@ -1087,20 +1396,43 @@ export default function ViewHDTicket() {
                                     <Row className="align-items-center">
                                         <Col xs="auto">
                                             <h3 className="fw-bold text-dark mb-0">Support Ticket Details</h3>
-                                            <h7
-                                                style={{
-                                                    fontStyle: "italic",
-                                                    color: "#2c7e36ff",
-                                                    cursor: "pointer",
-                                                    textDecoration: "none",
-                                                }}
-                                                onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
-                                                onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
-                                                onClick={HandleView}
-                                            >
-                                                view ticket logs
-                                            </h7>
+                                            <Row className="align-items-center g-1">
+                                                <Col xs="auto">
+                                                    <h7
+                                                        style={{
+                                                            fontStyle: "italic",
+                                                            color: "#2c7e36ff",
+                                                            cursor: "pointer",
+                                                            textDecoration: "none",
+                                                        }}
+                                                        onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
+                                                        onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+                                                        onClick={HandleView}
+                                                    >
+                                                        view logs
+                                                    </h7>
+                                                </Col>
+                                                <Col xs="auto">|</Col>
+                                                <Col xs="auto">
+                                                    <h7
+                                                        style={{
+                                                            fontStyle: "italic",
+                                                            color: "#2c7e36ff",
+                                                            cursor: "pointer",
+                                                            textDecoration: "none",
+                                                        }}
+                                                        onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
+                                                        onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+                                                        onClick={HandleViewTAT}
+                                                    >
+                                                        view TAT details
+                                                    </h7>
+                                                </Col>
+
+
+                                            </Row>
                                         </Col>
+
                                         {/* Button */}
                                         {archiveTextState && (
                                             <Col xs="auto">
@@ -1283,36 +1615,6 @@ export default function ViewHDTicket() {
 
                                         {/* Employee Select */}
                                         <div style={{ flex: 1 }}>
-                                            {/* <Select
-                                            name="ticket_for"
-                                            value={
-                                                allUser.find(u => u.user_name === formData.ticket_for)
-                                                    ? {
-                                                        value: formData.ticket_for,
-                                                        label: `${allUser.find(u => u.user_name === formData.ticket_for).emp_FirstName} ${allUser.find(u => u.user_name === formData.ticket_for).emp_LastName}`
-                                                    }
-                                                    : null
-                                            }
-                                            onChange={option => {
-                                                handleChange({
-                                                    target: {
-                                                        name: 'ticket_for',
-                                                        value: option ? option.value : ''
-                                                    }
-                                                });
-                                                setShowUserCard(false); // hide card when changing employee
-                                            }}
-                                            options={allUser.map(user => ({
-                                                value: user.user_name,
-                                                label: `${user.emp_FirstName} ${user.emp_LastName}`
-                                            }))}
-                                            isDisabled={!isEditable}
-                                            isClearable
-                                            placeholder="Select Employee"
-                                            styles={customSelectStyles}
-                                            classNamePrefix="react-select"
-                                        /> */}
-
                                             <Select
                                                 name="ticket_for"
                                                 value={
@@ -1418,61 +1720,6 @@ export default function ViewHDTicket() {
                                             />
                                         </div>
                                     </InputGroup>
-
-
-                                    {/* {hdUser?.emp_FirstName && hdUser?.emp_LastName ? (
-                                    <InputGroup >
-                                        <InputGroup.Text>
-                                            <FeatherIcon icon="user" />
-                                        </InputGroup.Text>
-                                        <Form.Control
-                                            name="assigned_to"
-                                            value={`${hdUser.emp_FirstName} ${hdUser.emp_LastName}`}
-                                            disabled
-                                        />
-                                    </InputGroup>
-                                ) : (
-                                    <InputGroup style={{ height: '43px' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <InputGroup.Text>
-                                                <FeatherIcon icon="user" />
-                                            </InputGroup.Text>
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <Select
-                                                name="assigned_to"
-                                                placeholder="Select Employee"
-                                                // value={`${hdUser.emp_FirstName} ${hdUser.emp_LastName}`}
-                                                value={
-                                                    allHDUser.find(u => u.user_name === formData.assigned_to)
-                                                        ? {
-                                                            value: formData.assigned_to,
-                                                            label: `${allHDUser.find(u => u.user_name === formData.assigned_to).emp_FirstName} ${allHDUser.find(u => u.user_name === formData.assigned_to).emp_LastName}`
-                                                        }
-                                                        : null
-                                                }
-
-                                                onChange={option => {
-                                                    handleChange({
-                                                        target: {
-                                                            name: 'assigned_to',
-                                                            value: option ? option.value : ''
-                                                        }
-                                                    })
-                                                }
-                                                }
-                                                options={allHDUser.map(u => ({
-                                                    label: `${u.emp_FirstName} ${u.emp_LastName}`,
-                                                    value: u.user_name,
-                                                }))}
-                                                isClearable
-                                                styles={customSelectStyles}
-                                                classNamePrefix="react-select"
-                                            />
-                                        </div>
-                                    </InputGroup>
-                                )} */}
-
                                 </Col>
                                 {/* Collaborators */}
                                 {collaboratorState && (
@@ -1642,28 +1889,46 @@ export default function ViewHDTicket() {
                                         <option value="" hidden>-</option>
                                         <option value="hardware">Hardware</option>
                                         <option value="network">Network</option>
-                                        <option value="software">Software</option>
+                                        <option value="application">Application</option>
                                         <option value="system">System</option>
                                     </Form.Select>
                                 </Form.Group>
                                 <Form.Group as={Col} md={6} className="mb-2">
-                                    <Form.Label>Sub Category</Form.Label>
+                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <Form.Label className="mb-0">Sub Category</Form.Label>
+                                        {isEditable && formData.ticket_category && (
+                                            <Button
+                                                variant="link"
+                                                size="sm"
+                                                onClick={() => {
+                                                    if (!formData.ticket_category) {
+                                                        setError('Please select a category first');
+                                                        return;
+                                                    }
+                                                    setShowAddSubCategoryModal(true);
+                                                }}
+                                                style={{ textDecoration: 'none', padding: 0, fontSize: '0.85rem' }}
+                                            >
+                                                + Add Option
+                                            </Button>
+                                        )}
+                                    </div>
                                     <Form.Select
                                         name="ticket_SubCategory"
                                         value={formData.ticket_SubCategory ?? ''}
                                         onChange={handleChange}
-                                        disabled={!isEditable}
+                                        disabled={!isEditable || !formData.ticket_category}
                                         required
                                     >
                                         <option value="">Select</option>
-                                        {subCategoryOptions[formData.ticket_category]?.map(
-                                            (subcat, idx) => (
-                                                <option key={idx} value={subcat}>
-                                                    {subcat}
-                                                </option>
-                                            )
-                                        )}
+                                        {getCurrentSubCategoryOptions().map((subcat, idx) => (
+                                            <option key={idx} value={subcat}>
+                                                {subcat}
+                                                {customSubCategories[formData.ticket_category]?.includes(subcat) && " (Custom)"}
+                                            </option>
+                                        ))}
                                     </Form.Select>
+
                                 </Form.Group>
                                 <Form.Group as={Col} md={6} className="mb-3">
                                     <Form.Label>Tag ID</Form.Label>
@@ -1776,6 +2041,7 @@ export default function ViewHDTicket() {
                                                             >
                                                                 {note.note}
                                                             </div>
+                                                            {note.note_upload_path && renderNoteAttachments(note.note_upload_path)}
                                                             <div className="d-flex justify-content-between align-items-center mt-2">
                                                                 <small className="text-muted fst-italic">
                                                                     {notesofhduser[note.created_by] || note.created_by || 'Unknown'}
@@ -1801,14 +2067,33 @@ export default function ViewHDTicket() {
                                     {hdnotesState && (
                                         <>
                                             <Form.Group>
-                                                <Form.Label className="fw-semibold text-muted">
+                                                <Form.Label className="fw-semibold text-muted" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: 'pointer' }}>
                                                     Add a Note
+                                                    <Form.Text onClick={() => setAttachmentButtonState(!attachmentButtonState)} style={{ color: '#DEA22B', cursor: 'pointer' }}>+ Add document</Form.Text>
                                                 </Form.Label>
+
+                                                {attachmentButtonState && (
+                                                    <>
+                                                        <Form.Control
+                                                            type="file"
+                                                            multiple
+                                                            onChange={handleNoteFileChange}
+                                                            className="mt-1 mb-2"
+                                                        />
+                                                        {noteAttachments.length > 0 && (
+                                                            <div className="text-muted small mb-2">
+                                                                {noteAttachments.length} file(s) selected
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+
                                                 {noteAlert && (
-                                                    <Form.Label className="fw-semibold  ms-2 text-danger">
+                                                    <Form.Label className="fw-semibold ms-2 text-danger">
                                                         Unable to save empty note
                                                     </Form.Label>
                                                 )}
+
                                                 <Form.Control
                                                     as="textarea"
                                                     rows={5}
@@ -1820,8 +2105,6 @@ export default function ViewHDTicket() {
                                                     style={{ resize: 'none', fontSize: '0.95rem' }}
                                                 />
                                             </Form.Group>
-
-
                                         </>
                                     )}
 
@@ -1915,6 +2198,25 @@ export default function ViewHDTicket() {
                                     onChange={(e) => setResolution(e.target.value)}
                                     placeholder="Enter your troubleshooting steps here"
                                 />
+                            </Form.Group>
+                            <Form.Group controlId="userResolution">
+                                <Form.Label>Turn around time(TAT)</Form.Label>
+                                <Form.Label>Category</Form.Label>
+                                <Form.Select
+                                    name="ticket_tat"
+                                    value={turnaroundtime ?? ''}
+                                    onChange={(e) => setTurnAroundTime(e.target.value)}
+                                    required
+                                    disabled={!resolution}
+                                >
+                                    <option value="" hidden>-</option>
+                                    <option value="30m">30 minutes</option>
+                                    <option value="1h">1 hour</option>
+                                    <option value="2h">2 hour</option>
+                                    <option value="1d">24 hour (1 day)</option>
+                                    <option value="2d">48 hour (2 days)</option>
+                                    <option value="3d">72 hour (3 days)</option>
+                                </Form.Select>
                             </Form.Group>
                         </Modal.Body>
                         <Modal.Footer>
@@ -2023,6 +2325,34 @@ export default function ViewHDTicket() {
 
                         <Modal.Footer>
                             <Button variant="secondary" onClick={() => setShowModal(false)}>
+                                Close
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
+
+                    {/* TAT Modal */}
+                    <Modal
+                        show={showModalTAT}
+                        onHide={() => setShowModalTAT(false)}
+                        size="lg" // smaller than xl
+                        centered
+                    >
+                        <Modal.Header closeButton>
+                            <Modal.Title>{modalTitleTAT}</Modal.Title>
+                        </Modal.Header>
+
+                        <Modal.Body
+                            style={{
+                                maxHeight: "50vh", // responsive height limit
+                                overflowY: "auto", // scroll if content is long
+                                padding: "20px",
+                            }}
+                        >
+                            {modalContentTAT}
+                        </Modal.Body>
+
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={() => setShowModalTAT(false)}>
                                 Close
                             </Button>
                         </Modal.Footer>

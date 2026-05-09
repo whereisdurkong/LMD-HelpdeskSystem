@@ -70,7 +70,7 @@ export default function HistoryPMSTicket() {
                     return (
                         isUniqueId ||
 
-                        ((isUniqueId || isAssignedOrCreatedByUser) && ticket.is_reviewed === true)
+                        ((isUniqueId || isAssignedOrCreatedByUser) && ticket.is_reviewed === true || ticket.pms_status === 'closed')
                     );
                 });
 

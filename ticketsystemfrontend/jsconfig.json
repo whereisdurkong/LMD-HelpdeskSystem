@@ -29,11 +29,7 @@
     "src",
     "**/*.js",
     "**/*.jsx",
-    "src/**/*"
+    "src/**/*",
+    "vite.config.mjs"
   ],
-  "references": [
-    {
-      "path": "./jsconfig.node.json"
-    }
-  ]
 }

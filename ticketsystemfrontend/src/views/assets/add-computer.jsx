@@ -25,9 +25,13 @@ export default function AddComputer() {
     const [processor, setProcessor] = useState('');
     const [memory, setMemory] = useState('');
     const [storage, setStorage] = useState('');
+    const [gpu, setGPU] = useState('');
     const [monitorBrandModel, setMonitorBrandModel] = useState('');
     const [monitorSerial, setMonitorSerial] = useState('');
     const [pms_date, setPMSDate] = useState('');
+    const [date_purchased, setDatePurchased] = useState('');
+    const [windows_license, setWindowsLicense] = useState('');
+    const [microsoft_license, setMicrosoftLicense] = useState('');
     const [description, setDescription] = useState('');
 
 
@@ -42,6 +46,7 @@ export default function AddComputer() {
     const monitorBMRef = useRef();
     const monitorSerialRef = useRef();
     const pmsdateRef = useRef();
+    const datePurchasedRef = useRef();
     const descriptionRef = useRef();
 
 
@@ -51,10 +56,11 @@ export default function AddComputer() {
     const tag = 'LMD.PC'
 
     //All Deparments
-    const departmentOptions = {
-        lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
-        corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
-    };
+  const departmentOptions = {
+    lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'RND', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
+    corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
+  };
+
 
     //Loading timeout 2s
     // useEffect(() => {
@@ -130,7 +136,7 @@ export default function AddComputer() {
         const empInfo = JSON.parse(localStorage.getItem('user'));
 
         //empty field validation
-        if (!tag_id && !password && !ip_address && !processor && !memory && !storage && !monitorBrandModel && !monitorSerial) {
+        if (!tag_id && !password && !ip_address && !processor && !memory && !storage && !monitorBrandModel && !monitorSerial && !date_purchased) {
             setLoading(false)
             setError('All Fields are required! please try again! ')
             return
@@ -186,7 +192,13 @@ export default function AddComputer() {
         if (!monitorSerial) {
             setLoading(false);
             monitorSerialRef.current.focus();
-            setError('Monitor Brand Model is required');
+            setError('Monitor Serial Number is required');
+            return;
+        }
+        if (!date_purchased) {
+            setLoading(false);
+            datePurchasedRef.current.focus();
+            setError('Date Purchased is required');
             return;
         }
 
@@ -200,9 +212,13 @@ export default function AddComputer() {
                 processor: processor,
                 memory: memory,
                 storage: storage,
+                gpu: gpu,
                 monitor_model: monitorBrandModel,
                 monitor_serial: monitorSerial,
+                date_purchased: date_purchased,
                 pms_date: pms_date || '',
+                wl: windows_license || '',
+                msl: microsoft_license || '',
                 description: description || '',
                 created_by: currentUser,
                 assigned_location: empInfo.emp_location
@@ -217,8 +233,12 @@ export default function AddComputer() {
             setProcessor('');
             setMemory('');
             setStorage('');
+            setGPU('');
             setMonitorBrandModel('');
             setMonitorSerial('')
+            setDatePurchased('');
+            setWindowsLicense('');
+            setMicrosoftLicense('');
             setPMSDate('');
             setDescription('');
 
@@ -264,7 +284,9 @@ export default function AddComputer() {
                             <h4 className="mb-3">Add Computer</h4>
                             <Form onSubmit={handleSubmit}>
                                 <Row className="mb-3">
+                                    <h6 className="text-muted fw-semibold mt-4 mb-2">Basic Asset Information</h6>
                                     <Col xs={12} md={6}>
+
                                         {/* Tag ID */}
                                         <Form.Group>
                                             <Form.Label>Tag ID</Form.Label>
@@ -324,7 +346,7 @@ export default function AddComputer() {
                                         </Form.Group>
                                     </Col>
                                 </Row>
-
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Hardware Specifications</h6>
                                 <Row className="mb-3" >
                                     <Col xs={12} md={6}>
                                         <Form.Group>
@@ -350,9 +372,7 @@ export default function AddComputer() {
                                             />
                                         </Form.Group>
                                     </Col>
-                                </Row>
 
-                                <Row className="mb-3" >
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Memory</Form.Label>
@@ -377,8 +397,21 @@ export default function AddComputer() {
                                             />
                                         </Form.Group>
                                     </Col>
+
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Graphics Card</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="gpu"
+                                                value={gpu}
+                                                onChange={(e) => setGPU(e.target.value)}
+                                            />
+                                        </Form.Group>
+                                    </Col>
                                 </Row>
 
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Monitor Information</h6>
                                 <Row className="mb-3" >
                                     <Col xs={12} md={6}>
                                         <Form.Group>
@@ -405,10 +438,11 @@ export default function AddComputer() {
                                         </Form.Group>
                                     </Col>
                                 </Row>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Purchase & Maintenance Details</h6>
 
                                 <Row className="mb-3" >
                                     <Col xs={12} md={6}>
-                                        <Form.Group className="mb-3" style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Form.Group style={{ display: 'flex', flexDirection: 'column' }}>
                                             <Form.Label
                                                 style={{
 
@@ -416,6 +450,20 @@ export default function AddComputer() {
                                                     marginBottom: '6px'
                                                 }}
                                             >
+                                                Purchased Dates
+                                            </Form.Label>
+                                            <DatePicker
+                                                selected={date_purchased}
+                                                onChange={(date) => setDatePurchased(date)}
+                                                dateFormat="yyyy-MM-dd"
+                                                className="form-control"
+                                                placeholderText="Select purchased date"
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <Form.Label style={{ fontSize: '14px', marginBottom: '6px' }}>
                                                 PMS Date
                                             </Form.Label>
                                             <DatePicker
@@ -423,11 +471,32 @@ export default function AddComputer() {
                                                 onChange={(date) => setPMSDate(date)}
                                                 dateFormat="yyyy-MM-dd"
                                                 className="form-control"
-                                                placeholderText="Select date"
+                                                placeholderText="Select pms date"
                                             />
                                         </Form.Group>
                                     </Col>
-
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Microsoft License</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="ms-license"
+                                                value={microsoft_license}
+                                                onChange={(e) => setMicrosoftLicense(e.target.value)}
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Windows License</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="windows-license"
+                                                value={windows_license}
+                                                onChange={(e) => setWindowsLicense(e.target.value)}
+                                            />
+                                        </Form.Group>
+                                    </Col>
                                 </Row>
 
 

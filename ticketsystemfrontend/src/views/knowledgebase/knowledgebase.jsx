@@ -44,10 +44,10 @@ export default function Knowledgebase() {
             link: '/network',
         },
         {
-            title: 'Software',
-            desc: 'Explore tips and solutions for common application errors and software usage.',
+            title: 'Application',
+            desc: 'Explore tips and solutions for common application errors and application usage.',
             src: 'src/assets/images/software.png',
-            link: '/software',
+            link: '/application',
         },
         {
             title: 'System',
@@ -212,7 +212,7 @@ export default function Knowledgebase() {
                             <span>Common troubleshooting topics:</span>
                             <a href="/ticketsystem/network" style={{ color: '#fff', textDecoration: 'underline' }}>Slow internet</a>
                             <a href="/ticketsystem/hardware" style={{ color: '#fff', textDecoration: 'underline' }}>Keyboard not working</a>
-                            <a href="/ticketsystem/software" style={{ color: '#fff', textDecoration: 'underline' }}>Outlook Unable to log in</a>
+                            <a href="/ticketsystem/application" style={{ color: '#fff', textDecoration: 'underline' }}>Outlook Unable to log in</a>
                         </div>
                     </Container>
                 </AnimatedContent>

@@ -22,7 +22,7 @@ export default function AddPrinter() {
     const [ip_address, setIpAddress] = useState('');
     const [model, setModel] = useState('');
     const [serial, setSerial] = useState('');
-
+    const [date_purchased, setDatePurchased] = useState('');
     const [pms_date, setPMSDate] = useState('');
     const [description, setDescription] = useState('');
 
@@ -34,6 +34,7 @@ export default function AddPrinter() {
     const modelRef = useRef();
     const serialRef = useRef();
     const descriptionRef = useRef();
+    const datepurchasedRef = useRef();
 
 
     const [currentUser, setCurrentUser] = useState('');
@@ -41,10 +42,12 @@ export default function AddPrinter() {
 
     const tag = 'LMD.PRT'
 
-    const departmentOptions = {
-        lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
-        corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
-    };
+   const departmentOptions = {
+    lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'RND', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
+    corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
+  };
+
+
 
     //loading state 3s
     // useEffect(() => {
@@ -153,6 +156,12 @@ export default function AddPrinter() {
             setError('Serial is required');
             return;
         }
+        if (!date_purchased) {
+            setLoading(false);
+            datepurchasedRef.current.focus();
+            setError('Date Purchased is required');
+            return;
+        }
 
         console.log(tag_id, department, assign_to, ip_address, model, serial, pms_date, description);
 
@@ -164,6 +173,7 @@ export default function AddPrinter() {
                 ip_address: ip_address,
                 model: model,
                 serial: serial,
+                date_purchased: date_purchased || '',
                 pms_date: pms_date || '',
                 description: description || '',
                 created_by: currentUser,
@@ -178,6 +188,7 @@ export default function AddPrinter() {
             setIpAddress('');
             setModel('');
             setSerial('');
+            setDatePurchased('');
             setPMSDate('');
             setDescription('');
             setLoading(false)
@@ -223,6 +234,8 @@ export default function AddPrinter() {
                         <Card className="p-4 shadow-sm">
                             <h4 className="mb-3">Add Printer</h4>
                             <Form onSubmit={handleSubmit}>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Basic Asset Information</h6>
+
                                 <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         {/* Tag ID */}
@@ -252,8 +265,7 @@ export default function AddPrinter() {
                                             </Form.Select>
                                         </Form.Group>
                                     </Col>
-                                </Row>
-                                <Row className="mb-3" >
+
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Assign to</Form.Label>
@@ -273,6 +285,7 @@ export default function AddPrinter() {
                                     </Col>
 
                                 </Row>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Hardware Specifications</h6>
 
                                 <Row className="mb-3" >
                                     <Col xs={12} md={6}>
@@ -299,9 +312,6 @@ export default function AddPrinter() {
                                             />
                                         </Form.Group>
                                     </Col>
-                                </Row>
-
-                                <Row className="mb-3" >
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Serial</Form.Label>
@@ -314,6 +324,10 @@ export default function AddPrinter() {
                                             />
                                         </Form.Group>
                                     </Col>
+
+                                </Row>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Purchase & Maintenance Details</h6>
+                                <Row className="mb-3" >
                                     <Col xs={12} md={6}>
                                         <Form.Group className="mb-3" style={{ display: 'flex', flexDirection: 'column' }}>
                                             <Form.Label
@@ -334,9 +348,22 @@ export default function AddPrinter() {
                                             />
                                         </Form.Group>
                                     </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <Form.Label style={{ fontSize: '14px', marginBottom: '6px' }}>
+                                                Date Purchased
+                                            </Form.Label>
+                                            <DatePicker
+                                                placeholderText='Pick date'
+                                                selected={date_purchased ? new Date(date_purchased) : null}
+                                                onChange={(date) => setDatePurchased(date?.toLocaleString())}
+                                                dateFormat="yyyy-MM-dd"
+                                                className="form-control"
+                                                disabled={!close}
+                                            />
+                                        </Form.Group>
+                                    </Col>
                                 </Row>
-
-
                                 <Form.Group className="mb-3">
                                     <Form.Label>Description</Form.Label>
                                     <Form.Control

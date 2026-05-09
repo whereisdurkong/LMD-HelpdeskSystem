@@ -374,7 +374,7 @@ export default function HDDashboard() {
                             className="bento-item-top"
                             style={{ cursor: "pointer" }}
                             onClick={() => openModal(
-                                "All Open Tickets",
+                                `All Tickets`,
                                 <TicketsTable tickets={filteredTickets.filter(t => (t.ticket_status === 'in-progress' || t.ticket_status === 'assigned' || t.ticket_status === 're-opened') &&
                                     (t.assigned_to === selectedHD && t.is_active === true))} />
                             )}
@@ -383,7 +383,7 @@ export default function HDDashboard() {
                                 <b>Tickets</b>
                             </div>
                             <div style={{ textAlign: 'center', paddingTop: '10px' }}>
-                                <h1>{open}</h1>
+                                <h1>{open || '0'}</h1>
                             </div>
                         </div>
                     </Col>
@@ -403,7 +403,7 @@ export default function HDDashboard() {
                                 <b>Not Reviewed</b>
                             </div>
                             <div style={{ textAlign: 'center', paddingTop: '10px' }}>
-                                <h1>{notReviewed}</h1>
+                                <h1>{notReviewed || '0'}</h1>
                             </div>
                         </div>
                     </Col>
@@ -421,7 +421,7 @@ export default function HDDashboard() {
                                 <b>Open Tickets</b>
                             </div>
                             <div style={{ textAlign: 'center', paddingTop: '10px' }}>
-                                <h1>{closed}</h1>
+                                <h1>{closed || '0'}</h1>
                             </div>
                         </div>
                     </Col>

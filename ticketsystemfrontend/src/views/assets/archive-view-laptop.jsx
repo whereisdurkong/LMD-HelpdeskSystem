@@ -22,13 +22,13 @@ export default function ArchiveViewlaptop() {
                 const res = await axios.get(`${config.baseApi}/pms/get-laptop`);
                 const data = res.data || [];
 
-                const allactive = data.filter(e => Number(e.is_active) === 0);
+                const allactive = data.filter(e => e.is_active === '0');
                 setAllpc(allactive);
 
-                const lmd = data.filter((pc) => pc.assigned_location === "lmd" && pc.pms_category === "laptop" && Number(e.is_active) === 0);
+                const lmd = data.filter((pc) => pc.assigned_location === "lmd" && pc.pms_category === "laptop" && pc.is_active === '0');
                 setLmdpc(lmd);
 
-                const corp = data.filter((pc) => pc.assigned_location === "corp" && pc.pms_category === "laptop" && Number(e.is_active) === 0);
+                const corp = data.filter((pc) => pc.assigned_location === "corp" && pc.pms_category === "laptop" && pc.is_active === '0');
                 setCorppc(corp);
             } catch (err) {
                 console.log('Unable to get laptop: ', err)

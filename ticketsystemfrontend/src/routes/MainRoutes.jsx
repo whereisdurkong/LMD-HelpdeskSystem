@@ -28,6 +28,7 @@ import PMSReport from 'views/pmsreports';
 import PMSbyDept from 'views/pmsreports/pmsbydept';
 import PMSbyHD from 'views/pmsreports/pmsbyhd';
 import Maintenance from 'views/pages/maintenance';
+import PMSList from 'views/pmsreports/pmslist';
 
 
 
@@ -55,7 +56,7 @@ const Network = lazy(() => import('views/knowledgebase/network'));
 const ANetwork = lazy(() => import('views/knowledgebase/networkarchive'));
 
 const Reports = lazy(() => import('views/report/reports'));
-const Test = lazy(() => import('views/pmsreports/pmsbydept'));
+const Test = lazy(() => import('views/pmsreports/pmstatpercategory'));
 
 const Tickets = lazy(() => import('views/tickets'))
 
@@ -90,6 +91,8 @@ const HDDashboard = lazy(() => import('views/dashboard/hddashboard'));
 
 const Profile = lazy(() => import('views/pages/profile'));
 const Users = lazy(() => import('views/users'))
+
+const TATCategory = lazy(() => import('views/report/tatpercategory'));
 const UsersView = lazy(() => import('views/users/users-view'))
 
 // Spinner fallback
@@ -156,6 +159,10 @@ const MainRoutes = {
     {
       path: '/2',
       element: withSpinner(<SubCatDepartmentTable />)
+    },
+    {
+      path: '/pmslist',
+      element: withSpinner(<PMSList />)
     },
     {
       path: '/dashboard',
@@ -307,11 +314,11 @@ const MainRoutes = {
       element: withSpinner(<ANetwork />)
     },
     {
-      path: '/software',
+      path: '/application',
       element: withSpinner(<Software />)
     },
     {
-      path: '/softwarearchive',
+      path: '/applicationarchive',
       element: withSpinner(<ASoftware />)
     },
     {
@@ -373,7 +380,12 @@ const MainRoutes = {
     {
       path: '/pmsreport',
       element: <PMSReport />
+    },
+    {
+      path: '/tatpercategory',
+      element: <TATCategory />
     }
+
 
 
 

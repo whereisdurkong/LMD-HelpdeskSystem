@@ -1,6 +1,5 @@
-
 import { FaFilePdf, FaFileWord, FaFileImage, FaFileAlt } from 'react-icons/fa';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Container, Row, Col, Form, Card, Button, Modal, Alert, InputGroup } from 'react-bootstrap';
 import axios from 'axios';
 import config from 'config';
@@ -37,22 +36,16 @@ export default function ViewPmsTicket() {
     const [allHDUser, setAllHDUser] = useState([]);
 
     const [loading, setLoading] = useState(false);
+    const [resolveState, setResolveState] = useState(false);
 
-    const [resolveState, setResolveState] = useState(false)
+    // New state for signature upload
+    const [signatureFile, setSignatureFile] = useState(null);
+    const [signaturePreview, setSignaturePreview] = useState(null);
+    const fileInputRef = useRef(null);
 
     const thumbLeft = `${10 + (value - 1) * 20}%`;
 
-    // useEffect(() => {
-    //     if (loading) {
-    //         const timer = setTimeout(() => {
-    //             window.location.reload()
-    //             setLoading(false);
-    //         }, 2000);
-    //         return () => clearTimeout(timer)
-    //     }
-    // }, [loading])
-
-    //Get all user
+    // Get all user
     useEffect(() => {
         try {
             axios.get(`${config.baseApi}/authentication/get-all-users`)
@@ -126,7 +119,7 @@ export default function ViewPmsTicket() {
         fetchData();
     }, [pmsticket_id]);
 
-    // // Check if ticket status is closed
+    // Check if ticket status is closed
     useEffect(() => {
         if (formData.pms_status === 'closed') {
             setClose(false)
@@ -155,13 +148,13 @@ export default function ViewPmsTicket() {
 
     }, [formData.pms_status])
 
-    // // Fetch current user data from local storage
+    // Fetch current user data from local storage
     useEffect(() => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         setCurrentUserData(empInfo);
     }, []);
 
-    // // Fetch created by user data
+    // Fetch created by user data
     useEffect(() => {
         if (formData.pmsticket_for) {
             const fetchCreatedby = async () => {
@@ -209,10 +202,10 @@ export default function ViewPmsTicket() {
                         setShowCloseReasonModal(false)
                         setShowCloseReviewModal(false)
                     }
-                    else if ((ticketdata.is_locked === '0' || ticketdata.is_locked === null) && ticketdata.is_reviewed === true) {
+                    else if ((ticketdata.is_locked === '0' || ticketdata.is_locked === null) && ticketdata.is_reviewed === true && ticketdata.pms_status === 'closed') {
                         setClose(false)
                     }
-                    else if (ticketdata.is_locked === '0' || ticketdata.is_locked === null) {
+                    else if ((ticketdata.is_locked === '0' || ticketdata.is_locked === null) && ticketdata.pms_status !== 'closed') {
                         setClose(true)
                     } else {
                         console.log("is_locked is missing or not boolean:", ticketdata.is_locked);
@@ -241,6 +234,46 @@ export default function ViewPmsTicket() {
         });
     };
 
+    // Handle signature file selection - RESTRICTED TO JPG/PNG ONLY
+    const handleSignatureFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Define allowed file types (JPG and PNG only)
+            const allowedTypes = ['image/jpeg', 'image/png'];
+            const allowedExtensions = ['jpg', 'jpeg', 'png'];
+
+            // Get file extension
+            const extension = file.name.split('.').pop().toLowerCase();
+
+            // Check MIME type and file extension
+            if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(extension)) {
+                setError('Only JPG and PNG files are allowed!');
+                e.target.value = ''; // Clear the input
+                setSignatureFile(null);
+                setSignaturePreview(null);
+                return;
+            }
+
+            // Check file size (limit to 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setError('File size must be less than 5MB');
+                e.target.value = ''; // Clear the input
+                setSignatureFile(null);
+                setSignaturePreview(null);
+                return;
+            }
+
+            setSignatureFile(file);
+
+            // Create preview URL
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setSignaturePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     //Check fields
     const HandleCheckerFields = async () => {
         try {
@@ -263,44 +296,138 @@ export default function ViewPmsTicket() {
 
     }
 
-    //Reson why Close tikcet function
+    // Function to rename file with username-signature pattern
+    const renameSignatureFile = (file, userName) => {
+        // Get file extension
+        const fileExtension = file.name.split('.').pop();
+        const empInfo = JSON.parse(localStorage.getItem('user'));
+
+        // Create new filename: username-signature.extension
+        const newFileName = `${userName}-${empInfo.user_id}.${fileExtension}`;
+
+        // Create a new File object with the new name
+        const renamedFile = new File([file], newFileName, {
+            type: file.type,
+            lastModified: file.lastModified,
+        });
+
+        console.log('File renamed from:', file.name, 'to:', newFileName);
+
+        return renamedFile;
+    };
+
+    // Reason why Close ticket function - Now with signature logging
+    // const handleConfirmClosure = async (e) => {
+    //     e.preventDefault();
+    //     const empInfo = JSON.parse(localStorage.getItem('user'));
+    //     if (!closureReason.trim()) return;
+    //     try {
+    //         //place a note
+    //         setLoading(true)
+    //         const finalnote = 'User Confirmation: ' + closureReason
+    //         const dataToSend = new FormData();
+    //         dataToSend.append('notes', finalnote)
+    //         dataToSend.append('current_user', empInfo.user_name);
+    //         dataToSend.append('pmsticket_id', pmsticket_id)
+
+
+    //         await axios.post(`${config.baseApi}/pmsticket/note-post`, {
+    //             notes: 'User Confirmation: ' + closureReason,
+    //             current_user: empInfo.user_name,
+    //             pmsticket_id: pmsticket_id
+    //         });
+
+    //         //Send app notifcation
+    //         await axios.post(`${config.baseApi}/pmsticket/notified-true`, {
+    //             pmsticket_id: pmsticket_id,
+    //             user_id: empInfo.user_id
+    //         })
+
+    //         setShowCloseReasonModal(false);
+    //         setClosureReason('');
+    //         setClose(false);
+
+    //         await handleSave();
+
+    //         setLoading(false);
+    //         setSuccessful('Ticket closed successfully.');
+    //         // setShowCloseReviewModal(true);
+
+    //     } catch (err) {
+    //         console.log(err);
+    //         setLoading(false)
+    //         setError('Failed to close ticket. Please try again.');
+    //         setShowCloseReasonModal(false);
+    //         setClosureReason('');
+    //     }
+    // }
+
+    // Reason why Close ticket function - Now with signature logging
     const handleConfirmClosure = async (e) => {
         e.preventDefault();
         const empInfo = JSON.parse(localStorage.getItem('user'));
         if (!closureReason.trim()) return;
+
         try {
-            //place a note
-            setLoading(true)
-            await axios.post(`${config.baseApi}/pmsticket/note-post`, {
-                notes: 'User Confirmation: ' + closureReason,
-                current_user: empInfo.user_name,
-                pmsticket_id: pmsticket_id
+            // Check if signature file exists
+            if (!signatureFile) {
+                setError('Please upload your signature');
+                return;
+            }
+
+            // Rename the file with username pattern
+            const renamedFile = renameSignatureFile(signatureFile, empInfo.user_name);
+
+            // Place a note
+            setLoading(true);
+            const finalnote = 'User Closed the ticket with notes: \n' + closureReason;
+
+            const dataToSend = new FormData();
+            dataToSend.append('notes', finalnote);
+            dataToSend.append('current_user', empInfo.user_name);
+            dataToSend.append('pmsticket_id', pmsticket_id);
+            dataToSend.append('is_pms', 'true'); // Send as string, not boolean
+
+            // IMPORTANT: Append the actual file, not just the filename!
+            dataToSend.append('signature', renamedFile); // Send the file object
+
+            // Log FormData contents for debugging
+            console.log('Sending FormData:');
+            for (let pair of dataToSend.entries()) {
+                console.log(pair[0] + ': ' + (pair[0] === 'signature' ? pair[1].name : pair[1]));
+            }
+
+            await axios.post(`${config.baseApi}/pmsticket/note-post-signature`, dataToSend, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
             });
 
-            //Send app notifcation 
+            // Send app notification
             await axios.post(`${config.baseApi}/pmsticket/notified-true`, {
                 pmsticket_id: pmsticket_id,
                 user_id: empInfo.user_id
-            })
+            });
 
             setShowCloseReasonModal(false);
             setClosureReason('');
+            setSignatureFile(null);
+            setSignaturePreview(null);
             setClose(false);
 
             await handleSave();
 
             setLoading(false);
             setSuccessful('Ticket closed successfully.');
-            // setShowCloseReviewModal(true);
 
         } catch (err) {
-            console.log(err);
-            setLoading(false)
+            console.log('Error details:', err.response?.data || err);
+            setLoading(false);
             setError('Failed to close ticket. Please try again.');
             setShowCloseReasonModal(false);
             setClosureReason('');
         }
-    }
+    };
 
     //Review function
     const handleReview = async (value, userfeedback) => {
@@ -384,11 +511,13 @@ export default function ViewPmsTicket() {
 
                 //save note if user re-opened the ticket
                 if (formData.pms_status === 're-opened') {
+                    console.log('!!!!!!!!!!!!!!!!')
                     await axios.post(`${config.baseApi}/pmsticket/note-post`, {
                         notes: `${currentUserData.user_name} re opened the ticket.`,
                         current_user: currentUserData.user_name,
                         pmsticket_id: pmsticket_id
                     });
+
                 }
 
                 // Send notification to HD
@@ -404,14 +533,13 @@ export default function ViewPmsTicket() {
                     pmsticket_id: formData.pmsticket_id,
                     tag_id: formData.tag_id,
                     pms_status: formData.pms_status,
-
                     description: formData.description,
                     updated_by: currentUserData.user_id,
                     changes_made: changesMade,
                     assigned_to_UserId: hdUser.user_id,
                     assigned_to: formData.assigned_to,
-
                 });
+                console.log('!!!!!!!!!!!!!!!!')
 
                 if (formData.pms_status === 'closed') {
                     setLoading(false)
@@ -620,8 +748,12 @@ export default function ViewPmsTicket() {
                     </Col>
                 </Row>
 
-                {/* CLOSE TICKET */}
-                <Modal show={showCloseReasonModal} onHide={() => setShowCloseReasonModal(false)} centered>
+                {/* CLOSE TICKET MODAL WITH SIGNATURE UPLOAD */}
+                <Modal show={showCloseReasonModal} onHide={() => {
+                    setShowCloseReasonModal(false);
+                    setSignatureFile(null);
+                    setSignaturePreview(null);
+                }} centered>
                     <Modal.Header closeButton>
                         <Modal.Title>Reason for Closing Ticket</Modal.Title>
                     </Modal.Header>
@@ -636,9 +768,69 @@ export default function ViewPmsTicket() {
                                 placeholder="Enter reason for closing the ticket"
                             />
                         </Form.Group>
+
+                        {/* Signature Upload Section */}
+                        <Form.Group style={{
+                            marginTop: '15px',
+                            padding: '15px',
+                            border: '1px dashed #dee2e6',
+                            borderRadius: '8px',
+                            backgroundColor: '#f8f9fa'
+                        }}>
+                            <Form.Label className="fw-bold">E-Signature</Form.Label>
+
+                            {/* Signature preview if available */}
+                            {signaturePreview && (
+                                <div className="mb-3 text-center">
+                                    <img
+                                        src={signaturePreview}
+                                        alt="Signature preview"
+                                        style={{
+                                            maxWidth: '100%',
+                                            maxHeight: '150px',
+                                            border: '1px solid #dee2e6',
+                                            borderRadius: '4px',
+                                            padding: '5px'
+                                        }}
+                                    />
+                                </div>
+                            )}
+
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                width: '100%',
+                                gap: '10px',
+                                flexWrap: 'wrap'
+                            }}>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleSignatureFileChange}
+                                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                                    style={{ display: 'none' }}
+                                />
+                                <Button
+                                    variant="outline-primary"
+                                    onClick={() => fileInputRef.current.click()}>
+                                    <FeatherIcon icon="upload" style={{ marginRight: '8px' }} />
+                                    Select Signature
+                                </Button>
+                            </div>
+
+                            {signatureFile && (
+                                <div className="mt-2 small text-muted">
+                                    Selected: {signatureFile.name}
+                                </div>
+                            )}
+                        </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowCloseReasonModal(false)}>
+                        <Button variant="secondary" onClick={() => {
+                            setShowCloseReasonModal(false);
+                            setSignatureFile(null);
+                            setSignaturePreview(null);
+                        }}>
                             Cancel
                         </Button>
                         <Button
@@ -678,7 +870,6 @@ export default function ViewPmsTicket() {
                     </Modal.Footer>
                 </Modal>
 
-                {/* Review Ticket */}
                 {/* Review Ticket with Scale + Feedback */}
                 <Modal show={showCloseReviewModal} onHide={() => setShowCloseReviewModal(false)} centered>
                     <Modal.Header closeButton>

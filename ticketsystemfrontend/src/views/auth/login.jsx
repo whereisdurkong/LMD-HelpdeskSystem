@@ -68,14 +68,22 @@ export default function SignIn1() {
     e.preventDefault();
 
     //Empty fields validation
-    if (!password.trim()) {
-      setLoginError('Password is required!');
-      return;
-    }
     if (!username.trim()) {
       setLoginError('Username is required!');
+      setTimeout(() => {
+        setLoading(false);
+      }, 1000);
       return;
     }
+    if (!password.trim()) {
+      setLoginError('Password is required!');
+      setTimeout(() => {
+
+        setLoading(false);
+      }, 1000);
+      return;
+    }
+
 
     try {
       setLoading(true);
@@ -96,13 +104,29 @@ export default function SignIn1() {
       if (err.response) {
         if (err.response.status === 401) {
           setLoginError('Incorrect password! Try again...');
+          setTimeout(() => {
+
+            setLoading(false);
+          }, 1000);
         } else if (err.response.status === 404) {
           setLoginError('Invalid username or password. Please try again.');
+          setTimeout(() => {
+
+            setLoading(false);
+          }, 1000);
         } else {
           setLoginError('Invalid username or password. Please try again.');
+          setTimeout(() => {
+
+            setLoading(false);
+          }, 1000);
         }
       } else {
         setLoginError('Unable to connect to server. Please check your internet or try again later.');
+        setTimeout(() => {
+
+          setLoading(false);
+        }, 1000);
       }
     }
   };

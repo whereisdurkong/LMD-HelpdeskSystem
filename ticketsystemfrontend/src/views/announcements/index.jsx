@@ -99,6 +99,7 @@ export default function Announcements() {
     // Handle save announcement
     const HandleSave = async () => {
         const empInfo = JSON.parse(localStorage.getItem("user"));
+        console.log(empInfo)
 
         //Check Fields
         if (!announcementTitleText.trim() || !announcementText.trim()) {
@@ -112,7 +113,8 @@ export default function Announcements() {
             await axios.post(`${config.baseApi}/announcements/add-anc`, {
                 announcements: announcementText,
                 created_by: empInfo.user_name,
-                announcementTitle: announcementTitleText
+                announcementTitle: announcementTitleText,
+                location: empInfo.emp_location
             });
             setSuccess("Announcement created successfully!");
             setAnnouncementText('');

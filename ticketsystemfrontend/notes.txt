@@ -100,3 +100,41 @@ useEffect(() => {
                   >
                     <Spinner animation="border" variant="light" />
                   </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+                     console.log({
+            'tat': turnaroundtime,
+            'user_id': empInfo.user_id,
+            'ticket_id': ticket_id,
+            'user_name': empInfo.user_name,
+            'category': formData.ticket_category,
+            'sub_category': formData.ticket_SubCategory
+        })
+
+
+
+
+
+
+
+
+           await axios.post(`${config.baseApi}/ticket/turnaround-time`, {
+                tat: turnaroundtime,
+                user_id: empInfo.user_id,
+                ticket_id: ticket_id,
+                user_name: empInfo.user_name,
+                category: formData.ticket_category,
+                sub_category: formData.ticket_SubCategory,
+                
+            })

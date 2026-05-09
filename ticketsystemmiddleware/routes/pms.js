@@ -4,8 +4,11 @@ var bcrypt = require('bcrypt');
 const router = express.Router();
 var Sequelize = require('sequelize');
 const nodemailer = require("nodemailer");
+const { date } = require('joi');
 const { DataTypes } = Sequelize;
 require('dotenv').config();
+
+
 
 var knex = require("knex")({
     client: 'mssql',
@@ -105,6 +108,19 @@ const Assets = db.define('users_master', {
     monitor_serial: {
         type: DataTypes.STRING
     },
+    msl: {
+        type: DataTypes.STRING
+    },
+    wl: {
+        type: DataTypes.STRING
+    },
+    date_purchased: {
+        type: DataTypes.DATE
+    },
+    gpu: {
+        type: DataTypes.STRING
+    },
+
 
 }, {
     freezeTableName: false,
@@ -217,6 +233,10 @@ router.post('/add-computer', async (req, res) => {
             monitor_model,
             monitor_serial,
             pms_date,
+            date_purchased,
+            msl,
+            wl,
+            gpu,
             description,
             created_by,
             assigned_location
@@ -236,6 +256,10 @@ router.post('/add-computer', async (req, res) => {
             monitor_model: monitor_model,
             monitor_serial: monitor_serial,
             pms_date: pms_date,
+            date_purchased: date_purchased,
+            msl: msl,
+            wl: wl,
+            gpu: gpu,
             description: description,
             created_by: created_by,
             created_at: currentTimestamp,
@@ -308,6 +332,10 @@ router.post('/update-computer', async (req, res) => {
             monitor_model,
             monitor_serial,
             pms_date,
+            gpu,
+            date_purchased,
+            windows_license,
+            microsoft_license,
             description,
             assigned_location,
             updated_by,
@@ -323,9 +351,13 @@ router.post('/update-computer', async (req, res) => {
             processor: processor,
             memory: memory,
             storage: storage,
+            gpu: gpu,
             monitor_model: monitor_model,
             monitor_serial: monitor_serial,
             pms_date: pms_date,
+            date_purchased: date_purchased,
+            msl: microsoft_license,
+            wl: windows_license,
             description: description,
             assigned_location: assigned_location,
             updated_by: updated_by,
@@ -382,6 +414,9 @@ router.post('/add-laptop', async (req, res) => {
             ip_address,
             model,
             serial,
+            date_purchased,
+            wl,
+            msl,
             processor,
             memory,
             storage,
@@ -404,6 +439,9 @@ router.post('/add-laptop', async (req, res) => {
             processor: processor,
             memory: memory,
             storage: storage,
+            date_purchased: date_purchased,
+            wl: wl,
+            msl: msl,
             pms_date: pms_date,
             description: description,
             created_by: created_by,
@@ -476,6 +514,9 @@ router.post('/update-laptop', async (req, res) => {
             processor,
             memory,
             storage,
+            date_purchased,
+            microsoft_license,
+            windows_license,
             pms_date,
             description,
             assigned_location,
@@ -494,6 +535,9 @@ router.post('/update-laptop', async (req, res) => {
             processor: processor,
             memory: memory,
             storage: storage,
+            date_purchased: date_purchased,
+            wl: windows_license,
+            msl: microsoft_license,
             pms_date: pms_date,
             description: description,
             assigned_location: assigned_location,
@@ -526,6 +570,7 @@ router.post('/add-printer', async (req, res) => {
             model,
             serial,
             pms_date,
+            date_purchased,
             description,
             created_by,
             assigned_location
@@ -541,6 +586,7 @@ router.post('/add-printer', async (req, res) => {
             model: model,
             serial: serial,
             pms_date: pms_date,
+            date_purchased: date_purchased,
             description: description,
             created_by: created_by,
             created_at: currentTimestamp,
@@ -696,4 +742,40 @@ router.post("/unlock", async (req, res) => {
     }
 });
 
+
+router.get('/get-all-assets', async (req, res) => {
+    try {
+        const assets = await knex('pms_master').select('*');
+        res.json(assets);
+    } catch (err) {
+        console.log('INTERNAL ERROR: ', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+})
+
+
+router.post('/turnaround-time', async (req, res) => {
+    try {
+
+        const { tat, user_id, pmsticket_id, user_name, pms_category, ticket_type, ticket_created_at, created_by, assigned_location } = req.body;
+        await knex('pmstat_master').insert({
+            tat,
+            user_id,
+            pmsticket_id,
+            user_name,
+            assigned_location,
+            pms_category: pms_category,
+            created_by,
+            ticket_created_at,
+            ticket_type,
+            created_at: new Date()
+        })
+
+        console.log(`${created_by} TAT "Ticket: ${pmsticket_id}" saved successfully`);
+        res.status(200).json({ message: "TAT saved successfully" });
+
+    } catch (err) {
+        console.log('INTERNAL ERROR: ', err)
+    }
+})
 module.exports = router;

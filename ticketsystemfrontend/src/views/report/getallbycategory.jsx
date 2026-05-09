@@ -20,7 +20,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
     const [chartData, setChartData] = useState(null);
     const [hardwareTickets, setHardwareTickets] = useState([]);
     const [networkTickets, setNetworkTickets] = useState([]);
-    const [softwareTickets, setSoftwareTickets] = useState([]);
+    const [applicationTickets, setapplicationTickets] = useState([]);
     const [systemTickets, setSystemTickets] = useState([]);
     const navigate = useNavigate();
 
@@ -58,7 +58,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
             case "perMonth":
                 return d.getFullYear() === today.getFullYear();
             case "perYear":
-                return true;
+                return true; // Show all years
             case "all":
             default:
                 return true;
@@ -92,12 +92,12 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                 // Separate into categories
                 const hardware = tickets.filter(t => t.ticket_category?.toLowerCase() === "hardware");
                 const network = tickets.filter(t => t.ticket_category?.toLowerCase() === "network");
-                const software = tickets.filter(t => t.ticket_category?.toLowerCase() === "software");
+                const application = tickets.filter(t => t.ticket_category?.toLowerCase() === "application");
                 const system = tickets.filter(t => t.ticket_category?.toLowerCase() === "system");
 
                 setHardwareTickets(hardware);
                 setNetworkTickets(network);
-                setSoftwareTickets(software);
+                setapplicationTickets(application);
                 setSystemTickets(system);
 
                 // Chart setup
@@ -110,7 +110,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
 
                         const hardwareCounts = Array(12).fill(0);
                         const networkCounts = Array(12).fill(0);
-                        const softwareCounts = Array(12).fill(0);
+                        const applicationCounts = Array(12).fill(0);
                         const systemCounts = Array(12).fill(0);
 
                         tickets.forEach(t => {
@@ -118,7 +118,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                             const category = t.ticket_category?.toLowerCase();
                             if (category === "hardware") hardwareCounts[monthIndex]++;
                             if (category === "network") networkCounts[monthIndex]++;
-                            if (category === "software") softwareCounts[monthIndex]++;
+                            if (category === "application") applicationCounts[monthIndex]++;
                             if (category === "system") systemCounts[monthIndex]++;
                         });
 
@@ -127,7 +127,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                             datasets: [
                                 { label: "Hardware", data: hardwareCounts, backgroundColor: "rgba(255,99,132,0.6)" },
                                 { label: "Network", data: networkCounts, backgroundColor: "rgba(54,162,235,0.6)" },
-                                { label: "Software", data: softwareCounts, backgroundColor: "rgba(75,192,192,0.6)" },
+                                { label: "Application", data: applicationCounts, backgroundColor: "rgba(75,192,192,0.6)" },
                                 { label: "System", data: systemCounts, backgroundColor: "rgba(136, 141, 64, 0.6)" }
                             ]
                         });
@@ -138,19 +138,62 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                                 category: "All",
                                 hardware: hardwareCounts[i],
                                 network: networkCounts[i],
-                                software: softwareCounts[i],
+                                application: applicationCounts[i],
                                 system: systemCounts[i],
-                                total: hardwareCounts[i] + networkCounts[i] + softwareCounts[i] + systemCounts[i]
+                                total: hardwareCounts[i] + networkCounts[i] + applicationCounts[i] + systemCounts[i]
+                            }));
+                            onDataReady(summary);
+                        }
+                    } else if (filterType === "perYear") {
+                        // Get all unique years from tickets
+                        const years = [...new Set(tickets.map(t => new Date(t.created_at).getFullYear()))].sort((a, b) => a - b);
+
+                        const hardwareCounts = Array(years.length).fill(0);
+                        const networkCounts = Array(years.length).fill(0);
+                        const applicationCounts = Array(years.length).fill(0);
+                        const systemCounts = Array(years.length).fill(0);
+
+                        tickets.forEach(t => {
+                            const year = new Date(t.created_at).getFullYear();
+                            const yearIndex = years.indexOf(year);
+                            const category = t.ticket_category?.toLowerCase();
+
+                            if (category === "hardware") hardwareCounts[yearIndex]++;
+                            if (category === "network") networkCounts[yearIndex]++;
+                            if (category === "application") applicationCounts[yearIndex]++;
+                            if (category === "system") systemCounts[yearIndex]++;
+                        });
+
+                        setChartData({
+                            labels: years.map(String),
+                            datasets: [
+                                { label: "Hardware", data: hardwareCounts, backgroundColor: "rgba(255,99,132,0.6)" },
+                                { label: "Network", data: networkCounts, backgroundColor: "rgba(54,162,235,0.6)" },
+                                { label: "Application", data: applicationCounts, backgroundColor: "rgba(75,192,192,0.6)" },
+                                { label: "System", data: systemCounts, backgroundColor: "rgba(136, 141, 64, 0.6)" }
+                            ]
+                        });
+
+                        // Send summary to parent
+                        if (onDataReady) {
+                            const summary = years.map((year, i) => ({
+                                year: year,
+                                category: "All",
+                                hardware: hardwareCounts[i],
+                                network: networkCounts[i],
+                                application: applicationCounts[i],
+                                system: systemCounts[i],
+                                total: hardwareCounts[i] + networkCounts[i] + applicationCounts[i] + systemCounts[i]
                             }));
                             onDataReady(summary);
                         }
                     } else {
                         setChartData({
-                            labels: ["Hardware", "Network", "Software", "System"],
+                            labels: ["Hardware", "Network", "Application", "System"],
                             datasets: [
                                 {
                                     label: "Tickets by Category",
-                                    data: [hardware.length, network.length, software.length, system.length],
+                                    data: [hardware.length, network.length, application.length, system.length],
                                     backgroundColor: [
                                         "rgba(255, 99, 132, 0.6)",
                                         "rgba(54, 162, 235, 0.6)",
@@ -165,7 +208,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                             const summary = [
                                 { category: "Hardware", count: hardware.length },
                                 { category: "Network", count: network.length },
-                                { category: "Software", count: software.length },
+                                { category: "application", count: application.length },
                                 { category: "System", count: system.length }
                             ];
                             onDataReady(summary);
@@ -247,6 +290,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
             </div>
         );
     };
+
     return (
         <div style={{ width: '100%', height: '100%' }}>
             {showChart && chartData && (
@@ -256,14 +300,16 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                     options={{
                         responsive: true,
                         maintainAspectRatio: false,
-                        indexAxis: filterType === "perMonth" ? "y" : "x",
+                        indexAxis: filterType === "perMonth" || filterType === "perYear" ? "x" : "x",
                         plugins: {
                             legend: { display: true },
                             title: {
                                 display: true,
                                 text: filterType === "perMonth"
                                     ? "Tickets by Category per Month"
-                                    : "Tickets by Category"
+                                    : filterType === "perYear"
+                                        ? "Tickets by Category per Year"
+                                        : "Tickets by Category"
                             }
                         },
                         scales: { x: { beginAtZero: true } }
@@ -275,7 +321,7 @@ export default function GetAllByCategory({ filterType, showChart = true, locatio
                 <>
                     {renderTable("Hardware Tickets", hardwareTickets)}
                     {renderTable("Network Tickets", networkTickets)}
-                    {renderTable("Software Tickets", softwareTickets)}
+                    {renderTable("Application Tickets", applicationTickets)}
                     {renderTable("System Tickets", systemTickets)}
                 </>
             )}

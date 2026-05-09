@@ -109,7 +109,7 @@ export default function CreatePMSUser() {
             'Others'
         ],
 
-        software: [
+        application: [
             'Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)',
             'Oracle (PROD/BIPUB)',
             'Email (Setup, Creation, Error, Backup)',

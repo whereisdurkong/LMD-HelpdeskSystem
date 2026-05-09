@@ -33,8 +33,22 @@ export default function MyPmsTicket() {
     const [showCloseResolutionModal, setShowCloseResolutionModal] = useState(false);
     const [resolution, setResolution] = useState('');
 
+    const [turnaroundtime, setTurnAroundTime] = useState('');
+    const [assets, setAssets] = useState([]);
+
     const navigate = useNavigate();
     const empInfo = JSON.parse(localStorage.getItem('user'));
+
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await axios.get(`${config.baseApi}/pms/get-all-pms`);
+            const data = res.data || [];
+            const active = data.filter(a => a.is_active === "1");
+            setAssets(active)
+        }
+        fetch();
+    }, [])
+
 
     //User Information from local storage
     useEffect(() => {
@@ -48,7 +62,6 @@ export default function MyPmsTicket() {
     //Get All Tickets Assigned on User
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
-
         if (!userName) return;
 
         const fetch = async () => {
@@ -66,7 +79,8 @@ export default function MyPmsTicket() {
                             const userTickets = res.data.filter(
                                 (ticket) =>
                                     ticket.assigned_to === userName && ticket.is_active === true &&
-                                    (ticket.is_reviewed === false || ticket.is_reviewed === null)
+                                    (ticket.is_reviewed === false || ticket.is_reviewed === null) &&
+                                    ticket.pms_status !== 'closed'
                             );
                             setAllTicket(userTickets);
                         }
@@ -186,37 +200,153 @@ export default function MyPmsTicket() {
 
     //Handle Status Change Function
     const handleStatusChange = async (ticket, newStatus) => {
-        console.log(ticket, newStatus)
-        const prevStat = ticket.pms_status
+        const empInfo = JSON.parse(localStorage.getItem('user'));
+        const prevStat = ticket.pms_status;
 
         setSelectedTicket(ticket);
         setSelectedNewStatus(newStatus);
+        //if na review na
+        if ((prevStat === 'closed' && ticket.is_reviewed === true) && (newStatus === 'open' || newStatus === 'in-progress' || newStatus === 'resolved' || newStatus === 'closed' || newStatus === 'assigned')) {
+            setError('Unable to change status! Ticket was already reviewed')
+        }
+        //if open and not empty
+        else if (prevStat === 'open' && (newStatus === 'in-progress' || newStatus === 'resolved') && (ticket.sub_category?.trim() !== '' || ticket.ticket_SubCategory?.trim() !== '')) {
+            setError(`Ticket ID: ${ticket.pmsticket_id}, you are not assigned on this ticket!`)
+        }
+        //Accept a ticket from open to assigned
+        else if (prevStat === 'open' && newStatus === 'assigned') {
+            setModalTitle(`Ticket ID: ${ticket.pmsticket_id}`)
+            setModalContent(`Are you sure you want to "accept" this ticket?\n\nReminder: Leave a note before committing changes.`)
+            setShowModal(true)
+        }
 
-        if (prevStat !== newStatus && newStatus === 'open') {
+        //if assigned tapos open tas naka assign sa assgined na tao
+        else if (prevStat === 'assigned' && newStatus === 'open' && (ticket.assigned_to === empInfo.user_name)) {
             setModalTitle(`Ticket ID: ${ticket.pmsticket_id}`)
             setModalContent(`Are you sure you want to "open" this ticket?\n\nReminder: Leave a note before committing changes.`)
             setShowModal(true)
         }
-        else if (prevStat !== newStatus && newStatus === 'in-progress') {
+        //!! 
+        //if assigned tapos open tas naka assign sa ibang tao
+        else if (prevStat === 'assigned' && (newStatus === 'in-progress' || newStatus === 'resolved' || newStatus === 'open') && (ticket.assigned_to !== empInfo.user_name || ticket.assigned_to === null)) {
+            setError(`Ticket ID: ${ticket.pmsticket_id}, you are not assigned on this ticket!`)
+        }
+        //if assigned to in-progress and assigned user is the user
+        else if (prevStat === 'assigned' && (newStatus === 'in-progress') && ticket.assigned_to === empInfo.user_name) {
             setModalTitle(`Ticket ID: ${ticket.pmsticket_id}`)
             setModalContent(`Are you sure you want to change the status to "in-progress"?\n\nReminder: Leave a note before committing changes.`)
             setShowModal(true)
         }
-        else if (prevStat !== newStatus && newStatus === 'resolved') {
+        //if assigned to resolved and assigned user is the user
+        else if (prevStat === 'assigned' && (newStatus === 'resolved') && ticket.assigned_to === empInfo.user_name) {
             setModalTitle(`Ticket ID: ${ticket.pmsticket_id}`)
             setModalContent(`Are you sure you want to change the status to "resolved"?\n\nReminder: Leave a note before committing changes.`)
             setShowModal(true)
-        } else {
+        }
+        /////////TAT
+
+
+        //in-progress changing to resolve or open And not the assign
+        else if (prevStat === 'in-progress' && (newStatus === 'resolved' || newStatus === 'open') && ticket.assigned_to !== empInfo.user_name) {
+            setError(`Ticket ID: ${ticket.pmsticket_id}, you are not assigned on this ticket!`)
+        }
+        else if (prevStat === 'in-progress' && newStatus === 'assigned' && ticket.assigned_to === empInfo.user_name) {
+            setError(`Ticket ID: ${ticket.pmsticket_id}, you are already assigned on this ticket!`)
+        }
+
+        else if (prevStat === 'in-progress' && (newStatus === 'resolved') && ticket.assigned_to === empInfo.user_name) {
+            setModalTitle(`Ticket ID: ${ticket.pmsticket_id}`)
+            setModalContent(`Are you sure you want to "resolve" this ticket?\n\nReminder: Leave a note before committing changes.`)
+            setShowModal(true)
+        }
+        else if (prevStat === 'in-progress' && newStatus === 'open' && ticket.assigned_to === empInfo.user_name) {
+            setModalTitle(`Ticket ID: ${ticket.pmsticket_id}`)
+            setModalContent(`Are you sure you want to "open" this ticket?\n\nReminder: Leave a note before committing changes.`)
+            setShowModal(true)
+        }
+
+        //Accept ticket
+        else if (prevStat === 'in-progress' && newStatus === 'assigned') {
+            setModalTitle(`Ticket ID: ${ticket.pmsticket_id}`)
+            setModalContent(`Are you sure you want to "accept" this ticket?\n\nReminder: Leave a note before committing changes.`)
+            setShowModal(true)
+        }
+        else {
             setShowModal(false)
         }
     }
 
     //Update pms ticket function
+    // const handleUpdate = async () => {
+    //     const empInfo = JSON.parse(localStorage.getItem('user'));
+    //     const prevStat = selectedTicket.pms_status
+
+    //     if (prevStat !== selectedNewStatus && selectedNewStatus === 'open') {
+    //         setLoading(true);
+    //         try {
+    //             await axios.post(`${config.baseApi}/pmsticket/update-pmsticket`, {
+    //                 pmsticket_id: selectedTicket.pmsticket_id,
+    //                 pms_status: selectedNewStatus,
+    //                 updated_by: empInfo.user_id,
+    //                 updated_at: new Date()
+    //             });
+    //             setSuccessful(`Succesfully changed Ticket ID: ${selectedTicket.pmsticket_id} to open!`);
+    //             setTimeout(() => {
+    //                 window.location.reload()
+    //             }, 2000);
+    //         } catch (err) {
+    //             setError('Unable to change status, please try again!')
+    //             console.log(err)
+    //         }
+    //     }
+    //     else if (prevStat !== selectedNewStatus && selectedNewStatus === 'in-progress') {
+    //         setLoading(true);
+    //         try {
+    //             await axios.post(`${config.baseApi}/pmsticket/update-pmsticket`, {
+    //                 pmsticket_id: selectedTicket.pmsticket_id,
+    //                 pms_status: selectedNewStatus,
+    //                 updated_by: empInfo.user_id,
+    //                 updated_at: new Date()
+    //             });
+    //             setSuccessful(`Succesfully changed ${selectedTicket.pmsticket_id} to in-progress!`);
+    //             setTimeout(() => {
+    //                 window.location.reload()
+    //             }, 2000);
+    //         } catch (err) {
+    //             setError('Unable to change status, please try again!')
+    //             console.log(err)
+    //         }
+    //     }
+    //     else if (prevStat !== selectedNewStatus && selectedNewStatus === 'closed') {
+    //         setShowCloseResolutionModal(true)
+    //         setShowModal(false)
+    //     }
+    // }
+
     const handleUpdate = async () => {
         const empInfo = JSON.parse(localStorage.getItem('user'));
         const prevStat = selectedTicket.pms_status
 
-        if (prevStat !== selectedNewStatus && selectedNewStatus === 'open') {
+        if (prevStat === 'open' && selectedNewStatus === 'assigned') {
+            setLoading(true);
+            try {
+                await axios.post(`${config.baseApi}/pmsticket/update-pmsticket`, {
+                    pmsticket_id: selectedTicket.pmsticket_id,
+                    pms_status: selectedNewStatus,
+                    assigned_to: empInfo.user_name,
+                    updated_by: empInfo.user_id,
+                    updated_at: new Date()
+                });
+                setSuccessful(`Succesfully changed Ticket ID: ${selectedTicket.pmsticket_id} to assigned!`);
+                setTimeout(() => {
+                    window.location.reload()
+                }, 2000);
+            } catch (err) {
+                setError('Unable to change status, please try again!')
+                console.log(err)
+            }
+        }
+        else if (prevStat === 'assigned' && selectedNewStatus === 'open' && (selectedTicket.assigned_to === empInfo.user_name)) {
             setLoading(true);
             try {
                 await axios.post(`${config.baseApi}/pmsticket/update-pmsticket`, {
@@ -234,8 +364,10 @@ export default function MyPmsTicket() {
                 console.log(err)
             }
         }
-        else if (prevStat !== selectedNewStatus && selectedNewStatus === 'in-progress') {
+        else if (prevStat === 'assigned' && (selectedNewStatus === 'in-progress') && selectedTicket.assigned_to === empInfo.user_name) {
             setLoading(true);
+
+
             try {
                 await axios.post(`${config.baseApi}/pmsticket/update-pmsticket`, {
                     pmsticket_id: selectedTicket.pmsticket_id,
@@ -243,7 +375,7 @@ export default function MyPmsTicket() {
                     updated_by: empInfo.user_id,
                     updated_at: new Date()
                 });
-                setSuccessful(`Succesfully changed ${selectedTicket.pmsticket_id} to in-progress!`);
+                setSuccessful(`Succesfully changed Ticket ID: ${selectedTicket.pmsticket_id} to open!`);
                 setTimeout(() => {
                     window.location.reload()
                 }, 2000);
@@ -252,21 +384,105 @@ export default function MyPmsTicket() {
                 console.log(err)
             }
         }
-        else if (prevStat !== selectedNewStatus && selectedNewStatus === 'resolved') {
+        ////TAT
+        else if (prevStat === 'assigned' && (selectedNewStatus === 'resolved') && selectedTicket.assigned_to === empInfo.user_name) {
             setShowCloseResolutionModal(true)
             setShowModal(false)
+            console.log(selectedTicket.pmsticket_id)
+        }
+
+        else if (prevStat === 'in-progress' && (selectedNewStatus === 'resolved') && selectedTicket.assigned_to === empInfo.user_name) {
+            setShowCloseResolutionModal(true)
+            setShowModal(false)
+            console.log(selectedTicket.pmsticket_id)
+        }
+        else if (prevStat === 'in-progress' && selectedNewStatus === 'open' && selectedTicket.assigned_to === empInfo.user_name) {
+            setLoading(true);
+            try {
+                await axios.post(`${config.baseApi}/pmsticket/update-pmsticket`, {
+                    pmsticket_id: selectedTicket.pmsticket_id,
+                    pms_status: selectedNewStatus,
+                    updated_by: empInfo.user_id,
+                    updated_at: new Date()
+                });
+                setSuccessful(`Succesfully changed Ticket ID: ${selectedTicket.pmsticket_id} to open!`);
+                setTimeout(() => {
+                    window.location.reload()
+                }, 2000);
+            } catch (err) {
+                setError('Unable to change status, please try again!')
+                console.log(err)
+            }
+        }
+
+        else if (prevStat === 'in-progress' && newStatus === 'assigned') {
+            setLoading(true);
+            try {
+                await axios.post(`${config.baseApi}/pmsticket/update-pmsticket`, {
+                    pmsticket_id: selectedTicket.pmsticket_id,
+                    pms_status: selectedNewStatus,
+                    updated_by: empInfo.user_id,
+                    updated_at: new Date()
+                });
+                setSuccessful(`Succesfully changed Ticket ID: ${selectedTicket.pmsticket_id} to open!`);
+                setTimeout(() => {
+                    window.location.reload()
+                }, 2000);
+            } catch (err) {
+                setError('Unable to change status, please try again!')
+                console.log(err)
+            }
         }
     }
+
+    // useEffect(() => {
+    //     const selectedAsset = assets.find(asset => asset.tag_id === selectedTicket.tag_id);
+
+
+    //     console.log('Selected Asset:', assets);
+
+
+    // }, [])
 
     //Handle when resolved
     const handleResolved = async (e) => {
         e.preventDefault();
         setShowModal(false)
         const empInfo = JSON.parse(localStorage.getItem('user'));
-        console.log(selectedTicket)
+
+
+        if (selectedTicket.tag_id === '' || selectedTicket.tag_id === null || selectedTicket.tag_id === undefined) {
+            setError('Unable to save empty Asset Tag! Please try again!');
+            return;
+        }
+
+        const selectedAsset = assets.find(asset => asset.tag_id === selectedTicket.tag_id);
+
+        if (!selectedAsset) {
+            console.log(`${selectedTicket.tag_id} not found in assets list.`);
+            setError(`Tag ID: ${selectedTicket.tag_id} not found in assets list. `);
+            return;
+        }
+
+        if (selectedAsset.is_active === "0" || selectedAsset.is_active === false) {
+            setError('Selected asset is inactive. Please select an active asset.');
+            return;
+        }
+
+        console.log('Selected Asset:', selectedAsset);
+        // const selectedOption = options.find(opt => opt.value === formData.tag_id);
+
+        console.log('user_id:', empInfo.user_id,
+            'username: ', empInfo.user_name,
+            'pmsticket_id: ', selectedTicket.pmsticket_id,
+            'turnaroundtime: ', turnaroundtime,
+            'asset:', selectedAsset.tag_id,
+            'pms_category: ', selectedAsset.pms_category,
+            'ticket_type: pms',
+            'ticket_created_at: ', selectedTicket.created_at)
         try {
             setLoading(true);
-            await axios.post(`${config.baseApi}/pmsticket/note-post`, {
+            await axios.post(`${config.baseApi}/pmsticket/note-hd-post`, {
                 notes: resolution,
                 current_user: empInfo.user_name,
                 pmsticket_id: selectedTicket.pmsticket_id
@@ -282,7 +498,18 @@ export default function MyPmsTicket() {
                 updated_by: empInfo.user_id,
                 updated_at: new Date()
             });
-            setSuccessful(`Succesfully changed ${selectedTicket.pmsticket_id} to in-progress!`);
+
+            await axios.post(`${config.baseApi}/pms/turnaround-time`, {
+                tat: turnaroundtime,
+                user_id: empInfo.user_id,
+                pmsticket_id: selectedTicket.pmsticket_id,
+                user_name: empInfo.user_name,
+                pms_category: selectedAsset.pms_category,
+                created_by: empInfo.user_name,
+                ticket_type: 'pms',
+                ticket_created_at: selectedTicket.created_at
+            })
+            setResolution(`Successfully closed ticket ${selectedTicket.pmsticket_id}`);
             setTimeout(() => {
                 window.location.reload()
             }, 2000);
@@ -536,12 +763,44 @@ export default function MyPmsTicket() {
                                                         onChange={(e) => handleStatusChange(ticket, e.target.value)}
                                                         style={{ width: 170, borderRadius: 8, fontSize: 13 }}
                                                     >
-                                                        <option value="open">Open</option>
-                                                        <option hidden value="assigned">Assigned</option>
-                                                        <option value="in-progress">In-Progress</option>
-                                                        <option value="resolved">Resolved</option>
-                                                        <option hidden value="re-opened">Re-Opened</option>
-                                                        <option hidden value="closed">Closed</option>
+                                                        {ticket.pms_status === 'open' ? (
+                                                            // When status is open, show only Open and Accept options
+                                                            <>
+                                                                <option hidden value="open">Open</option>
+                                                                <option value="assigned">Accept</option>
+                                                            </>
+                                                        ) : ticket.pms_status === 'closed' ? (
+                                                            // When status is closed, show only Close option
+                                                            <>
+                                                                <option value="closed">Close</option>
+                                                            </>
+                                                        ) : ticket.pms_status === 'resolved' ? (
+                                                            // When status is resolved, show only Accept option
+                                                            <>
+                                                                <option hidden value="resolved">Resolve</option>
+                                                                <option value="assigned">Accept</option>
+                                                            </>
+                                                        ) : ticket.pms_status === 're-opened' ? (
+                                                            // When status is re-opened, show only Accept option
+                                                            <>
+                                                                <option hidden value="re-opened">Re-Opened</option>
+                                                                <option value="assigned">Accept</option>
+                                                            </>
+                                                        ) : (
+                                                            // For all other statuses, show all options
+                                                            <>
+                                                                <option value="open">Open</option>
+                                                                {ticket.pms_status === 'assigned' || ticket.pms_status === 'in-progress' ? (
+                                                                    <option value="assigned">Assigned</option>
+                                                                ) : (
+                                                                    <option value="assigned">Accept</option>
+                                                                )}
+                                                                <option value="in-progress">In-Progress</option>
+                                                                <option value="resolved">Resolved</option>
+                                                                <option hidden value="re-opened">Re-Opened</option>
+                                                                <option value="closed" hidden>Close</option>
+                                                            </>
+                                                        )}
                                                     </Form.Select>
                                                 </div>
                                             </td>
@@ -656,6 +915,25 @@ export default function MyPmsTicket() {
                             onChange={(e) => setResolution(e.target.value)}
                             placeholder="Enter your troubleshooting steps here"
                         />
+                    </Form.Group>
+                    <Form.Group controlId="userResolution">
+                        <Form.Label>Turn around time(TAT)</Form.Label>
+                        <Form.Label>Category</Form.Label>
+                        <Form.Select
+                            name="ticket_tat"
+                            value={turnaroundtime ?? ''}
+                            onChange={(e) => setTurnAroundTime(e.target.value)}
+                            required
+                            disabled={!resolution}
+                        >
+                            <option value="" hidden>-</option>
+                            <option value="30m">30 minutes</option>
+                            <option value="1h">1 hour</option>
+                            <option value="2h">2 hour</option>
+                            <option value="1d">24 hour (1 day)</option>
+                            <option value="2d">48 hour (2 days)</option>
+                            <option value="3d">72 hour (3 days)</option>
+                        </Form.Select>
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>

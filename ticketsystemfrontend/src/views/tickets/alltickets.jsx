@@ -37,6 +37,8 @@ export default function Alltickets() {
     const [showCloseResolutionModal, setShowCloseResolutionModal] = useState(false);
     const [resolution, setResolution] = useState('');
 
+    const [turnaroundtime, setTurnAroundTime] = useState('');
+
     const navigate = useNavigate();
 
     //Alerts timeout 3s
@@ -438,6 +440,11 @@ export default function Alltickets() {
         setShowModal(false)
 
         const empInfo = JSON.parse(localStorage.getItem('user'));
+
+        if (!turnaroundtime) {
+            return setError('Unable to save empty Turn Around Time! Please try again!')
+        }
+
         try {
             setLoading(true);
             await axios.post(`${config.baseApi}/ticket/note-post`, {
@@ -449,6 +456,18 @@ export default function Alltickets() {
                 ticket_id: selectedTicket.ticket_id,
                 user_id: empInfo.user_id
             });
+
+            await axios.post(`${config.baseApi}/ticket/turnaround-time`, {
+                tat: turnaroundtime,
+                user_id: empInfo.user_id,
+                ticket_id: selectedTicket.ticket_id,
+                user_name: empInfo.user_name,
+                category: selectedTicket.ticket_category,
+                sub_category: selectedTicket.ticket_SubCategory,
+                created_by: empInfo.user_name,
+                ticket_type: 'support',
+                ticket_created_at: selectedTicket.created_at
+            })
 
             await axios.post(`${config.baseApi}/ticket/update-ticket`, {
                 ticket_id: selectedTicket.ticket_id,
@@ -771,6 +790,7 @@ export default function Alltickets() {
                     ) : (
                         //USER TABLE DATA
                         <tbody style={{ fontSize: '15px', color: '#333' }}>
+
                             {currentTickets.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="text-center py-4">
@@ -871,6 +891,25 @@ export default function Alltickets() {
                             onChange={(e) => setResolution(e.target.value)}
                             placeholder="Enter your troubleshooting steps here"
                         />
+                    </Form.Group>
+                    <Form.Group controlId="userResolution">
+                        <Form.Label>Turn around time(TAT)</Form.Label>
+                        <Form.Label>Category</Form.Label>
+                        <Form.Select
+                            name="ticket_tat"
+                            value={turnaroundtime ?? ''}
+                            onChange={(e) => setTurnAroundTime(e.target.value)}
+                            required
+                            disabled={!resolution}
+                        >
+                            <option value="" hidden>-</option>
+                            <option value="30m">30 minutes</option>
+                            <option value="1h">1 hour</option>
+                            <option value="2h">2 hour</option>
+                            <option value="1d">24 hour (1 day)</option>
+                            <option value="2d">48 hour (2 days)</option>
+                            <option value="3d">72 hour (3 days)</option>
+                        </Form.Select>
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>

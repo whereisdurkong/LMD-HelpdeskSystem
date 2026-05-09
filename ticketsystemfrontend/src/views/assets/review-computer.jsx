@@ -9,6 +9,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import FeatherIcon from 'feather-icons-react';
 import AssetLogs from './asset-logs';
+import { date } from 'yup';
 
 export default function ReviewComputer() {
     const pms_id = new URLSearchParams(window.location.search).get('id');
@@ -36,6 +37,10 @@ export default function ReviewComputer() {
     const [monitorBrandModel, setMonitorBrandModel] = useState('');
     const [monitorSerial, setMonitorSerial] = useState('');
     const [pms_date, setPMSDate] = useState('');
+    const [date_purchased, setDatePurchased] = useState('');
+    const [gpu, setGPU] = useState('');
+    const [microsoft_license, setMicrosoftLicense] = useState('');
+    const [windows_license, setWindowsLicense] = useState('');
     const [description, setDescription] = useState('');
     const [originalData, setOriginalData] = useState({});
     const [changedFields, setChangedFields] = useState({});
@@ -52,6 +57,7 @@ export default function ReviewComputer() {
     const memoryRef = useRef();
     const storageRef = useRef();
     const pmsdateRef = useRef();
+    const datepurchasedRef = useRef();
     const descriptionRef = useRef();
 
     const [currentUser, setCurrentUser] = useState('');
@@ -62,9 +68,11 @@ export default function ReviewComputer() {
 
     //Departments
     const departmentOptions = {
-        lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
-        corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
-    };
+    lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'RND', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
+    corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
+  };
+
+
 
     //Loading state 2s
     // useEffect(() => {
@@ -102,9 +110,13 @@ export default function ReviewComputer() {
                 setProcessor(data.processor || '');
                 setMemory(data.memory || '');
                 setStorage(data.storage || '');
+                setGPU(data.gpu || '');
                 setMonitorBrandModel(data.monitor_model || '');
                 setMonitorSerial(data.monitor_serial || '')
                 setPMSDate(data.pms_date ? new Date(data.pms_date).toLocaleString() : '');
+                setDatePurchased(data.date_purchased ? new Date(data.date_purchased).toLocaleString() : '');
+                setWindowsLicense(data.wl || '');
+                setMicrosoftLicense(data.msl || '');
                 setDescription(data.description || '');
                 setCurrentUser(data.created_by || '');
                 setLocation(data.assigned_location || '');
@@ -119,9 +131,13 @@ export default function ReviewComputer() {
                     processor: data.processor || '',
                     memory: data.memory || '',
                     storage: data.storage || '',
+                    gpu: data.gpu || '',
                     monitor_model: data.monitor_model || '',
                     monitor_serial: data.monitor_serial || '',
                     pms_date: data.pms_date ? new Date(data.pms_date).toLocaleString() : '',
+                    date_purchased: data.date_purchased ? new Date(data.date_purchased).toLocaleString() : '',
+                    wl: data.wl || '',
+                    msl: data.msl || '',
                     description: data.description || '',
                     assigned_location: data.assigned_location || ''
                 });
@@ -220,6 +236,10 @@ export default function ReviewComputer() {
             monitor_model: monitorBrandModel,
             monitor_serial: monitorSerial,
             pms_date,
+            date_purchased,
+            windows_license,
+            microsoft_license,
+            gpu,
             description,
             assigned_location: location
         };
@@ -274,7 +294,7 @@ export default function ReviewComputer() {
         const changeSummary = changeSentences.join(', ');
         console.log(`Changes made: ${changeSummary}`);
 
-        if (!tag_id || !password || !ip_address || !processor || !memory || !storage || !location || !monitorBrandModel || !monitorSerial) {
+        if (!tag_id || !password || !ip_address || !processor || !memory || !storage || !location || !monitorBrandModel || !monitorSerial || !date_purchased) {
             setLoading(false);
             setError('Please fill in all required fields.');
             return;
@@ -296,9 +316,13 @@ export default function ReviewComputer() {
             processor,
             memory,
             storage,
+            gpu,
             monitor_model: monitorBrandModel,
             monitor_serial: monitorSerial,
             pms_date,
+            date_purchased,
+            windows_license,
+            microsoft_license,
             description,
             assigned_location: location,
             updated_by: empInfo.user_name,
@@ -549,6 +573,7 @@ export default function ReviewComputer() {
 
                             <Form onSubmit={updateBTNChecker}>
                                 <Row className="mb-3" >
+                                    <h6 className="text-muted fw-semibold mt-4 mb-2">Basic Asset Information</h6>
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Tag ID</Form.Label>
@@ -583,8 +608,19 @@ export default function ReviewComputer() {
                                             <Form.Control type="text" value={password} onChange={(e) => setPassword(e.target.value)} ref={passwordRef} disabled={!close} />
                                         </Form.Group>
                                     </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Location</Form.Label>
+                                            <Form.Select value={location} onChange={(e) => setLocation(e.target.value)} disabled={!close}>
+                                                <option value="">Select Location</option>
+                                                <option value="lmd">LMD</option>
+                                                <option value="corp">CORP</option>
+                                            </Form.Select>
+                                        </Form.Group>
+                                    </Col>
                                 </Row>
 
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Hardware Specifications</h6>
                                 <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         <Form.Group>
@@ -598,9 +634,6 @@ export default function ReviewComputer() {
                                             <Form.Control type="text" value={processor} onChange={(e) => setProcessor(e.target.value)} ref={processorRef} disabled={!close} />
                                         </Form.Group>
                                     </Col>
-                                </Row>
-
-                                <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Memory</Form.Label>
@@ -613,7 +646,20 @@ export default function ReviewComputer() {
                                             <Form.Control type="text" value={storage} onChange={(e) => setStorage(e.target.value)} ref={storageRef} disabled={!close} />
                                         </Form.Group>
                                     </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Graphics Card</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                name="gpu"
+                                                value={gpu}
+                                                onChange={(e) => setGPU(e.target.value)}
+                                            />
+                                        </Form.Group>
+                                    </Col>
                                 </Row>
+
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Monitor Information</h6>
                                 <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         <Form.Group>
@@ -629,9 +675,10 @@ export default function ReviewComputer() {
                                     </Col>
                                 </Row>
 
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Purchase & Maintenance Details</h6>
                                 <Row className="mb-3">
                                     <Col xs={12} md={6}>
-                                        <Form.Group className="mb-3" style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Form.Group style={{ display: 'flex', flexDirection: 'column' }}>
                                             <Form.Label style={{ fontSize: '14px', marginBottom: '6px' }}>
                                                 PMS Date
                                             </Form.Label>
@@ -645,17 +692,38 @@ export default function ReviewComputer() {
                                             />
                                         </Form.Group>
                                     </Col>
+
+                                    <Col xs={12} md={6}>
+                                        <Form.Group style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <Form.Label style={{ fontSize: '14px', marginBottom: '6px' }}>
+                                                Date Purchased
+                                            </Form.Label>
+                                            <DatePicker
+                                                placeholderText='Pick date'
+                                                selected={date_purchased ? new Date(date_purchased) : null}
+                                                onChange={(date) => setDatePurchased(date?.toLocaleString())}
+                                                dateFormat="yyyy-MM-dd"
+                                                className="form-control"
+                                                disabled={!close}
+                                            />
+                                        </Form.Group>
+                                    </Col>
+
                                     <Col xs={12} md={6}>
                                         <Form.Group>
-                                            <Form.Label>Location</Form.Label>
-                                            <Form.Select value={location} onChange={(e) => setLocation(e.target.value)} disabled={!close}>
-                                                <option value="">Select Location</option>
-                                                <option value="lmd">LMD</option>
-                                                <option value="corp">CORP</option>
-                                            </Form.Select>
+                                            <Form.Label>Microsoft License</Form.Label>
+                                            <Form.Control type="text" value={microsoft_license} onChange={(e) => setMicrosoftLicense(e.target.value)} disabled={!close} />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Windows License</Form.Label>
+                                            <Form.Control type="text" value={windows_license} onChange={(e) => setWindowsLicense(e.target.value)} disabled={!close} />
                                         </Form.Group>
                                     </Col>
                                 </Row>
+
+
 
                                 <Form.Group className="mb-3">
                                     <Form.Label>Description</Form.Label>

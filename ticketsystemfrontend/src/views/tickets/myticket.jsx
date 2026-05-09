@@ -32,6 +32,8 @@ export default function Myticket() {
     const [showCloseResolutionModal, setShowCloseResolutionModal] = useState(false);
     const [resolution, setResolution] = useState('');
 
+    const [turnaroundtime, setTurnAroundTime] = useState('');
+
     const navigate = useNavigate();
     const empInfo = JSON.parse(localStorage.getItem('user'));
 
@@ -306,6 +308,14 @@ export default function Myticket() {
         e.preventDefault();
         setShowModal(false)
         const empInfo = JSON.parse(localStorage.getItem('user'));
+
+        if (!turnaroundtime) {
+            return setError('Unable to save empty Turn Around Time! Please try again!')
+        }
+        if (!selectedTicket.ticket_category)
+            return setError('Unable to save empty Ticket Category! Please try again!');
+        if (!selectedTicket.ticket_SubCategory)
+            return setError('Unable to save empty Ticket Sub Category! Please try again!');
         try {
             setLoading(true);
             await axios.post(`${config.baseApi}/ticket/note-post`, {
@@ -318,13 +328,25 @@ export default function Myticket() {
                 user_id: empInfo.user_id
             });
 
+            await axios.post(`${config.baseApi}/ticket/turnaround-time`, {
+                tat: turnaroundtime,
+                user_id: empInfo.user_id,
+                ticket_id: selectedTicket.ticket_id,
+                user_name: empInfo.user_name,
+                category: selectedTicket.ticket_category,
+                sub_category: selectedTicket.ticket_SubCategory,
+                created_by: empInfo.user_name,
+                ticket_type: 'support',
+                ticket_created_at: selectedTicket.created_at
+            })
+
             await axios.post(`${config.baseApi}/ticket/update-ticket`, {
                 ticket_id: selectedTicket.ticket_id,
                 ticket_status: selectedNewStatus,
                 updated_by: empInfo.user_id,
                 updated_at: new Date()
             });
-            setSuccessful(`Succesfully changed ${selectedTicket.ticket_id} to in-progress!`);
+            setSuccessful(`Succesfully changed ${selectedTicket.ticket_id} to resolved!`);
             setTimeout(() => {
                 window.location.reload()
             }, 2000);
@@ -701,6 +723,25 @@ export default function Myticket() {
                             onChange={(e) => setResolution(e.target.value)}
                             placeholder="Enter your troubleshooting steps here"
                         />
+                    </Form.Group>
+                    <Form.Group controlId="userResolution">
+                        <Form.Label>Turn around time(TAT)</Form.Label>
+                        <Form.Label>Category</Form.Label>
+                        <Form.Select
+                            name="ticket_tat"
+                            value={turnaroundtime ?? ''}
+                            onChange={(e) => setTurnAroundTime(e.target.value)}
+                            required
+                            disabled={!resolution}
+                        >
+                            <option value="" hidden>-</option>
+                            <option value="30m">30 minutes</option>
+                            <option value="1h">1 hour</option>
+                            <option value="2h">2 hour</option>
+                            <option value="1d">24 hour (1 day)</option>
+                            <option value="2d">48 hour (2 days)</option>
+                            <option value="3d">72 hour (3 days)</option>
+                        </Form.Select>
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>

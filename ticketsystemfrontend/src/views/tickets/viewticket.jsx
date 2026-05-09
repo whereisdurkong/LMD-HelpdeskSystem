@@ -82,7 +82,7 @@ export default function ViewTicket() {
                 "Bandwidth Issues",
                 "Others",
             ],
-            software: [
+            application: [
                 "Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)",
                 "Oracle (PROD/BIPUB)",
                 "Email (Setup, Creation, Error, Backup)",
@@ -119,7 +119,7 @@ export default function ViewTicket() {
                 "ISP Request",
                 "Others",
             ],
-            software: [
+            application: [
                 "New Software Installation",
                 "License Renewal",
                 "User Account Creation",
@@ -131,7 +131,7 @@ export default function ViewTicket() {
         inquiry: {
             hardware: ["Warranty Inquiry", "Specs Inquiry", "Others"],
             network: ["Network Policy Inquiry", "Coverage Inquiry", "Others"],
-            software: ["Software Policy Inquiry", "Version Inquiry", "Others"],
+            application: ["Software Policy Inquiry", "Version Inquiry", "Others"],
         },
     };
 
@@ -596,10 +596,55 @@ export default function ViewTicket() {
     };
 
     //Display the files uploaded
+    // const renderAttachment = () => {
+    //     if (!formData.Attachments) return <div className="text-muted fst-italic">No attachments</div>;
+
+    //     const filePaths = formData.Attachments.split(',');
+
+    //     const getFileIcon = (filename) => {
+    //         const ext = filename.split('.').pop().toLowerCase();
+    //         if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return <FaFileImage size={28} className="text-primary" />;
+    //         if (['pdf'].includes(ext)) return <FaFilePdf size={28} className="text-danger" />;
+    //         if (['doc', 'docx'].includes(ext)) return <FaFileWord size={28} className="text-info" />;
+    //         return <FaFileAlt size={28} className="text-secondary" />;
+    //     };
+
+    //     return (
+    //         <div className="d-flex flex-column">
+    //             {filePaths.map((filePath, idx) => {
+    //                 const fileName = filePath.split('\\').pop().split('/').pop();
+    //                 const shortName = fileName.length > 25 ? fileName.slice(0, 25) + '...' : fileName;
+    //                 const fileUrl = `${config.baseApi}/${filePath.replace(/\\/g, '/')}`;
+
+    //                 return (
+
+    //                     <Card key={idx} className="shadow-sm border-0 mb-1" style={{ backgroundColor: '#fdedd3ff' }}>
+    //                         <Card.Body className="d-flex align-items-center justify-content-between p-2">
+    //                             <div className="d-flex align-items-center">
+    //                                 <div className="me-3">{getFileIcon(fileName)}</div>
+    //                                 <div className="text-truncate" style={{ maxWidth: '250px' }}>{shortName}</div>
+    //                             </div>
+    //                             <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+    //                                 <Button variant="outline-primary" size="sm">View</Button>
+    //                             </a>
+    //                         </Card.Body>
+    //                     </Card>
+
+    //                 );
+    //             })
+
+    //             }
+    //         </div>
+    //     );
+    // };
+
+
     const renderAttachment = () => {
         if (!formData.Attachments) return <div className="text-muted fst-italic">No attachments</div>;
 
-        const filePaths = formData.Attachments.split(',');
+        // Check if separator is semicolon or comma
+        const separator = formData.Attachments.includes(';') ? ';' : ',';
+        const filePaths = formData.Attachments.split(separator);
 
         const getFileIcon = (filename) => {
             const ext = filename.split('.').pop().toLowerCase();
@@ -612,12 +657,16 @@ export default function ViewTicket() {
         return (
             <div className="d-flex flex-column">
                 {filePaths.map((filePath, idx) => {
-                    const fileName = filePath.split('\\').pop().split('/').pop();
+                    // Clean up the file path
+                    let cleanPath = filePath.trim();
+                    // Ensure consistent path separators and remove leading slashes
+                    cleanPath = cleanPath.replace(/^[\\/]+/, '').replace(/\\/g, '/');
+
+                    const fileName = cleanPath.split('/').pop();
                     const shortName = fileName.length > 25 ? fileName.slice(0, 25) + '...' : fileName;
-                    const fileUrl = `${config.baseApi}/${filePath.replace(/\\/g, '/')}`;
+                    const fileUrl = `${config.baseApi}/${cleanPath}`;
 
                     return (
-
                         <Card key={idx} className="shadow-sm border-0 mb-1" style={{ backgroundColor: '#fdedd3ff' }}>
                             <Card.Body className="d-flex align-items-center justify-content-between p-2">
                                 <div className="d-flex align-items-center">
@@ -629,11 +678,48 @@ export default function ViewTicket() {
                                 </a>
                             </Card.Body>
                         </Card>
-
                     );
-                })
+                })}
+            </div>
+        );
+    };
 
-                }
+    const renderNoteAttachments = (attachmentPath) => {
+        if (!attachmentPath) return null;
+
+        // Split by semicolon and space (your format)
+        const separator = attachmentPath.includes(';') ? ';' : ',';
+        const filePaths = attachmentPath.split(separator).filter(path => path.trim());
+
+        if (filePaths.length === 0) return null;
+
+        const getFileIcon = (filename) => {
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return <FaFileImage size={20} className="text-primary" />;
+            if (['pdf'].includes(ext)) return <FaFilePdf size={20} className="text-danger" />;
+            if (['doc', 'docx'].includes(ext)) return <FaFileWord size={20} className="text-info" />;
+            return <FaFileAlt size={20} className="text-secondary" />;
+        };
+
+        return (
+            <div className="mt-2">
+                <small className="text-muted">Attachments:</small>
+                {filePaths.map((filePath, idx) => {
+                    let cleanPath = filePath.trim().replace(/^[\\/]+/, '').replace(/\\/g, '/');
+                    const fileName = cleanPath.split('/').pop();
+                    const fileUrl = `${config.baseApi}/${cleanPath}`;
+
+                    return (
+                        <div key={idx} className="mt-1">
+                            <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                                <div className="d-flex align-items-center">
+                                    <div className="me-2">{getFileIcon(fileName)}</div>
+                                    <small>{fileName.length > 30 ? fileName.slice(0, 30) + '...' : fileName}</small>
+                                </div>
+                            </a>
+                        </div>
+                    );
+                })}
             </div>
         );
     };
@@ -879,7 +965,7 @@ export default function ViewTicket() {
                                     >
                                         <option value="hardware">Hardware</option>
                                         <option value="network">Network</option>
-                                        <option value="software">Software</option>
+                                        <option value="application">Application</option>
                                     </Form.Select>
                                 </Form.Group>
                                 <Form.Group as={Col} md={6} className="mb-2" hidden>
@@ -964,6 +1050,7 @@ export default function ViewTicket() {
                                                             >
                                                                 {note.note}
                                                             </div>
+                                                            {note.note_upload_path && renderNoteAttachments(note.note_upload_path)}
                                                             <div className="d-flex justify-content-between align-items-center mt-2">
                                                                 <small className="text-muted fst-italic">
                                                                     {notesofhduser[note.created_by] || note.created_by || 'Unknown'}

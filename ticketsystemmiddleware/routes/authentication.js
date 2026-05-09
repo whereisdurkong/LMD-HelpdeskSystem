@@ -30,9 +30,12 @@ var db = new Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSW
 const { DataTypes } = Sequelize;
 
 const Users1 = db.define('users_master', {
-  user_id: {
+  id_master: {
     type: DataTypes.INTEGER,
     primaryKey: true
+  },
+  user_id: {
+    type: DataTypes.STRING
   },
   user_name: {
     type: DataTypes.STRING
@@ -150,7 +153,11 @@ router.post('/register', async function (req, res, next) {
   } = req.body
 
   try {
-    const [user] = await knex('users_master').insert({
+    const usermasterlength = await knex('users_master').count('* as count').first();
+    const user_id = (usermasterlength.count || 0) + 1;
+
+    await knex('users_master').insert({
+      user_id: user_id,
       emp_FirstName: emp_firstname,
       emp_LastName: emp_lastname,
       user_name: user_name,
@@ -165,9 +172,9 @@ router.post('/register', async function (req, res, next) {
       created_by: current_user,
       created_at: currentTimestamp,
       is_active: 1
-    }).returning('user_id');
+    })
 
-    const user_id = user.user_id || user;
+
 
     await knex('users_logs').insert({
       user_id: user_id,
@@ -205,7 +212,7 @@ router.post('/register', async function (req, res, next) {
         const username = user_name.charAt(0).toUpperCase() + user_name.slice(1).toLowerCase();
 
         var body = `This is to inform you that your account has been created in the IT Helpdesk System. <br><br>`
-          + `You can access the Helpdesk System using the following link: <a href="192.168.4.246:3007/ticketsystem" style=color: #1a73e8; text-decoration: none;>Click Here</a> <br><br>`
+          + `You can access the Helpdesk System using the following link: <a href="${process.env.REACT_CLIENT}" style=color: #1a73e8; text-decoration: none;>Click Here</a> <br><br>`
           + `Below are your account details: <br>`
           + `Username: <b>${user_name}</b> <br>`
           + `Temporary Password: <b>${pass_word}</b> <br><br>`
@@ -268,7 +275,7 @@ router.post('/register-email', async function (req, res, next) {
     const username = user_name.charAt(0).toUpperCase() + user_name.slice(1).toLowerCase();
 
     var body = `This is to inform you that your account has been created in the IT Helpdesk System. <br><br>`
-      + `You can access the Helpdesk System using the following link: <a href="192.168.4.246:3007/ticketsystem" style=color: #1a73e8; text-decoration: none;>Click Here</a> <br><br>`
+      + `You can access the Helpdesk System using the following link: "<a href="${process.env.REACT_CLIENT}" style=color: #1a73e8; text-decoration: none;>Click Here</a> <br><br>`
       + `Below are your account details: <br>`
       + `Username: <b>${user_name}</b> <br>`
       + `Temporary Password: <b>${pass_word}</b> <br><br>`

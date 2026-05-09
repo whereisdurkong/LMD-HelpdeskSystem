@@ -35,6 +35,10 @@ export default function ArchiveReviewComputer() {
     const [description, setDescription] = useState('');
     const [originalData, setOriginalData] = useState({});
     const [changedFields, setChangedFields] = useState({});
+    const [date_purchased, setDatePurchased] = useState('');
+    const [gpu, setGPU] = useState('');
+    const [microsoft_license, setMicrosoftLicense] = useState('');
+    const [windows_license, setWindowsLicense] = useState('');
 
     const [showModal, setShowModal] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
@@ -42,6 +46,8 @@ export default function ArchiveReviewComputer() {
     const empInfo = JSON.parse(localStorage.getItem('user'));
     const [lockModal, setLockModal] = useState(false)
     const [lockError, setLockError] = useState('')
+
+
 
     const tagidRef = useRef();
     const deparmentRef = useRef();
@@ -53,6 +59,7 @@ export default function ArchiveReviewComputer() {
     const storageRef = useRef();
     const pmsdateRef = useRef();
     const descriptionRef = useRef();
+    const datepurchasedRef = useRef();
 
     const [currentUser, setCurrentUser] = useState('');
     const [fullname, setFullName] = useState('');
@@ -61,10 +68,12 @@ export default function ArchiveReviewComputer() {
     const [close, setClose] = useState(false)
 
     //All departments
-    const departmentOptions = {
-        lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
-        corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
-    };
+     const departmentOptions = {
+    lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'RND', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
+    corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
+  };
+
+
 
     // //Loading state 2s
     // useEffect(() => {
@@ -105,10 +114,13 @@ export default function ArchiveReviewComputer() {
                 setMonitorBrandModel(data.monitor_model || '');
                 setMonitorSerial(data.monitor_serial || '')
                 setPMSDate(data.pms_date ? new Date(data.pms_date).toLocaleString() : '');
+                setDatePurchased(data.date_purchased ? new Date(data.date_purchased).toLocaleString() : '');
+                setWindowsLicense(data.wl || '');
+                setMicrosoftLicense(data.msl || '');
                 setDescription(data.description || '');
                 setCurrentUser(data.created_by || '');
                 setLocation(data.assigned_location || '');
-
+                setGPU(data.gpu || '');
                 // Store original data
                 setOriginalData({
                     tag_id: data.tag_id || '',
@@ -119,9 +131,13 @@ export default function ArchiveReviewComputer() {
                     processor: data.processor || '',
                     memory: data.memory || '',
                     storage: data.storage || '',
+                    gpu: data.gpu || '',
                     monitor_model: data.monitor_model || '',
                     monitor_serial: data.monitor_serial || '',
                     pms_date: data.pms_date ? new Date(data.pms_date).toLocaleString() : '',
+                    date_purchased: data.date_purchased ? new Date(data.date_purchased).toLocaleString() : '',
+                    wl: data.wl || '',
+                    msl: data.msl || '',
                     description: data.description || '',
                     assigned_location: data.assigned_location || ''
                 });
@@ -196,6 +212,10 @@ export default function ArchiveReviewComputer() {
             monitor_model: monitorBrandModel,
             monitor_serial: monitorSerial,
             pms_date,
+            date_purchased,
+            windows_license,
+            microsoft_license,
+            gpu,
             description,
             assigned_location: location
         };
@@ -276,9 +296,13 @@ export default function ArchiveReviewComputer() {
             processor,
             memory,
             storage,
+            gpu,
             monitor_model: monitorBrandModel,
             monitor_serial: monitorSerial,
             pms_date,
+            date_purchased,
+            windows_license,
+            microsoft_license,
             description,
             assigned_location: location,
             updated_by: empInfo.user_name,
@@ -601,6 +625,7 @@ export default function ArchiveReviewComputer() {
 
                             <Form onSubmit={updateBTNChecker}>
                                 <Row className="mb-3">
+                                    <h6 className="text-muted fw-semibold mt-4 mb-2">Basic Asset Information</h6>
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Tag ID</Form.Label>
@@ -635,7 +660,18 @@ export default function ArchiveReviewComputer() {
                                             <Form.Control type="text" value={password} onChange={(e) => setPassword(e.target.value)} ref={passwordRef} disabled={!close} />
                                         </Form.Group>
                                     </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Location</Form.Label>
+                                            <Form.Select value={location} onChange={(e) => setLocation(e.target.value)} disabled={!close}>
+                                                <option value="">Select Location</option>
+                                                <option value="lmd">LMD</option>
+                                                <option value="corp">CORP</option>
+                                            </Form.Select>
+                                        </Form.Group>
+                                    </Col>
                                 </Row>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Hardware Specifications</h6>
 
                                 <Row className="mb-3">
                                     <Col xs={12} md={6}>
@@ -650,9 +686,7 @@ export default function ArchiveReviewComputer() {
                                             <Form.Control type="text" value={processor} onChange={(e) => setProcessor(e.target.value)} ref={processorRef} disabled={!close} />
                                         </Form.Group>
                                     </Col>
-                                </Row>
 
-                                <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Memory</Form.Label>
@@ -665,8 +699,14 @@ export default function ArchiveReviewComputer() {
                                             <Form.Control type="text" value={storage} onChange={(e) => setStorage(e.target.value)} ref={storageRef} disabled={!close} />
                                         </Form.Group>
                                     </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Graphics Card</Form.Label>
+                                            <Form.Control type="text" value={gpu} onChange={(e) => setGPU(e.target.value)} disabled={!close} />
+                                        </Form.Group>
+                                    </Col>
                                 </Row>
-
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Monitor Information</h6>
                                 <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         <Form.Group>
@@ -681,8 +721,23 @@ export default function ArchiveReviewComputer() {
                                         </Form.Group>
                                     </Col>
                                 </Row>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Purchase & Maintenance Details</h6>
 
                                 <Row className="mb-3">
+                                    <Col xs={12} md={6}>
+                                        <Form.Group className="mb-3" style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <Form.Label style={{ fontSize: '14px', marginBottom: '6px' }}>
+                                                Date Purchased
+                                            </Form.Label>
+                                            <DatePicker
+                                                selected={date_purchased ? new Date(date_purchased) : null}
+                                                onChange={(date) => setDatePurchased(date?.toLocaleString())}
+                                                dateFormat="yyyy-MM-dd"
+                                                className="form-control"
+                                                disabled={!close}
+                                            />
+                                        </Form.Group>
+                                    </Col>
                                     <Col xs={12} md={6}>
                                         <Form.Group className="mb-3" style={{ display: 'flex', flexDirection: 'column' }}>
                                             <Form.Label style={{ fontSize: '14px', marginBottom: '6px' }}>
@@ -699,14 +754,17 @@ export default function ArchiveReviewComputer() {
                                     </Col>
                                     <Col xs={12} md={6}>
                                         <Form.Group>
-                                            <Form.Label>Location</Form.Label>
-                                            <Form.Select value={location} onChange={(e) => setLocation(e.target.value)} disabled={!close}>
-                                                <option value="">Select Location</option>
-                                                <option value="lmd">LMD</option>
-                                                <option value="corp">CORP</option>
-                                            </Form.Select>
+                                            <Form.Label>Microsoft License</Form.Label>
+                                            <Form.Control type="text" value={microsoft_license} onChange={(e) => setMicrosoftLicense(e.target.value)} disabled={!close} />
                                         </Form.Group>
                                     </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Windows License</Form.Label>
+                                            <Form.Control type="text" value={windows_license} onChange={(e) => setWindowsLicense(e.target.value)} disabled={!close} />
+                                        </Form.Group>
+                                    </Col>
+
                                 </Row>
 
                                 <Form.Group className="mb-3">

@@ -104,7 +104,7 @@ export default function CreateTicketWalkthrough() {
             'Others'
         ],
 
-        software: [
+        application: [
             'Microsoft Applications (Excel, Word, Outlook, PowerPoint, Teams)',
             'Oracle (PROD/BIPUB)',
             'Email (Setup, Creation, Error, Backup)',
@@ -440,7 +440,7 @@ export default function CreateTicketWalkthrough() {
                                                 <option value="">Select</option>
                                                 <option value="hardware">Hardware</option>
                                                 <option value="network">Network</option>
-                                                <option value="software">Software</option>
+                                                <option value="application">Application</option>
                                             </Form.Select>
                                             <Form.Control.Feedback type="invalid">{validationErrors.ticket_category}</Form.Control.Feedback>
                                         </Form.Group>

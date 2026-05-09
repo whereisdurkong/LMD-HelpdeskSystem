@@ -29,7 +29,9 @@ export default function AddLaptop() {
     const [storage, setStorage] = useState('');
     const [pms_date, setPMSDate] = useState('');
     const [description, setDescription] = useState('');
-
+    const [date_purchased, setDatePurchased] = useState('');
+    const [microsoft_license, setMicrosoftLicense] = useState('');
+    const [windows_license, setWindowsLicense] = useState('');
 
     const tagidRef = useRef();
     const deparmentRef = useRef();
@@ -42,6 +44,7 @@ export default function AddLaptop() {
     const memoryRef = useRef();
     const storageRef = useRef();
     const descriptionRef = useRef();
+    const datepurchasedRef = useRef();
 
 
     const [currentUser, setCurrentUser] = useState('');
@@ -49,10 +52,12 @@ export default function AddLaptop() {
     const desc = 'Issue: \nWhen did it start: \nHave you tried any troubleshooting steps: \nAdditional notes: ';
     const tag = 'LMD.LCOM'
 
-    const departmentOptions = {
-        lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
-        corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
-    };
+      const departmentOptions = {
+    lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'RND', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
+    corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
+  };
+
+
 
     //Loading state 2s
     // useEffect(() => {
@@ -186,6 +191,12 @@ export default function AddLaptop() {
             setError('Storage is required');
             return;
         }
+        if (!date_purchased) {
+            setLoading(false);
+            datepurchasedRef.current.focus();
+            setError('Date Purchased is required');
+            return;
+        }
 
         console.log(tag_id, department, assign_to, password, ip_address, model, serial, processor, memory, storage, pms_date, description);
 
@@ -200,6 +211,9 @@ export default function AddLaptop() {
                 serial: serial,
                 processor: processor,
                 memory: memory,
+                date_purchased: date_purchased,
+                wl: windows_license,
+                msl: microsoft_license,
                 storage: storage,
                 pms_date: pms_date || '',
                 description: description || '',
@@ -215,6 +229,9 @@ export default function AddLaptop() {
             setIpAddress('');
             setModel('');
             setSerial('');
+            setDatePurchased('');
+            setWindowsLicense('');
+            setMicrosoftLicense('');
             setProcessor('');
             setMemory('');
             setStorage('');
@@ -265,6 +282,8 @@ export default function AddLaptop() {
                             <h4 className="mb-3">Add Laptop</h4>
                             <Form onSubmit={handleSubmit}>
                                 <Row className="mb-3">
+                                    <h6 className="text-muted fw-semibold mt-4 mb-2">Basic Asset Information</h6>
+
                                     <Col xs={12} md={6}>
                                         {/* Tag ID */}
                                         <Form.Group>
@@ -323,7 +342,7 @@ export default function AddLaptop() {
                                         </Form.Group>
                                     </Col>
                                 </Row>
-
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Hardware Specifications</h6>
                                 <Row className="mb-3" >
                                     <Col xs={12} md={6}>
                                         <Form.Group>
@@ -349,9 +368,7 @@ export default function AddLaptop() {
                                             />
                                         </Form.Group>
                                     </Col>
-                                </Row>
 
-                                <Row className="mb-3" >
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Serial</Form.Label>
@@ -376,9 +393,7 @@ export default function AddLaptop() {
                                             />
                                         </Form.Group>
                                     </Col>
-                                </Row>
 
-                                <Row className="mb-3" >
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Memory</Form.Label>
@@ -404,6 +419,7 @@ export default function AddLaptop() {
                                         </Form.Group>
                                     </Col>
                                 </Row>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Purchase & Maintenance Details</h6>
                                 <Row className="mb-3" >
                                     <Col xs={12} md={6}>
                                         <Form.Group className="mb-3" style={{ display: 'flex', flexDirection: 'column' }}>
@@ -425,7 +441,34 @@ export default function AddLaptop() {
                                             />
                                         </Form.Group>
                                     </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <Form.Label style={{ fontSize: '14px', marginBottom: '6px' }}>
+                                                Date Purchased
+                                            </Form.Label>
+                                            <DatePicker
+                                                placeholderText='Pick date'
+                                                selected={date_purchased ? new Date(date_purchased) : null}
+                                                onChange={(date) => setDatePurchased(date?.toLocaleString())}
+                                                dateFormat="yyyy-MM-dd"
+                                                className="form-control"
+                                                disabled={!close}
+                                            />
+                                        </Form.Group>
+                                    </Col>
 
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Microsoft License</Form.Label>
+                                            <Form.Control type="text" value={microsoft_license} onChange={(e) => setMicrosoftLicense(e.target.value)} disabled={!close} />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
+                                            <Form.Label>Windows License</Form.Label>
+                                            <Form.Control type="text" value={windows_license} onChange={(e) => setWindowsLicense(e.target.value)} disabled={!close} />
+                                        </Form.Group>
+                                    </Col>
                                 </Row>
 
 

@@ -14,7 +14,7 @@ const archiver = require('archiver');
 const { assign } = require('nodemailer/lib/shared');
 const { DataTypes } = Sequelize;
 
-const DIR = './uploads';
+
 
 var knex = require("knex")({
     client: 'mssql',
@@ -37,6 +37,9 @@ var db = new Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSW
     port: parseInt(process.env.APP_SERVER_PORT),
 });
 
+
+const DIR = './uploads';
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, DIR);
@@ -51,6 +54,25 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage,
     limits: { fileSize: 200 * 1024 * 1024 } // 200 MB
+});
+
+
+// ---------------Notes ---------------------
+const DIRnotes = './noteuploads';
+
+const storageNotes = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, DIRnotes);
+    },
+    filename: function (req, file, cb) {
+        const original = file.originalname.replace(/\s+/g, '_');
+        const uniqueName = `${new Date().toISOString().replace(/[:.]/g, '-')}_${original}`;
+        cb(null, uniqueName);
+    }
+});
+const uploadNotes = multer({
+    storage: storageNotes,
+    limits: { fileSize: 200 * 1024 * 1024 }
 });
 
 const Tickets = db.define('ticket_master', {
@@ -141,7 +163,7 @@ const Tickets = db.define('ticket_master', {
     tableName: 'ticket_master'
 })
 
-//Create a ticket function FOR USER
+// Create a ticket function FOR USER
 router.post('/create-ticket-user', upload.array('Attachments'), async (req, res) => {
     const currentTimestamp = new Date();
     try {
@@ -154,7 +176,7 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
             user_id
         } = req.body;
 
-        //Get the current user's information
+        // Get the current user's information
         const empInfo = await knex('users_master').where('user_id', user_id).first();
         // Capitalize the first letter of the user's first name
         const Fullname = empInfo.emp_FirstName.charAt(0).toUpperCase() + empInfo.emp_FirstName.slice(1).toLowerCase();
@@ -164,10 +186,12 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
             attachmentPath = req.files.map(file => file.path).join(';'); // Save multiple paths separated by ;
         }
 
+        const ticketmasterlength = await knex('ticket_master').count('* as count').first();
+        const ticket_id = (ticketmasterlength.count || 0) + 1;
         // Insert the ticket into the database
-        const [createTicket] = await knex('ticket_master').insert({
+        await knex('ticket_master').insert({
+            ticket_id,
             ticket_subject,
-            // ticket_type: '',
             ticket_status: 'open',
             ticket_urgencyLevel: 'low',
             ticket_category: '',
@@ -180,9 +204,9 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
             created_at: currentTimestamp,
             Attachments: attachmentPath,
             is_active: true
-        }).returning('ticket_id')
+        })
 
-        const ticket_id = createTicket.ticket_id || createTicket;
+
 
         // Insert into ticket logs
         await knex('ticket_logs').insert({
@@ -193,10 +217,9 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
             changes_made: `User ${created_by} submmited the ticket, Ticket ID: ${ticket_id}`
         })
 
-        console.log('Created a ticket successfully by ' + `${created_by}`)
-        res.status(200).json({ message: 'Ticket created successfully' });
+        console.log('Created a ticket successfully by ' + `${created_by}`);
 
-        //Email Function
+        // Email Function - DON'T SEND RESPONSE HERE, JUST HANDLE EMAILS
         try {
             const transporter = nodemailer.createTransport({
                 host: process.env.EMAIL_HOST,
@@ -209,17 +232,16 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
                     rejectUnauthorized: false
                 }
             });
-            let email = [];
 
-            //If HD created a ticket do not send an email
+            // If HD created a ticket do not send an email
             if (empInfo.emp_tier === 'helpdesk') {
                 console.log('HD created a ticket, no email sent');
             } else if (empInfo.emp_tier === 'user') {
                 console.log('User created a ticket');
-                const allHdEmails = await knex('users_master').select('*').whereIn('emp_tier', 'helpdesk');
+                const allHdEmails = await knex('users_master').where('emp_tier', 'helpdesk');
 
                 const hdEmail = allHdEmails.map(email => email.emp_email);
-                email = hdEmail;
+                const email = hdEmail;
 
                 var start = 'Good Day, <br><br>'
                     + 'This is to inform you that a new support ticket has been successfully created in our system. Below are the details for your reference: <br><br>'
@@ -230,7 +252,7 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
                        <b>Description: </b> ${Description} <br><br>`
 
                 var body = 'Kindly review the ticket and take the necessary action in accordance with our standard support procedures.<br>'
-                    + `You may access and update the ticket via the <a href=192.168.4.251:3007/ticketsystem/view-hd-ticket?id=${ticket_id}>Click me to view ticket</a>` + ' link.<br><br>'
+                    + `You may access and update the ticket via the <a href=${process.env.REACT_CLIENT}/view-hd-ticket?id=${ticket_id}>Click me to view ticket</a>` + ' link.<br><br>'
 
                 var end = 'Thank you for your prompt attention to this matter.<br><br>'
                 var footer = 'Best regards,<br> Lepanto Helpdesk System';
@@ -253,16 +275,16 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
                     + 'Best regards,<br> Lepanto Helpdesk System';
 
                 var UserWholeEmail = useremail + privacy
-
                 var wholeEmail = start + body + end + footer + privacy
-                //Email for all helpdesk personnel
+
+                // Email for all helpdesk personnel
                 const mailOption = {
                     from: process.env.EMAIL,
                     to: email,
                     subject: `Help Desk System Notification - New Ticket Created`,
                     html: wholeEmail
                 }
-                //Email for the user who created the ticket
+                // Email for the user who created the ticket
                 const userMailOption = {
                     from: process.env.EMAIL,
                     to: empInfo.emp_email,
@@ -272,18 +294,22 @@ router.post('/create-ticket-user', upload.array('Attachments'), async (req, res)
 
                 await transporter.sendMail(mailOption);
                 await transporter.sendMail(userMailOption);
-                return res.status(200).json({
-                    message: 'Ticket created successfully and email sent to HD'
-                });
             }
         } catch (err) {
             console.error('Unable to submit email: ', err);
-            // return res.status(500).json({ message: 'Mail Server Error' })
+            // Just log the error, don't send response here
         }
+
+        // Send SINGLE response at the end
+        return res.status(200).json({
+            message: empInfo.emp_tier === 'helpdesk'
+                ? 'Ticket created successfully'
+                : 'Ticket created successfully and email sent to HD'
+        });
 
     } catch (err) {
         console.error('Error creating ticket:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -311,11 +337,13 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
         if (req.files && req.files.length > 0) {
             attachmentPath = req.files.map(file => file.path).join(';'); // Save multiple paths separated by ;
         }
+        const ticketmasterlength = await knex('ticket_master').count('* as count').first();
+        const ticket_id = (ticketmasterlength.count || 0) + 1;
 
         // Insert the ticket into the database
-        const [createTicket] = await knex('ticket_master').insert({
+        await knex('ticket_master').insert({
             ticket_subject,
-
+            ticket_id,
             ticket_status: 'open',
             ticket_urgencyLevel: 'low',
             ticket_category,
@@ -328,9 +356,9 @@ router.post('/create-ticket', upload.array('Attachments'), async (req, res) => {
             created_at: currentTimestamp,
             Attachments: attachmentPath,
             is_active: true
-        }).returning('ticket_id')
+        })
 
-        const ticket_id = createTicket.ticket_id || createTicket;
+
 
         // Insert into ticket logs
         await knex('ticket_logs').insert({
@@ -749,6 +777,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
         res.status(200).json({ message: 'Ticket updated successfully' });
 
         if (ticket_status) {
+            console.log('999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999')
             try {
                 const transporter = nodemailer.createTransport({
                     host: process.env.EMAIL_HOST,
@@ -771,7 +800,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
                 // For HD push Emails
 
                 if (ticket_status === 'in-progress') {
-                    console.log('HHHHHHHHHHHHEEEEEEEEEELLLLLLLLLLLOOOOOOOOO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                    console.log('SEENND EMAIL - INPROGRESSSSSSS')
                     const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
                     const name = ticketForInfo.user_name
                     const Fullname = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
@@ -796,6 +825,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
                 }
 
                 if (ticket_status === 'resolved') {
+                    console.log('SEENND EMAIL - RESOLVEDDDDD')
                     const ticketForInfo = await knex('users_master').where('user_id', ticket_for_UserId).first();
                     const name = ticketForInfo.user_name
                     const Fullname = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
@@ -805,7 +835,7 @@ router.post('/update-ticket', upload.array('attachments'), async (req, res) => {
                         + `<b>Ticket Subject: </b> ${ticket_subject} <br>`
                         + `<b>Ticket Status: </b> ${ticket_status} <br><br>`
                         + `To help us improve our service, we kindly request you to leave a review regarding your experience.<br>`
-                        + `<a href=192.168.4.251:3007/ticketsystem/view-hd-ticket?id=${ticket_id}>Click me to view the ticket</a><br>`
+                        + `<a href=${process.env.REACT_CLIENT}/view-ticket?id=${ticket_id}>Click me to view the ticket</a><br>`
                         + `Your feedback is highly valuable to us and helps ensure we continue to provide the best support possible.<br><br>`
                         + `If you are still having this issue/error, you can re-open the ticket status or create a new ticket.<br><br>`
                     var start = `Hello ${Fullname}, <br><br>`
@@ -1001,37 +1031,47 @@ router.get('/ticket-logs', async (req, res) => {
     }
 })
 
-//Adding a note to a ticket
-router.post('/note-post', async (req, res, next) => {
+router.post('/note-post', uploadNotes.array('note_upload_path'), async (req, res, next) => {
     const currentTimestamp = new Date()
 
     try {
         const {
             notes,
             current_user,
-            ticket_id
+            ticket_id,
         } = req.body;
-        await knex('notes_master').insert({
+
+        console.log('Received files:', req.files); // Debug: Check if files are received
+        console.log('Received body:', req.body);   // Debug: Check body data
+
+        let attachmentPath = null;
+        if (req.files && req.files.length > 0) {
+            attachmentPath = req.files.map(file => file.path).join(';');
+        }
+
+        const insertResult = await knex('notes_master').insert({
             note: notes,
             created_by: current_user,
             created_at: currentTimestamp,
-            ticket_id: ticket_id
-        })
+            ticket_id: ticket_id,
+            note_upload_path: attachmentPath
+        });
 
         await knex('ticket_logs').insert({
             ticket_id: ticket_id,
             created_by: current_user,
             time_date: currentTimestamp,
             changes_made: `${current_user} placed a note "${notes}"`
-        })
+        });
 
-
-        console.log(`${current_user} placed a note successfully`)
-        res.status(200).json({ message: 'PLaced a note successfully' });
+        console.log(`${current_user} placed a note successfully`);
+        console.log('Saved attachment path:', attachmentPath);
+        res.status(200).json({ message: 'Placed a note successfully' });
     } catch (err) {
-        console.log('Internal Error: ', err)
+        console.log('Internal Error: ', err);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
-})
+});
 
 //GET SUPPORT TICKET NOTES BY ID
 router.get('/get-all-notes/:ticket_id', async (req, res, next) => {
@@ -1163,7 +1203,7 @@ router.post('/send-notification-review', async (req, res) => {
             + ` At this stage, you may now proceed to close the ticket if you are satisfied with the resolution.<br>`
             + `We would also appreciate it if you could take a moment to provide your review or feedback on your `
             + `experience. Your input is valuable and helps us continue improving our support services.<br><br>`
-            + `<a href={192.168.4.251:3007/ticketsystem/view-ticket?id=${ticket_id}}>Submit Your Feedback Here.</a><br><br>`
+            + `<a href={${process.env.REACT_CLIENT}/view-ticket?id=${ticket_id}}>Submit Your Feedback Here.</a><br><br>`
             + `If the issue persists or you require further assistance, you may reopen the ticket at any time.<br><br>`
             + `Thank you for your cooperation and support!<br><br>`;
 
@@ -1215,5 +1255,57 @@ router.delete('/911', async (req, res) => {
         res.status(500).json({ message: "Failed to delete files" });
     }
 });
+
+router.post('/turnaround-time', async (req, res) => {
+    try {
+
+        const { tat, user_id, ticket_id, user_name, category, sub_category, ticket_type, ticket_created_at, created_by } = req.body;
+        await knex('tat_master').insert({
+            tat,
+            user_id,
+            ticket_id,
+            user_name,
+            category,
+            sub_category,
+            created_by,
+            ticket_created_at,
+            ticket_type,
+            created_at: new Date()
+        })
+
+        console.log(`${created_by} TAT "Ticket: ${ticket_id}" saved successfully`);
+        res.status(200).json({ message: "TAT saved successfully" });
+
+    } catch (err) {
+        console.log('INTERNAL ERROR: ', err)
+    }
+});
+
+router.post('/add-custom-subcategory', async (req, res) => {
+    try {
+        const { category, subcategory } = req.body;
+
+
+        await knex('option_master').insert({
+            category,
+            sub_category: subcategory,
+        });
+
+        res.status(200).json({ message: "Sub cat saved successfully!" });
+
+    } catch (err) {
+        console.log('Unable to add custom sub-cat: ', err)
+    }
+});
+
+router.get('/get-custom-subcategories', async (req, res) => {
+    try {
+        const getAll = await knex('option_master').select('*');
+        res.status(200).json(getAll);
+        console.log('Triggered /get-custom-subcategories', getAll);
+    } catch (err) {
+        console.log('Unable to get custom subcat : ', err)
+    }
+})
 
 module.exports = router;

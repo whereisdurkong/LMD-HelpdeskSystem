@@ -33,6 +33,7 @@ export default function ReviewPrinter() {
     const [model, setModel] = useState('');
     const [serial, setSerial] = useState('');
     const [pms_date, setPMSDate] = useState('');
+    const [date_purchased, setDatePurchased] = useState('');
     const [description, setDescription] = useState('');
     const [originalData, setOriginalData] = useState({});
     const [changedFields, setChangedFields] = useState({});
@@ -47,6 +48,7 @@ export default function ReviewPrinter() {
     const ipaddressRef = useRef();
     const pmsdateRef = useRef();
     const descriptionRef = useRef();
+    const datepurchasedRef = useRef();
 
     const [currentUser, setCurrentUser] = useState('');
     const [fullname, setFullName] = useState('');
@@ -54,10 +56,11 @@ export default function ReviewPrinter() {
     const [close, setClose] = useState(false)
 
     //All Deparments 
-    const departmentOptions = {
-        lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
-        corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
-    };
+  const departmentOptions = {
+    lmd: ['ACC', 'ASY', 'CLB', 'DEV', 'ENGR', 'ESD', 'EXP', 'GEO', 'GMS', 'HRD', 'IAD', 'IMD', 'IOSD', 'LPS', 'LSD', 'MED', 'MEG', 'MEGG', 'MES', 'MET', 'MGS', 'MIL', 'MIS', 'MME', 'MMS', 'MMT', 'MOG-PRO & DEV', 'MROR', 'MV', 'MWS', 'ORM', 'PCES', 'PED', 'PRO', 'RND', 'SDD', 'SLC', 'SMED', 'SMED-ENERGY', 'SMED-TRANSPORTATION', 'TSF 5A', 'TSG'],
+    corp: ['AVI', 'BLCN', 'CFA', 'CHA', 'CLS', 'CMC', 'CPD', 'ISD', 'TRE']
+  };
+
 
     //Loading state
     // useEffect(() => {
@@ -95,6 +98,7 @@ export default function ReviewPrinter() {
                 setSerial(data.serial || '');
                 setPMSDate(data.pms_date ? new Date(data.pms_date).toLocaleString() : '');
                 setDescription(data.description || '');
+                setDatePurchased(data.date_purchased ? new Date(data.date_purchased).toLocaleString() : '');
                 setCurrentUser(data.created_by || '');
                 setLocation(data.assigned_location || '');
 
@@ -107,7 +111,7 @@ export default function ReviewPrinter() {
                     ip_address: data.ip_address || '',
                     model: data.model || '',
                     serial: data.serial || '',
-
+                    date_purchased: data.date_purchased ? new Date(data.date_purchased).toLocaleString() : '',
                     pms_date: data.pms_date ? new Date(data.pms_date).toLocaleString() : '',
                     description: data.description || '',
                     assigned_location: data.assigned_location || ''
@@ -174,6 +178,7 @@ export default function ReviewPrinter() {
             ip_address,
             model,
             serial,
+            date_purchased,
             pms_date,
             description,
             assigned_location: location
@@ -254,6 +259,7 @@ export default function ReviewPrinter() {
             model,
             serial,
             pms_date,
+            date_purchased,
             description,
             assigned_location: location,
             updated_by: empInfo.user_name,
@@ -536,6 +542,8 @@ export default function ReviewPrinter() {
 
                             <Form onSubmit={updateBTNChecker}>
                                 <Row className="mb-3">
+                                    <h6 className="text-muted fw-semibold mt-4 mb-2">Basic Asset Information</h6>
+
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Tag ID</Form.Label>
@@ -553,9 +561,6 @@ export default function ReviewPrinter() {
                                             </Form.Select>
                                         </Form.Group>
                                     </Col>
-
-                                </Row>
-                                <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Assign to</Form.Label>
@@ -569,14 +574,24 @@ export default function ReviewPrinter() {
                                     </Col>
                                     <Col xs={12} md={6}>
                                         <Form.Group>
+                                            <Form.Label>Location</Form.Label>
+                                            <Form.Select value={location} onChange={(e) => setLocation(e.target.value)} disabled={!close}>
+                                                <option value="">Select Location</option>
+                                                <option value="lmd">LMD</option>
+                                                <option value="corp">CORP</option>
+                                            </Form.Select>
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Hardware Specifications</h6>
+
+                                <Row className="mb-3">
+                                    <Col xs={12} md={6}>
+                                        <Form.Group>
                                             <Form.Label>IP Address</Form.Label>
                                             <Form.Control type="text" value={ip_address} onChange={(e) => setIpAddress(e.target.value)} ref={ipaddressRef} disabled={!close} />
                                         </Form.Group>
                                     </Col>
-
-                                </Row>
-
-                                <Row className="mb-3">
                                     <Col xs={12} md={6}>
                                         <Form.Group>
                                             <Form.Label>Brand Model</Form.Label>
@@ -591,6 +606,7 @@ export default function ReviewPrinter() {
                                     </Col>
 
                                 </Row>
+                                <h6 className="text-muted fw-semibold mt-4 mb-2">Purchase & Maintenance Details</h6>
 
                                 <Row className="mb-3">
                                     <Col xs={12} md={6}>
@@ -608,13 +624,18 @@ export default function ReviewPrinter() {
                                         </Form.Group>
                                     </Col>
                                     <Col xs={12} md={6}>
-                                        <Form.Group>
-                                            <Form.Label>Location</Form.Label>
-                                            <Form.Select value={location} onChange={(e) => setLocation(e.target.value)} disabled={!close}>
-                                                <option value="">Select Location</option>
-                                                <option value="lmd">LMD</option>
-                                                <option value="corp">CORP</option>
-                                            </Form.Select>
+                                        <Form.Group style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <Form.Label style={{ fontSize: '14px', marginBottom: '6px' }}>
+                                                Date Purchased
+                                            </Form.Label>
+                                            <DatePicker
+                                                placeholderText='Pick date'
+                                                selected={date_purchased ? new Date(date_purchased) : null}
+                                                onChange={(date) => setDatePurchased(date?.toLocaleString())}
+                                                dateFormat="yyyy-MM-dd"
+                                                className="form-control"
+                                                disabled={!close}
+                                            />
                                         </Form.Group>
                                     </Col>
                                 </Row>

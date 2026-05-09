@@ -16,6 +16,7 @@ var pmsRouter = require('./routes/pms');//predefined
 var pmsticketRouter = require('./routes/pmsticket');//predefined
 var announcementsRouter = require('./routes/announcements');//predefined
 var knowledgebaseRouter = require('./routes/knowledgebase');//predefine
+var tatRouter = require('./routes/tat');//predefined
 
 // var requestRouter = require('./routes/request');
 
@@ -23,39 +24,6 @@ var knowledgebaseRouter = require('./routes/knowledgebase');//predefine
 
 const session = require('express-session');
 var MemoryStore = require('memorystore')(session);
-
-var app = express();
-app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-
-app.use(session({
-	cookie: { maxAge: 3600000 },
-	store: new MemoryStore({
-		checkPeriod: 3600000
-	}),
-	resave: false,
-	secret: 'LCMC_COR',
-	saveUninitialized: false,
-}))
-
-var whitelist = [
-	'http://localhost:3007',
-	'http://127.0.0.1:3007/',
-	'http://localhost',
-	'https://192.168.44.26:443',
-	'https://192.168.44.26:444',
-	'http://192.168.44.26',
-	'http://192.168.44.26:3007'
-];
 
 var corsOptions = {
 	origin: function (origin, callback) {
@@ -82,7 +50,55 @@ var corsOptions = {
 	],
 };
 
+var app = express();
 app.use(cors(corsOptions));
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.use('/api/noteuploads', express.static(path.join(__dirname, 'noteuploads')));
+
+app.use('/api/esignatures', express.static(path.join(__dirname, 'esignatures')));
+app.use('api/esignatures', express.static(path.join(__dirname, 'esignatures')));
+// Custom static file serving with CORS
+
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'jade');
+
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+
+app.use(session({
+	cookie: { maxAge: 3600000 },
+	store: new MemoryStore({
+		checkPeriod: 3600000
+	}),
+	resave: false,
+	secret: 'LCMC_COR',
+	saveUninitialized: false,
+}))
+
+var whitelist = [
+	'http://localhost:3007',
+	'http://127.0.0.1:3007/',
+	'http://localhost',
+	'http://192.168.4.252',
+	'http://192.168.4.252:3007',
+	'http://192.168.4.252:5007',
+	'https://192.168.44.26:443',
+	'https://192.168.44.26:444',
+	'http://192.168.44.26',
+	'http://192.168.44.26:3007'
+];
+
+
+
+
+
 
 
 //calling of routes
@@ -92,6 +108,7 @@ app.use('/api/ticket', ticketRouter);
 app.use('/api/announcements', announcementsRouter);
 app.use('/api/knowledgebase', knowledgebaseRouter);
 app.use('/api/pms', pmsRouter);
+app.use('/api/tat', tatRouter);
 
 app.use('/api/pmsticket', pmsticketRouter);
 // app.use('/api/headermaster',headerMasterRouter);

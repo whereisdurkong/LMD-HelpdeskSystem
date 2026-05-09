@@ -352,3 +352,12 @@ button.close {
   background: #333;
   cursor: pointer;
 }
+
+.view-signature {
+  cursor: pointer;
+}
+
+.view-signature:hover {
+  color: rgb(0, 59, 5);
+  font-weight: bold;
+}

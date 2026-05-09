@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import CreatableSelect from 'react-select/creatable';
 import AnimatedContent from 'layouts/ReactBits/AnimatedContent';
 import ViewPMSTicketLogs from './viewpmsticketlogs';
+import ViewPMSTicketTAT from './viewpmstickettat';
 
 export default function ViewHDPmsTicket() {
     const [formData, setFormData] = useState({});
@@ -61,16 +62,24 @@ export default function ViewHDPmsTicket() {
     const [archBTN1, setArchBTN1] = useState(false);
     const [archBTN2, setArchBTN2] = useState(false);
 
+    const [turnaroundtime, setTurnAroundTime] = useState('');
+
     // Modal states
     const [showModal, setShowModal] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
     const [modalContent, setModalContent] = useState(null);
+
+    const [showModalTAT, setShowModalTAT] = useState(false);
+    const [modalTitleTAT, setModalTitleTAT] = useState("");
+    const [modalContentTAT, setModalContentTAT] = useState(null);
 
     const [assets, setAssets] = useState([]);
 
     const empInfo = JSON.parse(localStorage.getItem('user'));
     const [lockModal, setLockModal] = useState(false)
     const [lockError, setLockError] = useState('')
+
+    const [openstate, setOpenState] = useState(false);
 
     //dropdown design
     const customSelectStyles = {
@@ -131,6 +140,7 @@ export default function ViewHDPmsTicket() {
     // }, [loading])
 
     //Alerts timeout 3s
+
     useEffect(() => {
         if (error || successful) {
             const timer = setTimeout(() => {
@@ -158,6 +168,7 @@ export default function ViewHDPmsTicket() {
             if (formData.pms_status === 're-opened') {
                 setIsEditable(true);
             }
+
             if (formData.pms_status === 'in-progress' || formData.pms_status === 'assigned') {
                 if (formData.assigned_to !== empInfo.user_name) {
                     setIsEditable(false)
@@ -167,7 +178,7 @@ export default function ViewHDPmsTicket() {
                 }
             }
 
-            if (formData.pms_status === 'resolved' || formData.pms_status === 'closed') {
+            if (formData.pms_status === 'resolved') {
                 setIsEditable(false);
                 if (isEditable === true) {
                     setShowAcceptButton(false)
@@ -175,6 +186,8 @@ export default function ViewHDPmsTicket() {
                     setShowAcceptButton(true)
                 }
             }
+
+
         }
 
 
@@ -289,6 +302,7 @@ export default function ViewHDPmsTicket() {
                 });
 
                 const ticket = Array.isArray(fetchticket.data) ? fetchticket.data[0] : fetchticket.data;
+                console.log('TICKET DATA: ', ticket)
                 setFormData(ticket);
                 setOriginalData(ticket);
 
@@ -400,7 +414,7 @@ export default function ViewHDPmsTicket() {
                 hd_user_id: empInfo.user_id,
             });
 
-            axios.post(`${config.baseApi}/pmsticket/note-post`, {
+            axios.post(`${config.baseApi}/pmsticket/note-hd-post`, {
                 notes: 'Notified the user for review',
                 current_user: empInfo.user_name,
                 pmsticket_id: pmsticket_id
@@ -444,6 +458,8 @@ export default function ViewHDPmsTicket() {
                 setIsEditable(true)
                 setShowAcceptButton(false)
                 window.location.reload();
+
+
             }
             else if (ticket.is_locked === "1" || ticket.locked_by !== empInfo.user_name) {
                 setLoading(false)
@@ -611,10 +627,49 @@ export default function ViewHDPmsTicket() {
         e.preventDefault();
 
         const empInfo = JSON.parse(localStorage.getItem('user'));
+
+        const selectedAsset = assets.find(asset => asset.tag_id === formData.tag_id);
+        const selectedOption = options.find(opt => opt.value === formData.tag_id);
+
+        // Validation tag_id
+        if (formData.tag_id === '' || formData.tag_id === null || formData.tag_id === undefined) {
+            setError('Unable to save empty Asset Tag! Please try again!');
+            return;
+        }
+
+        if (!turnaroundtime) {
+            setError('Unable to save empty Turn Around Time! Please try again!');
+            return;
+        }
+
+        // Check if asset exists in the system
+        if (!selectedAsset) {
+            setError('Selected asset not found in the system. Please select a valid asset.');
+            return;
+        }
+
+        // Check if asset is active
+        if (selectedAsset.is_active === "0" || selectedOption.is_active === false) {
+            setError('Selected asset is inactive. Please select an active asset.');
+            return;
+        }
+
+        const assetCategory = selectedOption ? selectedOption.category : selectedAsset.pms_category;
+
+        console.log(
+            'user_id: ', empInfo.user_id,
+            'username: ', empInfo.user_name,
+            'Turnaround Time:', turnaroundtime,
+            'asset:', formData.tag_id,
+            'asset category:', assetCategory,
+            'pms Ticket ID:', pmsticket_id,
+            'User:', empInfo.user_name
+
+        );
         try {
             setLoading(true);
-            await axios.post(`${config.baseApi}/pmsticket/note-post`, {
-                notes: 'HelpDesk Resolution: ' + resolution,
+            await axios.post(`${config.baseApi}/pmsticket/note-hd-post`, {
+                notes: 'HelpDesk Resolved the ticket: \n' + resolution,
                 current_user: empInfo.user_name,
                 pmsticket_id: pmsticket_id
             });
@@ -624,6 +679,19 @@ export default function ViewHDPmsTicket() {
                 user_id: empInfo.user_id
             })
 
+            await axios.post(`${config.baseApi}/pms/turnaround-time`, {
+                tat: turnaroundtime,
+                user_id: empInfo.user_id,
+                pmsticket_id: pmsticket_id,
+                user_name: empInfo.user_name,
+                pms_category: assetCategory,
+                created_by: empInfo.user_name,
+                assigned_location: formData.assigned_location,
+                ticket_type: 'pms',
+                ticket_created_at: formData.created_at
+            })
+
+            console.log(formData.assigned_location)
             setResolution('');
             console.log('Submitted a resolution succesfully');
             handleSave();
@@ -654,8 +722,6 @@ export default function ViewHDPmsTicket() {
                         return;
                     }
                 }
-
-
 
                 //Check changes
                 const changedFields = [];
@@ -805,7 +871,7 @@ export default function ViewHDPmsTicket() {
                 } else {
                     setLoading(true);
 
-                    await axios.post(`${config.baseApi}/pmsticket/note-post`, {
+                    await axios.post(`${config.baseApi}/pmsticket/note-hd-post`, {
                         notes,
                         current_user: empInfo.user_name,
                         pmsticket_id: pmsticket_id
@@ -888,6 +954,11 @@ export default function ViewHDPmsTicket() {
         setShowModal(true);
     };
 
+    const HandleViewTAT = () => {
+        setModalTitleTAT("Ticket Turn Around Time Details");
+        setModalContentTAT(<ViewPMSTicketTAT pmsticket_id={pmsticket_id} />);
+        setShowModalTAT(true);
+    };
     return (
         <Container
             fluid
@@ -941,20 +1012,44 @@ export default function ViewHDPmsTicket() {
                                     <Row className="align-items-center">
                                         <Col xs="auto">
                                             <h3 className="fw-bold text-dark mb-0">PMS Ticket Details</h3>
-                                            <h7
-                                                style={{
-                                                    fontStyle: "italic",
-                                                    color: "#2c7e36ff",
-                                                    cursor: "pointer",
-                                                    textDecoration: "none",
-                                                }}
-                                                onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
-                                                onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
-                                                onClick={HandleView}
-                                            >
-                                                view ticket logs
-                                            </h7>
+                                            <Row className="align-items-center g-1">
+                                                <Col xs="auto">
+                                                    <h7
+                                                        style={{
+                                                            fontStyle: "italic",
+                                                            color: "#2c7e36ff",
+                                                            cursor: "pointer",
+                                                            textDecoration: "none",
+                                                        }}
+                                                        onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
+                                                        onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+                                                        onClick={HandleView}
+                                                    >
+                                                        view logs
+                                                    </h7>
+                                                </Col>
+                                                <Col xs="auto">|</Col>
+                                                <Col xs="auto">
+                                                    <h7
+                                                        style={{
+                                                            fontStyle: "italic",
+                                                            color: "#2c7e36ff",
+                                                            cursor: "pointer",
+                                                            textDecoration: "none",
+                                                        }}
+                                                        onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
+                                                        onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+                                                        onClick={HandleViewTAT}
+                                                    >
+                                                        view TAT details
+                                                    </h7>
+                                                </Col>
+
+
+
+                                            </Row>
                                         </Col>
+
                                         {/* Archive text */}
                                         {archiveTextState && (
                                             <Col xs="auto">
@@ -1232,9 +1327,9 @@ export default function ViewHDPmsTicket() {
                                         <option value="assigned" hidden>Assigned</option>
                                         <option value="in-progress">In Progress</option>
                                         {/* <option value="escalate">Escalate</option> */}
-                                        <option value="resolved">Resolve</option>
+                                        <option value="resolved" >Resolve</option>
                                         <option value="closed" hidden>Close</option>
-                                        <option value="re-opened" hidden>Re Open</option>
+                                        <option hidden value="re-opened" >Re Open</option>
                                     </Form.Select>
                                 </Form.Group>
 
@@ -1486,6 +1581,26 @@ export default function ViewHDPmsTicket() {
                                     placeholder="Enter your troubleshooting steps here"
                                 />
                             </Form.Group>
+                            <Form.Group controlId="userResolution">
+                                <Form.Label>Turn around time(TAT)</Form.Label>
+                                <Form.Label>Category</Form.Label>
+                                <Form.Select
+                                    name="ticket_tat"
+                                    value={turnaroundtime ?? ''}
+                                    onChange={(e) => setTurnAroundTime(e.target.value)}
+                                    required
+                                    disabled={!resolution}
+                                >
+                                    <option value="" hidden>-</option>
+                                    <option value="30m">30 minutes</option>
+                                    <option value="1h">1 hour</option>
+                                    <option value="2h">2 hour</option>
+                                    <option value="1d">24 hour (1 day)</option>
+                                    <option value="2d">48 hour (2 days)</option>
+                                    <option value="3d">72 hour (3 days)</option>
+                                </Form.Select>
+                            </Form.Group>
+
                         </Modal.Body>
                         <Modal.Footer>
                             <Button variant="secondary" onClick={() => setShowCloseResolutionModal(false)}>
@@ -1494,7 +1609,7 @@ export default function ViewHDPmsTicket() {
                             <Button
                                 variant="primary"
                                 onClick={HandleResolution}
-                                disabled={resolution.trim() === ''}
+                                disabled={resolution.trim() === '' || turnaroundtime === ''}
                             >
                                 Confirm
                             </Button>
@@ -1593,6 +1708,36 @@ export default function ViewHDPmsTicket() {
 
                         <Modal.Footer>
                             <Button variant="secondary" onClick={() => setShowModal(false)}>
+                                Close
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
+
+
+                    {/* TAT MODAL */}
+                    {/* TAT Modal */}
+                    <Modal
+                        show={showModalTAT}
+                        onHide={() => setShowModalTAT(false)}
+                        size="lg" // smaller than xl
+                        centered
+                    >
+                        <Modal.Header closeButton>
+                            <Modal.Title>{modalTitleTAT}</Modal.Title>
+                        </Modal.Header>
+
+                        <Modal.Body
+                            style={{
+                                maxHeight: "50vh", // responsive height limit
+                                overflowY: "auto", // scroll if content is long
+                                padding: "20px",
+                            }}
+                        >
+                            {modalContentTAT}
+                        </Modal.Body>
+
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={() => setShowModalTAT(false)}>
                                 Close
                             </Button>
                         </Modal.Footer>
